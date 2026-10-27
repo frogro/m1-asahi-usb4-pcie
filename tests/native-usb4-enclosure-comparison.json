@@ -1,0 +1,47 @@
+{
+  "date_utc": "2026-10-28",
+  "board": "Apple Mac mini M1 (J274)",
+  "kernel": "7.2.0-1001-asahi-arm",
+  "controlled_conditions": {
+    "same_crucial_nvme_used_where_applicable": true,
+    "same_known_usb4_cable": true,
+    "both_mac_usb4_ports_tested": true,
+    "partitions_mounted": false
+  },
+  "devices": [
+    {
+      "name": "Other World Computing Express 1M2",
+      "protocol": "native USB4",
+      "lanes": 2,
+      "initial_link": "Gen 2, both lanes entered CL0",
+      "stable": false,
+      "disconnect_seconds_approx": 11,
+      "errors": [83, 84, 87, 89],
+      "fallback": "USB UAS"
+    },
+    {
+      "name": "Fanxiang X6 / ASMedia 246x",
+      "protocol": "native USB4",
+      "lanes": 2,
+      "initial_link": "Gen 2, both lanes entered CL0",
+      "stable": false,
+      "disconnect_seconds_approx": 11,
+      "errors": [83, 84, 87, 89],
+      "fallback": "USB 2.0 UAS, 480 Mbit/s"
+    },
+    {
+      "name": "Yottamaster / Intel Ash Creek",
+      "protocol": "Thunderbolt 3 legacy",
+      "lanes": 2,
+      "initial_link": "40 Gbit/s, 2 x 20 Gbit/s",
+      "stable": true,
+      "observation_seconds_minimum": 90
+    }
+  ],
+  "conclusion": "The reproducible failure follows the native USB4 path rather than the SSD, one enclosure, cable, or Mac port. Legacy Thunderbolt 3 remains stable on the same Apple ACIO/NHI stack.",
+  "next_focus": [
+    "native USB4 TMU mode and exact failing configuration transaction",
+    "configuration-valid and tunnel setup ordering",
+    "Apple-specific native-port device links"
+  ]
+}
