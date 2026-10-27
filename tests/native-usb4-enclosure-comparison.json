@@ -40,7 +40,28 @@
       "observation_seconds_minimum": 90
     }
   ],
-  "conclusion": "The reproducible failure follows the ASMedia ASM246x native-USB4 family across two enclosure brands, both Mac ports and the known USB4 cable. This does not yet prove a generic failure of all native USB4 devices because both native-USB4 enclosures use the same controller family. Legacy Intel Thunderbolt 3 remains stable on the same Apple ACIO/NHI stack.",
+  "linux_x86_control": {
+    "host": "Lenovo ThinkPad T480",
+    "kernel": "7.0.0-38-generic",
+    "host_controller": "Intel JHL6240 Alpine Ridge LP",
+    "device": "Fanxiang X6 / ASMedia ASM2464PD with Crucial P310 4 TB",
+    "connection": "direct to the ThinkPad Thunderbolt 3 port with the known USB4 cable",
+    "usb4_link": "40 Gbit/s, 2 x 20 Gbit/s in both directions",
+    "pcie_path": [
+      "Intel JHL6240 NHI",
+      "ASMedia ASM2464PD upstream bridge 1b21:2463",
+      "ASMedia ASM2464PD downstream bridge 1b21:2463",
+      "Crucial P310 NVMe c0a9:5426"
+    ],
+    "nvme_node": "/dev/nvme1n1",
+    "iommu_group": 13,
+    "nvme_host_memory_buffer_mib": 64,
+    "sustained_read_test": "4 GiB direct read at 1.3 GB/s",
+    "stable": true,
+    "writes_performed": false,
+    "belkin_hub_required": false
+  },
+  "conclusion": "The reproducible failure follows the Apple M1 software-managed USB4 path with the ASMedia ASM246x family across two enclosure brands, both Mac ports and the known USB4 cable. The same Fanxiang ASM2464PD enclosure, cable and Crucial NVMe are stable when connected directly to the Intel JHL6240 Thunderbolt 3 host in a ThinkPad T480, so the enclosure, SSD and Belkin dock are excluded as the primary cause. Legacy Intel Thunderbolt 3 also remains stable on the Apple ACIO/NHI stack. The remaining focus is Apple ACIO/NHI PCIe-tunnel setup, DART mapping and interrupt integration for the ASM246x path.",
   "next_focus": [
     "control test with a native USB4 device using non-ASMedia silicon",
     "ASM246x-specific TMU and configuration transaction handling",
