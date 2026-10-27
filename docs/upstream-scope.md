@@ -52,8 +52,10 @@ yet a generic upstream host implementation.
 
 1. Boot the dedicated kernel with PCI OF ownership and Apple DART fixes.
 2. Repeat the TB3 NVMe lifecycle, direct read and bounded write test.
-3. Test the OWC Express 1M2 with a known USB4 cable and record whether it uses
-   native USB4 PCIe tunnelling or a USB-storage fallback.
+3. Repeat the OWC Express 1M2 test after a clean test-kernel boot. On the stock
+   Ubuntu Asahi 7.2 kernel it initially trained both lanes as USB4 Gen 2, then
+   disconnected after about eleven seconds with ACIO link errors 83, 84 and
+   87. Only its 480 Mbit/s USB 2.0 UAS fallback remained available.
 4. Repeat the non-storage ASMedia/Qualcomm endpoint test.
 5. Add surprise-unplug and suspend/resume only after deterministic teardown is
    stable.

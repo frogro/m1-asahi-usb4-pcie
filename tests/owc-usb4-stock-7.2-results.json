@@ -1,0 +1,26 @@
+{
+  "date_utc": "2026-10-27",
+  "board": "Apple Mac mini M1 (J274)",
+  "kernel": "7.2.0-1001-asahi-arm",
+  "device": "Other World Computing Express 1M2, 4 TB",
+  "cable": "USB4 cable",
+  "native_usb4": {
+    "device_detected": true,
+    "generation": "USB4",
+    "local_mode": "gen=2 legacy=0 usb4=1 two lanes",
+    "remote_mode": "gen=2 legacy=0 usb4=1 two lanes",
+    "retimer_detected": true,
+    "stable": false,
+    "connected_seconds_approx": 11,
+    "acio_link_errors": [83, 84, 87]
+  },
+  "fallback": {
+    "transport": "USB UAS",
+    "speed_mbit_s": 480,
+    "block_device": "/dev/sda",
+    "capacity_tb_decimal": 4,
+    "partitions_mounted": false
+  },
+  "result": "native USB4 link disconnected; USB 2.0 fallback remained",
+  "raw_log_location": "local evidence directory/owc-usb4-stock-7.2-relevant.log"
+}
