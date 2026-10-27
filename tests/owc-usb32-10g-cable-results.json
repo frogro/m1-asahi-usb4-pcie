@@ -1,0 +1,22 @@
+{
+  "date_utc": "2026-10-27",
+  "board": "Apple Mac mini M1 (J274)",
+  "kernel": "7.2.0-1001-asahi-arm",
+  "device": "Other World Computing Express 1M2, 4 TB",
+  "cable": "alternate USB-C cable; USB4 capability not advertised",
+  "transport": {
+    "protocol": "USB 3.2 Gen 2x1",
+    "driver": "UAS",
+    "speed_mbit_s": 10000,
+    "block_device": "/dev/sda",
+    "capacity_tb_decimal": 4,
+    "stable_during_observation": true,
+    "partitions_mounted": false
+  },
+  "native_usb4": {
+    "negotiated": false,
+    "bolt_status": "previous USB4 instance disconnected"
+  },
+  "result": "OWC enclosure, NVMe and Mac port work at stable 10 Gbit/s; native USB4 failure is isolated to the USB4 link path",
+  "raw_log_location": "local evidence directory/owc-usb32-10g-other-cable-relevant-20261027.log"
+}
