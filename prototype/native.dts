@@ -15,6 +15,7 @@
    };
    pcie@530000000 {
     device_type="pci";
+    dma-coherent;
     #address-cells=<3>;#size-cells=<2>;
     reg=<5 0x30000000 0 0x4000000>;
     bus-range=<0 63>;

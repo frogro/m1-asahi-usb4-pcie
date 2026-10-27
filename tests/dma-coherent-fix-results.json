@@ -1,0 +1,35 @@
+{
+  "date_utc": "2026-10-27",
+  "board": "Apple Mac mini M1 (J274)",
+  "kernel": "7.2.0-1001-asahi-arm",
+  "device": "Crucial P310 1 TB in Intel Ash Creek TB3 enclosure",
+  "root_cause": "synthetic PCIe root omitted dma-coherent",
+  "before": {
+    "endpoint_dma_coherent": false,
+    "direct_read_result": "blocked",
+    "swiotlb_dynamic_alloc_warnings_visible": 63,
+    "dart_selection_messages": 7543,
+    "oom_victims": 122
+  },
+  "after": {
+    "endpoint_dma_coherent": true,
+    "iommu_aperture": "0x80000000..0xffefffff",
+    "iommu_granule_bytes": 16384,
+    "dma_mask": "0xffffffff",
+    "read_64k_direct": "pass",
+    "read_1m_direct": "pass",
+    "read_efi_partition_bytes": 209715200,
+    "read_efi_elapsed_ms": 217,
+    "read_efi_sha256": "6e19ddabb421d7855d24d79338bb87eb4259eac6f674b5bace8c453e44f0bb62",
+    "verified_prewrite_image": true,
+    "write_smoke_bytes": 4194304,
+    "write_readback_delete": "pass",
+    "write_sha256": "5fdddd9006db4cbf40b0dc10f76de3f63b062ae507bffb2716041f366c307d97",
+    "fat_check_after_delete": "clean",
+    "swiotlb_used": 0,
+    "swiotlb_transient_nslabs": 0,
+    "swiotlb_used_hiwater": 0,
+    "nvme_state": "live",
+    "staged_cleanup": "pass"
+  }
+}

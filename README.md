@@ -19,7 +19,7 @@ Build the modules on the matching kernel using `make -C /lib/modules/$(uname -r)
 
 ## Current limits
 
-The prototype fixes the port, ECAM addresses, bridge topology, NVMe ID, SID and MSI resource range. Other devices, surprise unplug, suspend/resume and writes have not been validated. Read timings include Python checksumming and verbose kernel logging; they do not establish maximum link throughput. A temporary workaround protects an overlay-owned PCI root node during teardown; a proper kernel-level ownership fix is still required.
+The prototype fixes the port, ECAM addresses, bridge topology, NVMe ID, SID, MSI resource range and Apple PCIe DMA-coherency description. Direct reads and a bounded create/read-back/delete write test passed on the Crucial P310. Other devices, surprise unplug and suspend/resume remain unvalidated. Read timings include checksumming and verbose kernel logging; they do not establish maximum link throughput. A temporary workaround protects an overlay-owned PCI root node during teardown; a proper kernel-level ownership fix is still required.
 
 The display went through poweroff and HDMI hotplug events after the test sleep inhibitor was released. Ubuntu remained reachable in the same boot. This display issue is recorded separately from the successful storage teardown.
 

@@ -19,7 +19,7 @@ A matching upstream proposal is Hervé Codina's [v12 10/10: PCI: of: Avoid np->d
 
 ## Successful lifecycle
 
-After recovery, round 5 (no NVMe binding) passed all three teardown phases and module unload. Round 6 enabled stock NVMe binding, identified the namespace, verified 1 GiB of direct reads, then passed all three phases and full cleanup. Udisks and the udev execution queue were restored, temporary modules removed, and the tunnel deauthorized. No SSD data writes or filesystem mounts were performed.
+After recovery, round 5 (no NVMe binding) passed all three teardown phases and module unload. Round 6 enabled stock NVMe binding, identified the namespace, verified 1 GiB of direct reads, then passed all three phases and full cleanup. A later general direct-I/O test exposed a missing `dma-coherent` property in the synthetic PCIe root; the resulting SWIOTLB growth exhausted memory. With the property restored to match Apple's native PCIe node, a full 200 MiB direct read and bounded 4 MiB create/read-back/delete FAT write test passed with zero SWIOTLB use. Udisks and the udev execution queue were restored, temporary modules removed, and the tunnel deauthorized.
 
 Setup sequence used: hold sleep/idle, stop automatic mounts and udev execution, enable netconsole, load host with binding disabled or enabled, run host stages 1–6, authorize tunnel, stages 7–10, load isolated DART and overlay, register host. Set the resulting external namespace read-only before any test. Teardown writes 1, then 2, then 3 to the `teardown` attribute, checking each result; only then remove overlay, DART, restore routes, deauthorize tunnel and remove controller. Do not use `host=0` as a shortcut while registered.
 

@@ -16,6 +16,7 @@
 #include <linux/io.h>
 #include <linux/delay.h>
 #include <linux/iopoll.h>
+#include <linux/dma-map-ops.h>
 #include <linux/mutex.h>
 #include <asm/barrier.h>
 
@@ -248,6 +249,24 @@ static int native_inspect_device(struct pci_dev *pdev, void *unused)
  validate=symbol_get(apple_apciec_dart_validate);
  if(validate){valid=validate(&pdev->dev,1);symbol_put(apple_apciec_dart_validate);}
  dev_info(&pdev->dev,"APCIEC inspection domain=%p type=%u actual_sid1=%d driver=%s\n",d,d?d->type:0,valid,pdev->dev.driver?pdev->dev.driver->name:"none");
+ dev_info(&pdev->dev,
+          "APCIEC DMA mask=%#llx coherent_mask=%#llx coherent=%u bus_limit=%#llx min_align=%#x max_map=%zu opt_map=%zu seg_boundary=%#llx max_seg=%u untrusted=%u external=%u\n",
+          (unsigned long long)dma_get_mask(&pdev->dev),
+          (unsigned long long)pdev->dev.coherent_dma_mask,
+          dev_is_dma_coherent(&pdev->dev),
+          (unsigned long long)pdev->dev.bus_dma_limit,
+          dma_get_min_align_mask(&pdev->dev),
+          dma_max_mapping_size(&pdev->dev),
+          dma_opt_mapping_size(&pdev->dev),
+          (unsigned long long)dma_get_seg_boundary(&pdev->dev),
+          dma_get_max_seg_size(&pdev->dev), pdev->untrusted,
+          pdev->external_facing);
+ if(d)
+  dev_info(&pdev->dev,
+           "APCIEC IOMMU aperture=%#llx..%#llx force=%u pgsize_bitmap=%#lx\n",
+           (unsigned long long)d->geometry.aperture_start,
+           (unsigned long long)d->geometry.aperture_end,
+           d->geometry.force_aperture, d->pgsize_bitmap);
  return 0;
 }
 /* Local diagnostic workaround for PCI OF node ownership bug.
