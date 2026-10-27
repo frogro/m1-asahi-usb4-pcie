@@ -11,6 +11,7 @@
   "devices": [
     {
       "name": "Other World Computing Express 1M2",
+      "controller_family": "ASMedia ASM246x (macOS PCIe bridges 1b21:2463)",
       "protocol": "native USB4",
       "lanes": 2,
       "initial_link": "Gen 2, both lanes entered CL0",
@@ -21,6 +22,7 @@
     },
     {
       "name": "Fanxiang X6 / ASMedia 246x",
+      "controller_family": "ASMedia ASM246x (USB fallback 174c:2464)",
       "protocol": "native USB4",
       "lanes": 2,
       "initial_link": "Gen 2, both lanes entered CL0",
@@ -38,8 +40,10 @@
       "observation_seconds_minimum": 90
     }
   ],
-  "conclusion": "The reproducible failure follows the native USB4 path rather than the SSD, one enclosure, cable, or Mac port. Legacy Thunderbolt 3 remains stable on the same Apple ACIO/NHI stack.",
+  "conclusion": "The reproducible failure follows the ASMedia ASM246x native-USB4 family across two enclosure brands, both Mac ports and the known USB4 cable. This does not yet prove a generic failure of all native USB4 devices because both native-USB4 enclosures use the same controller family. Legacy Intel Thunderbolt 3 remains stable on the same Apple ACIO/NHI stack.",
   "next_focus": [
+    "control test with a native USB4 device using non-ASMedia silicon",
+    "ASM246x-specific TMU and configuration transaction handling",
     "native USB4 TMU mode and exact failing configuration transaction",
     "configuration-valid and tunnel setup ordering",
     "Apple-specific native-port device links"
