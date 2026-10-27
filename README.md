@@ -26,3 +26,9 @@ The display went through poweroff and HDMI hotplug events after the test sleep i
 ## Licensing and provenance
 
 Original kernel files retain their upstream licensing and notices; see `baseline/COPYING` and `baseline/LICENSES/`. Prototype code is GPL-2.0 compatible and contains kernel-derived code. Platform tunables were obtained from the local Sonoma/ADT investigation. No raw macOS firmware, account data, disk contents or full machine logs are included.
+
+## Follow-up validation
+
+A further 15-minute session completed three full registration/removal cycles, 1,762 paired read comparisons across distributed SSD regions, and a stock NVMe controller reset followed by fixed-range checksum verification. About 14.8 GiB was read in total. All eight I/O queue interrupts were exercised. The same Ubuntu boot remained active, and all temporary test modules were removed at the end. No data writes or mounts were performed. See `tests/validation15-results.json` and `tests/soak-read.py`.
+
+APST was disabled; surprise unplug, suspend and generic-device support remain outside this result. Existing ACIO supplier-link warnings still need resolution before persistent integration. See `docs/generic-host-design.md` for the permanent-kernel plan.

@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-27",
+  "kernel": "7.2.0-1001-asahi-arm",
+  "device": "Crucial CT1000P310SSD8 in Yottamaster TB3, Mac mini M1 J274",
+  "cycles": [
+    {
+      "cycle": 1,
+      "elapsed": 180.000952956,
+      "workers": 1,
+      "bytes_read": 754974720,
+      "paired_comparisons": 90,
+      "boot_id": "b62270ca-c8ec-48b6-b903-97809d5468e0"
+    },
+    {
+      "cycle": 2,
+      "elapsed": 180.00183689000005,
+      "workers": 8,
+      "bytes_read": 6039797760,
+      "paired_comparisons": 720,
+      "boot_id": "b62270ca-c8ec-48b6-b903-97809d5468e0"
+    },
+    {
+      "cycle": 3,
+      "elapsed": 240.00145464399998,
+      "workers": 8,
+      "bytes_read": 7985954816,
+      "paired_comparisons": 952,
+      "boot_id": "b62270ca-c8ec-48b6-b903-97809d5468e0"
+    }
+  ],
+  "total_soak_bytes": 14780727296,
+  "reset_recovery_verified": true,
+  "post_reset_verified_bytes": 1073741824,
+  "direct_io": true,
+  "write_access": false,
+  "filesystem_mounts": false,
+  "nvme_driver": "unchanged stock Linux PCI NVMe driver",
+  "limitations": [
+    "Fixed reference topology and port",
+    "Automatic NVMe power saving disabled",
+    "No physical surprise unplug or suspend test",
+    "No disk write test",
+    "Timing includes checksumming and verbose logging; not a maximum-speed benchmark"
+  ],
+  "window_utc": {
+    "start": "2026-10-27T21:38:15Z",
+    "cleanup_complete": "2026-10-27T21:53:24Z"
+  },
+  "teardown_all_three_cycles_verified": true,
+  "final_test_modules_loaded": false,
+  "final_tunnel_authorized": false,
+  "nvme_block_write_requests_cycle3": 0,
+  "nvme_block_sectors_written_cycle3": 0,
+  "known_warnings": [
+    "Two existing ACIO supplier-link warnings per overlay insertion; unresolved"
+  ],
+  "compiled_module_sha256": {
+    "apple_apciec_step.ko": "e7d5ec7e3d1de4c377e609a21a089eea5fbc9518f48ce3b715345f5c4f1b3aa5",
+    "apple-dart-apciec-test.ko": "67288e16b37762c66ad87215e1918303f6372ae8316237afbc5d0de20d6eb6ba",
+    "native-overlay.ko": "3fdd86fcafffd1cb87a5ab2112a8e8c5ad5976be10b4746d76e0a2ca17dd2638"
+  }
+}

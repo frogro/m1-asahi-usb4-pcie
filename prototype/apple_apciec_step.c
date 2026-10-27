@@ -62,11 +62,10 @@ static int probe_status = -ENODEV;
 static int logged_write(void __iomem *base, u32 off, u32 value, const char *region);
 
 /* Bounded diagnostic: real ECAM reads for the four already verified BDFs.
- * PCI config writes are rejected except optional BAR sizing/restoration.
- * BAR assignment and DMA are NOT supported in this stage. The PCI core may
- * report unassigned resources. No pci_bus_add_devices(): binding stays disabled
- * on the checked Ubuntu 7.2 PCI core. enable_device is an additional backstop.
- * No hot unplug is supported while this temporary diagnostic is registered.
+ * Config access remains limited to the four verified BDFs of this topology.
+ * With bind_nvme=true, Linux assigns BARs and binds stock NVMe only after
+ * validating the test endpoint's translated DMA domain and SID mapping.
+ * No surprise unplug is supported while this temporary host is registered.
  */
 static void __iomem *apciec_cfg_base(struct pci_bus *bus, unsigned int devfn)
 {
