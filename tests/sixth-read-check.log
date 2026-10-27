@@ -1,0 +1,14 @@
+{"chunk": 65536, "total": 268435456, "repeat": 0, "seconds": 0.7468560120000802, "sha256": "b1207d6addf0f0a4a1dabf0233b01d5a0b72d6fa41e500da75eee27de1c67130", "kernel_crc32": "2234812b"}
+{"chunk": 65536, "total": 268435456, "repeat": 1, "seconds": 0.7658001690000447, "sha256": "b1207d6addf0f0a4a1dabf0233b01d5a0b72d6fa41e500da75eee27de1c67130", "kernel_crc32": "2234812b"}
+{"chunk": 1048576, "total": 268435456, "repeat": 0, "seconds": 0.4572995490000267, "sha256": "b1207d6addf0f0a4a1dabf0233b01d5a0b72d6fa41e500da75eee27de1c67130", "kernel_crc32": "2234812b"}
+{"chunk": 1048576, "total": 268435456, "repeat": 1, "seconds": 0.44669665799995073, "sha256": "b1207d6addf0f0a4a1dabf0233b01d5a0b72d6fa41e500da75eee27de1c67130", "kernel_crc32": "2234812b"}
+PASS: repeated O_DIRECT reads, matching SHA256 and primary/backup GPT
+ 164:         23          0          0          0          0          0          0          0  PCI-MSIX-0001:03:00.0    0 Edge      nvme1q0
+ 165:          0          0          0          0       7167          0          0          0  PCI-MSIX-0001:03:00.0    1 Edge      nvme1q1
+ 166:          0          0          0          0          0        608          0          0  PCI-MSIX-0001:03:00.0    2 Edge      nvme1q2
+ 167:          0          0          0          0          0          0       2408          0  PCI-MSIX-0001:03:00.0    3 Edge      nvme1q3
+ 168:          0          0          0          0          0          0          0         52  PCI-MSIX-0001:03:00.0    4 Edge      nvme1q4
+ 169:          1          0          0          0          0          0          0          0  PCI-MSIX-0001:03:00.0    5 Edge      nvme1q5
+ 170:          0          0          0          0          0          0          0          0  PCI-MSIX-0001:03:00.0    6 Edge      nvme1q6
+ 171:          0          0          0          0          0          0          0          0  PCI-MSIX-0001:03:00.0    7 Edge      nvme1q7
+ 172:          0          0          0          7          0          0          0          0  PCI-MSIX-0001:03:00.0    8 Edge      nvme1q8

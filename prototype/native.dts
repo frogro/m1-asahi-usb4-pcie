@@ -1,0 +1,27 @@
+/dts-v1/;
+/plugin/;
+/ {
+ fragment@0 {
+  target-path="/soc";
+  __overlay__ {
+   #address-cells=<2>;#size-cells=<2>;
+   testdart: iommu@521008000 {
+    compatible="codex,t8103-apciec-dart-test";
+    reg=<5 0x21008000 0 0x4000>;
+    #iommu-cells=<1>;
+    interrupt-parent=<0xf>;interrupts=<0 851 4>;
+    power-domains=<0x7b>;
+    apple,dma-range=/bits/ 64 <0x80000000 0x7ff00000>;
+   };
+   pcie@530000000 {
+    device_type="pci";
+    #address-cells=<3>;#size-cells=<2>;
+    reg=<5 0x30000000 0 0x4000000>;
+    bus-range=<0 63>;
+    ranges=<0x02000000 0 0x100000 6 0x100000 0 0x100000>;
+    dma-ranges=<0x02000000 0 0 0 0 1 0>;
+    iommu-map=<0x0300 &testdart 1 1>;
+   };
+  };
+ };
+};

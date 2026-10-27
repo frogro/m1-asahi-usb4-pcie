@@ -1,0 +1,34 @@
+--- a/drivers/iommu/apple-dart.c
++++ b/drivers/iommu/apple-dart.c
+@@ -76,6 +76,7 @@
+ #define DART_T8020_ERROR_ADDR_LO 0x50
+ 
+ #define DART_T8020_STREAMS_ENABLE 0xfc
++#define DART_T8103_USB4_STREAMS_ENABLE 0xf8
+ 
+ #define DART_T8020_REMAP       	0x80
+ 
+@@ -505,11 +506,13 @@
+ 	unsigned long flags;
+ 	int ret, i;
+ 	u32 command_reg;
++	u32 select[BITS_TO_U32(DART_MAX_STREAMS)];
+ 
+ 	spin_lock_irqsave(&stream_map->dart->lock, flags);
+ 
++	bitmap_to_arr32(select, stream_map->sidmap, stream_map->dart->num_streams);
+ 	for (i = 0; i < BITS_TO_U32(stream_map->dart->num_streams); i++)
+-		writel(stream_map->sidmap[i],
++		writel(select[i],
+ 		       stream_map->dart->regs + DART_T8020_STREAM_SELECT + 4 * i);
+ 	writel(command, stream_map->dart->regs + DART_T8020_STREAM_COMMAND);
+ 
+@@ -1617,7 +1620,7 @@
+ 	.fmt = APPLE_DART,
+ 	.max_sid_count = 64,
+ 
+-	.enable_streams = DART_T8020_STREAMS_ENABLE,
++	.enable_streams = DART_T8103_USB4_STREAMS_ENABLE,
+ 	.lock = DART_T8020_CONFIG,
+ 	.lock_bit = DART_T8020_CONFIG_LOCK,
+ 

@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-27",
+  "kernel": "7.2.0-1001-asahi-arm",
+  "upstream_commit": "9b97d53812a6fb5c4d270899eb70a145fa762cc6",
+  "device": "Crucial CT1000P310SSD8 via Yottamaster TB3 / Mac mini M1 J274",
+  "stock_nvme_driver_modified": false,
+  "block_device": "/dev/nvme1n1",
+  "device_pci": "0001:03:00.0",
+  "dma_domain_type": 3,
+  "sid": 1,
+  "io_queues": 8,
+  "interrupt_mode": "MSI-X",
+  "read_only": true,
+  "mounted": false,
+  "verified_bytes": 1073741824,
+  "kernel_crc32": "2234812b",
+  "sha256_256MiB": "b1207d6addf0f0a4a1dabf0233b01d5a0b72d6fa41e500da75eee27de1c67130",
+  "checksum_matches_earlier_direct_nvme_test": true,
+  "gpt_primary_backup_verified": true,
+  "limits": [
+    "Fixed test topology and port; not generic",
+    "No write, surprise-unplug or suspend test",
+    "Temporary PCI OF overlay ownership workaround; proper kernel fix still needed",
+    "Throughput includes checksumming and diagnostic printk; not a bandwidth benchmark"
+  ],
+  "source_reports": [
+    "sixth-read-check.log",
+    "sixth-stock-nvme-setup.log",
+    "sixth-after-read-state.log"
+  ],
+  "teardown": {
+    "stop": true,
+    "remove": true,
+    "resources_released": true,
+    "all_test_modules_unloaded": true,
+    "reboot_required": false
+  },
+  "post_test_display": "HDMI poweroff/hotplug after sleep inhibitor removal; SSH and same boot continue. Display issue remains separate and unresolved."
+}
