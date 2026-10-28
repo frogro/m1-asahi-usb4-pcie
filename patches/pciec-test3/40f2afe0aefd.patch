@@ -1,0 +1,33 @@
+From 40f2afe0aefd2d6ad2cac9c635e861907650f9aa Mon Sep 17 00:00:00 2001
+From: DjDeveloperr <hey@djdev.me>
+Date: Tue, 25 Aug 2026 14:35:39 -0400
+Subject: [PATCH] PCI: apple: support T8103-family PCIe-C tunnels
+
+Signed-off-by: DjDeveloperr <hey@djdev.me>
+---
+ drivers/pci/controller/pcie-apple.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pci/controller/pcie-apple.c b/drivers/pci/controller/pcie-apple.c
+index bea35fecaa13dc..a1a34c74ce47fa 100644
+--- a/drivers/pci/controller/pcie-apple.c
++++ b/drivers/pci/controller/pcie-apple.c
+@@ -185,7 +185,7 @@ static const struct hw_info t602x_hw = {
+ 	.max_rid2sid		= 512,
+ };
+ 
+-static const struct hw_info t6000_pciec_hw = {
++static const struct hw_info t8103_pciec_hw = {
+ 	.port_msiaddr		= PORT_MSIADDR,
+ 	.port_perst		= PORT_PERST,
+ 	.port_rid2sid		= PORT_RID2SID,
+@@ -1169,7 +1169,8 @@ static void apple_pcie_remove(struct platform_device *pdev)
+ }
+ 
+ static const struct of_device_id apple_pcie_of_match[] = {
+-	{ .compatible = "apple,t6000-pciec",	.data = &t6000_pciec_hw },
++	{ .compatible = "apple,t8103-pciec",	.data = &t8103_pciec_hw },
++	{ .compatible = "apple,t6000-pciec",	.data = &t8103_pciec_hw },
+ 	{ .compatible = "apple,t6020-pcie",	.data = &t602x_hw },
+ 	{ .compatible = "apple,pcie",		.data = &t8103_hw },
+ 	{ }

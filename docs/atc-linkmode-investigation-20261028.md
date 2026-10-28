@@ -24,6 +24,8 @@ The v2 TIPD change additionally quiesces DWC3 when the partner identity changes.
 
 The series cover also states that the published implementation supports XDomain and USB3-via-USB4, while PCIe and DisplayPort tunnelling are follow-up work. An NVMe enclosure requires PCIe tunnelling, so the current upstream series cannot by itself expose its SSD.
 
+The review thread also changes the expected integration shape for a later v3. Mika Westerberg pointed Sven Peter at the generic `usb4-host-interface` firmware property used to associate native PCIe and USB3 controllers with a USB4 host. Sven agreed to replace the Apple-specific OF graph representation with generic device-property handling and to split that work from the series. Mika clarified that this mapping is needed for PCIe and USB3, while DisplayPort uses a different path. This supports a generic tunnel binding rather than enclosure-ID matching, but it does not add the missing PCIe tunnel implementation by itself.
+
 The current public `AsahiLinux/linux` `asahi` branch (commit `94fb23346d522edf53722357c426a3e58030beea`, compared file by file on 2026-10-28) is not a newer solution for this path: it has no `drivers/thunderbolt/apple.c`, and its ATCPHY driver still lacks the USB4 PIPE-handler selection that is present in the Ubuntu 7.2 test tree. For this investigation, Peter's v2 posting and the Ubuntu 7.2 integration are therefore the relevant code bases rather than the public Asahi branch.
 
 Patch 04 of v2 extends the role quiesce condition with `partner_changed`; patch 16 adds the NHI-to-native-port device-link hook. Neither condition describes the observed fallback: the same partner remains present, the role stays `USB_ROLE_HOST`, and only the negotiated transport changes from USB4 to native USB. This is the specific gap exercised by `usb4-test2`.
@@ -78,3 +80,17 @@ The explicit full-PHY power-cycle variant derived from the macOS trace is retain
 ## Required durable solution
 
 The lasting NVMe solution is a generic Apple external-PCIe integration which is triggered by USB4 router discovery and removed on unplug. It must connect the standard Thunderbolt PCIe tunnel lifecycle to APCIEC power/reset, DART DMA mappings, interrupt routing, PCI bus enumeration, and teardown. Enclosure IDs can be used for diagnostics, but must not be the driver binding model.
+
+## New PCIe-C implementation reference
+
+An additional implementation was located after the fallback test in the `linux-aurora` integration tree. It is separate from mainline and the public Asahi branch, so it must be treated as development code, but it is materially closer to the required solution than the manual module:
+
+- `56ecc44554c7` adds cable-powered PCIe-C root complexes and ACIO-controlled host population;
+- `40f2afe0aefd` enables the same controller model for the T8103 family used by the M1 Mac mini;
+- `e32f89d3db2d` adds live tunnel teardown/restart and full completion barriers for non-posted tunnel MMIO;
+- `6243e9d63a90`, `86665d66e67e`, `e08681891d79`, and `79e9d853b0fb` describe the T8103 PCIe-C hosts, DART, MSI, tunables, and restore state in the device tree;
+- `8904429ab5cc` creates and removes the PCIe host under the ACIO cable-power lifetime.
+
+The non-posted MMIO rule in that implementation (`writel_relaxed`/`readl_relaxed` followed by `mb()` and `isb()`) independently matches the ordering correction that stopped the local prototype's asynchronous SError failures. Its later eGPU work also shows why PCIe configuration-space success alone is insufficient: tunnel BAR windows, delayed downstream link training, and non-coherent DMA each need explicit handling. For the NVMe case on T8103 tunnel 0, the eGPU-only AMD and large-BAR changes are not part of the first test.
+
+The first isolated integration build is named `7.2.12-usb4-pciec-test3`. It starts from the already validated `usb4-test2` fallback source, adds only the M1/T8103 PCIe-C seed series above, and remains separate from the installed stable kernel and boot default until build and offline inspection succeed.

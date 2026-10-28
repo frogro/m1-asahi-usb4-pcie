@@ -1,0 +1,347 @@
+From 6243e9d63a9050beda2db4043d4ed6c4560d92c3 Mon Sep 17 00:00:00 2001
+From: DjDeveloperr <hey@djdev.me>
+Date: Tue, 25 Aug 2026 14:35:44 -0400
+Subject: [PATCH] arm64: dts: apple: add T8103 and T8112 PCIe-C tunnels
+
+Signed-off-by: DjDeveloperr <hey@djdev.me>
+---
+ arch/arm64/boot/dts/apple/t8103.dtsi | 136 +++++++++++++++++++++++++++
+ arch/arm64/boot/dts/apple/t8112.dtsi | 136 +++++++++++++++++++++++++++
+ 2 files changed, 272 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/apple/t8103.dtsi b/arch/arm64/boot/dts/apple/t8103.dtsi
+index e3a91f89310733..d99cb8db4c6d1d 100644
+--- a/arch/arm64/boot/dts/apple/t8103.dtsi
++++ b/arch/arm64/boot/dts/apple/t8103.dtsi
+@@ -1583,6 +1583,7 @@
+ 					<&ps_atc0_cio_usb>;
+ 
+ 			thunderbolt-switch;
++			apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio0_pins>;
+ 			pinctrl-names = "default";
+@@ -1645,6 +1646,73 @@
+ 			};
+ 		};
+ 
++		usb4_0_pcie_tunnel: usb4-pcie-tunnel-0 {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			apciec0_dart: iommu@3a1008000 {
++				compatible = "apple,t8103-dart";
++				reg = <0x3 0xa1008000 0x0 0x4000>;
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 771 IRQ_TYPE_LEVEL_HIGH>;
++				#iommu-cells = <1>;
++			};
++
++			apciec0: pcie@3b0000000 {
++				compatible = "apple,t8103-pciec";
++				device_type = "pci";
++
++				reg = <0x3 0xb0000000 0x0 0x10000000>,
++					<0x3 0xa0000000 0x0 0x4000>,
++					<0x3 0xa1000000 0x0 0x8000>,
++					<0x3 0xa0004000 0x0 0x4000>,
++					<0x3 0xa0200000 0x0 0x4000>,
++					<0x3 0xa1010000 0x0 0x4000>,
++					<0x3 0xa100c000 0x0 0x4000>;
++				reg-names = "config", "rc", "port0", "common",
++					    "fabric", "debug", "intr2axi";
++
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 770 IRQ_TYPE_LEVEL_HIGH>;
++
++				msi-controller;
++				msi-parent = <&apciec0>;
++				msi-ranges = <&aic AIC_IRQ 738 IRQ_TYPE_EDGE_RISING 32>;
++
++				iommu-map = <0x0 &apciec0_dart 0x0 0x40>;
++				iommu-map-mask = <0x3f>;
++
++				bus-range = <0x0 0x7f>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges = <0x43000000 0x4 0x0
++					  0x4 0x0 0x0 0x80000000>,
++					 <0x02000000 0x0 0x80000000
++					  0x4 0x80000000 0x0 0x40000000>,
++					 <0x42000000 0x0 0xc0000000
++					  0x4 0xc0000000 0x0 0x40000000>;
++
++				apciec0_port: pci@0,0 {
++					device_type = "pci";
++					reg = <0x0 0x0 0x0 0x0 0x0>;
++					external-facing;
++
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					interrupt-controller;
++					#interrupt-cells = <1>;
++					interrupt-map-mask = <0 0 0 7>;
++					interrupt-map = <0 0 0 1 &apciec0_port 0 0 0 0>,
++							<0 0 0 2 &apciec0_port 0 0 0 1>,
++							<0 0 0 3 &apciec0_port 0 0 0 2>,
++							<0 0 0 4 &apciec0_port 0 0 0 3>;
++				};
++			};
++		};
++
+ 		dwc3_0: usb@382280000 {
+ 			compatible = "apple,t8103-dwc3";
+ 			reg = <0x3 0x82280000 0x0 0xcd00>, <0x3 0x8228cd00 0x0 0x3200>;
+@@ -1732,6 +1800,7 @@
+ 					<&ps_atc1_cio_usb>;
+ 
+ 			thunderbolt-switch;
++			apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio1_pins>;
+ 			pinctrl-names = "default";
+@@ -1794,6 +1863,73 @@
+ 			};
+ 		};
+ 
++		usb4_1_pcie_tunnel: usb4-pcie-tunnel-1 {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			apciec1_dart: iommu@521008000 {
++				compatible = "apple,t8103-dart";
++				reg = <0x5 0x21008000 0x0 0x4000>;
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 851 IRQ_TYPE_LEVEL_HIGH>;
++				#iommu-cells = <1>;
++			};
++
++			apciec1: pcie@530000000 {
++				compatible = "apple,t8103-pciec";
++				device_type = "pci";
++
++				reg = <0x5 0x30000000 0x0 0x10000000>,
++					<0x5 0x20000000 0x0 0x4000>,
++					<0x5 0x21000000 0x0 0x8000>,
++					<0x5 0x20004000 0x0 0x4000>,
++					<0x5 0x20200000 0x0 0x4000>,
++					<0x5 0x21010000 0x0 0x4000>,
++					<0x5 0x2100c000 0x0 0x4000>;
++				reg-names = "config", "rc", "port0", "common",
++					    "fabric", "debug", "intr2axi";
++
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 850 IRQ_TYPE_LEVEL_HIGH>;
++
++				msi-controller;
++				msi-parent = <&apciec1>;
++				msi-ranges = <&aic AIC_IRQ 818 IRQ_TYPE_EDGE_RISING 32>;
++
++				iommu-map = <0x0 &apciec1_dart 0x0 0x40>;
++				iommu-map-mask = <0x3f>;
++
++				bus-range = <0x0 0x7f>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges = <0x43000000 0x5 0x80000000
++					  0x5 0x80000000 0x0 0x80000000>,
++					 <0x02000000 0x0 0x00100000
++					  0x6 0x00100000 0x0 0x3ff00000>,
++					 <0x42000000 0x0 0x40000000
++					  0x6 0x40000000 0x0 0x40000000>;
++
++				apciec1_port: pci@0,0 {
++					device_type = "pci";
++					reg = <0x0 0x0 0x0 0x0 0x0>;
++					external-facing;
++
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					interrupt-controller;
++					#interrupt-cells = <1>;
++					interrupt-map-mask = <0 0 0 7>;
++					interrupt-map = <0 0 0 1 &apciec1_port 0 0 0 0>,
++							<0 0 0 2 &apciec1_port 0 0 0 1>,
++							<0 0 0 3 &apciec1_port 0 0 0 2>,
++							<0 0 0 4 &apciec1_port 0 0 0 3>;
++				};
++			};
++		};
++
+ 		dwc3_1: usb@502280000 {
+ 			compatible = "apple,t8103-dwc3";
+ 			reg = <0x5 0x02280000 0x0 0xcd00>, <0x5 0x0228cd00 0x0 0x3200>;
+diff --git a/arch/arm64/boot/dts/apple/t8112.dtsi b/arch/arm64/boot/dts/apple/t8112.dtsi
+index 8ae55040ab18ee..18f75c32e266db 100644
+--- a/arch/arm64/boot/dts/apple/t8112.dtsi
++++ b/arch/arm64/boot/dts/apple/t8112.dtsi
+@@ -1848,6 +1848,7 @@
+ 					<&ps_atc0_cio_usb>;
+ 
+ 			thunderbolt-switch;
++			apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio0_pins>;
+ 			pinctrl-names = "default";
+@@ -1911,6 +1912,73 @@
+ 			};
+ 		};
+ 
++		usb4_0_pcie_tunnel: usb4-pcie-tunnel-0 {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			apciec0_dart: iommu@3a1008000 {
++				compatible = "apple,t8110-dart";
++				reg = <0x3 0xa1008000 0x0 0x4000>;
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 1025 IRQ_TYPE_LEVEL_HIGH>;
++				#iommu-cells = <1>;
++			};
++
++			apciec0: pcie@3b0000000 {
++				compatible = "apple,t8112-pciec", "apple,t8103-pciec";
++				device_type = "pci";
++
++				reg = <0x3 0xb0000000 0x0 0x10000000>,
++					<0x3 0xa0000000 0x0 0x4000>,
++					<0x3 0xa1000000 0x0 0x8000>,
++					<0x3 0xa0004000 0x0 0x4000>,
++					<0x3 0xa0200000 0x0 0x4000>,
++					<0x3 0xa1010000 0x0 0x4000>,
++					<0x3 0xa100c000 0x0 0x4000>;
++				reg-names = "config", "rc", "port0", "common",
++					    "fabric", "debug", "intr2axi";
++
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 1024 IRQ_TYPE_LEVEL_HIGH>;
++
++				msi-controller;
++				msi-parent = <&apciec0>;
++				msi-ranges = <&aic AIC_IRQ 992 IRQ_TYPE_EDGE_RISING 32>;
++
++				iommu-map = <0x0 &apciec0_dart 0x0 0x40>;
++				iommu-map-mask = <0x3f>;
++
++				bus-range = <0x0 0x7f>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges = <0x43000000 0x4 0x0
++					  0x4 0x0 0x0 0x80000000>,
++					 <0x02000000 0x0 0x80000000
++					  0x4 0x80000000 0x0 0x40000000>,
++					 <0x42000000 0x0 0xc0000000
++					  0x4 0xc0000000 0x0 0x40000000>;
++
++				apciec0_port: pci@0,0 {
++					device_type = "pci";
++					reg = <0x0 0x0 0x0 0x0 0x0>;
++					external-facing;
++
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					interrupt-controller;
++					#interrupt-cells = <1>;
++					interrupt-map-mask = <0 0 0 7>;
++					interrupt-map = <0 0 0 1 &apciec0_port 0 0 0 0>,
++							<0 0 0 2 &apciec0_port 0 0 0 1>,
++							<0 0 0 3 &apciec0_port 0 0 0 2>,
++							<0 0 0 4 &apciec0_port 0 0 0 3>;
++				};
++			};
++		};
++
+ 		dwc3_0: usb@382280000 {
+ 			compatible = "apple,t8112-dwc3", "apple,t8103-dwc3";
+ 			reg = <0x3 0x82280000 0x0 0xcd00>, <0x3 0x8228cd00 0x0 0x3200>;
+@@ -1998,6 +2066,7 @@
+ 					<&ps_atc1_cio_usb>;
+ 
+ 			thunderbolt-switch;
++			apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio1_pins>;
+ 			pinctrl-names = "default";
+@@ -2061,6 +2130,73 @@
+ 			};
+ 		};
+ 
++		usb4_1_pcie_tunnel: usb4-pcie-tunnel-1 {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			apciec1_dart: iommu@521008000 {
++				compatible = "apple,t8110-dart";
++				reg = <0x5 0x21008000 0x0 0x4000>;
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 1025 IRQ_TYPE_LEVEL_HIGH>;
++				#iommu-cells = <1>;
++			};
++
++			apciec1: pcie@530000000 {
++				compatible = "apple,t8112-pciec", "apple,t8103-pciec";
++				device_type = "pci";
++
++				reg = <0x5 0x30000000 0x0 0x10000000>,
++					<0x5 0x20000000 0x0 0x4000>,
++					<0x5 0x21000000 0x0 0x8000>,
++					<0x5 0x20004000 0x0 0x4000>,
++					<0x5 0x20200000 0x0 0x4000>,
++					<0x5 0x21010000 0x0 0x4000>,
++					<0x5 0x2100c000 0x0 0x4000>;
++				reg-names = "config", "rc", "port0", "common",
++					    "fabric", "debug", "intr2axi";
++
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 1105 IRQ_TYPE_LEVEL_HIGH>;
++
++				msi-controller;
++				msi-parent = <&apciec1>;
++				msi-ranges = <&aic AIC_IRQ 1073 IRQ_TYPE_EDGE_RISING 32>;
++
++				iommu-map = <0x0 &apciec1_dart 0x0 0x40>;
++				iommu-map-mask = <0x3f>;
++
++				bus-range = <0x0 0x7f>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges = <0x43000000 0x5 0x80000000
++					  0x5 0x80000000 0x0 0x80000000>,
++					 <0x02000000 0x0 0x00100000
++					  0x6 0x00100000 0x0 0x3ff00000>,
++					 <0x42000000 0x0 0x40000000
++					  0x6 0x40000000 0x0 0x40000000>;
++
++				apciec1_port: pci@0,0 {
++					device_type = "pci";
++					reg = <0x0 0x0 0x0 0x0 0x0>;
++					external-facing;
++
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					interrupt-controller;
++					#interrupt-cells = <1>;
++					interrupt-map-mask = <0 0 0 7>;
++					interrupt-map = <0 0 0 1 &apciec1_port 0 0 0 0>,
++							<0 0 0 2 &apciec1_port 0 0 0 1>,
++							<0 0 0 3 &apciec1_port 0 0 0 2>,
++							<0 0 0 4 &apciec1_port 0 0 0 3>;
++				};
++			};
++		};
++
+ 		dwc3_1: usb@502280000 {
+ 			compatible = "apple,t8112-dwc3", "apple,t8103-dwc3";
+ 			reg = <0x5 0x02280000 0x0 0xcd00>, <0x5 0x0228cd00 0x0 0x3200>;

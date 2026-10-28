@@ -1,0 +1,586 @@
+From 86665d66e67e48a66b2237f49d10ab0262b066bb Mon Sep 17 00:00:00 2001
+From: DjDeveloperr <hey@djdev.me>
+Date: Fri, 28 Aug 2026 00:03:23 -0400
+Subject: [PATCH] arm64: dts: apple: wire PCIe-C on non-Ultra M1 and M2 SoCs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[ryan: adapted to 7.2.10 — also carries the T602x &usb4_N_acio apple,pcie-tunnel references from fc1b73b30e5a, which needed the tunnel nodes defined here]
+Signed-off-by: DjDeveloperr <hey@djdev.me>
+---
+ arch/arm64/boot/dts/apple/t600x-dieX.dtsi     |  9 ++--
+ arch/arm64/boot/dts/apple/t600x-pciec.dtsi    | 28 +++++-----
+ arch/arm64/boot/dts/apple/t600x-pmgr.dtsi     | 12 +++++
+ arch/arm64/boot/dts/apple/t602x-dieX.dtsi     | 53 +++++++++++--------
+ .../arm64/boot/dts/apple/t602x-j414-j416.dtsi | 12 +++++
+ .../arm64/boot/dts/apple/t602x-j474-j475.dtsi | 12 +++++
+ arch/arm64/boot/dts/apple/t602x-pmgr.dtsi     | 12 +++++
+ arch/arm64/boot/dts/apple/t8103-pmgr.dtsi     |  2 +
+ arch/arm64/boot/dts/apple/t8103.dtsi          | 16 +++---
+ arch/arm64/boot/dts/apple/t8112-pmgr.dtsi     |  2 +
+ arch/arm64/boot/dts/apple/t8112.dtsi          | 16 +++---
+ 11 files changed, 124 insertions(+), 50 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/apple/t600x-dieX.dtsi b/arch/arm64/boot/dts/apple/t600x-dieX.dtsi
+index 9f9ca9d46344e1..0b0da1a4b066b0 100644
+--- a/arch/arm64/boot/dts/apple/t600x-dieX.dtsi
++++ b/arch/arm64/boot/dts/apple/t600x-dieX.dtsi
+@@ -488,7 +488,8 @@
+ 
+ 		power-domains = <&DIE_NODE(ps_atc0_cio)>,
+ 				<&DIE_NODE(ps_atc0_cio_pcie)>,
+-				<&DIE_NODE(ps_atc0_cio_usb)>;
++				<&DIE_NODE(ps_atc0_cio_usb)>,
++				<&DIE_NODE(ps_atc0_pcie)>;
+ 
+ 		thunderbolt-switch;
+ 
+@@ -641,7 +642,8 @@
+ 
+ 		power-domains = <&DIE_NODE(ps_atc1_cio)>,
+ 				<&DIE_NODE(ps_atc1_cio_pcie)>,
+-				<&DIE_NODE(ps_atc1_cio_usb)>;
++				<&DIE_NODE(ps_atc1_cio_usb)>,
++				<&DIE_NODE(ps_atc1_pcie)>;
+ 
+ 		thunderbolt-switch;
+ 
+@@ -794,7 +796,8 @@
+ 
+ 		power-domains = <&DIE_NODE(ps_atc2_cio)>,
+ 				<&DIE_NODE(ps_atc2_cio_pcie)>,
+-				<&DIE_NODE(ps_atc2_cio_usb)>;
++				<&DIE_NODE(ps_atc2_cio_usb)>,
++				<&DIE_NODE(ps_atc2_pcie)>;
+ 
+ 		thunderbolt-switch;
+ 
+diff --git a/arch/arm64/boot/dts/apple/t600x-pciec.dtsi b/arch/arm64/boot/dts/apple/t600x-pciec.dtsi
+index f4cad7634f5880..86cc1ac550e6ba 100644
+--- a/arch/arm64/boot/dts/apple/t600x-pciec.dtsi
++++ b/arch/arm64/boot/dts/apple/t600x-pciec.dtsi
+@@ -11,7 +11,7 @@
+ 		ranges;
+ 
+ 		apciec0_dart: iommu@721008000 {
+-			compatible = "apple,t6000-dart";
++			compatible = "apple,t8110-dart";
+ 			reg = <0x7 0x21008000 0x0 0x4000>;
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1198 IRQ_TYPE_LEVEL_HIGH>;
+@@ -29,11 +29,12 @@
+ 				<0x7 0x20200000 0x0 0x4000>,
+ 				<0x7 0x21010000 0x0 0x4000>,
+ 				<0x7 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug", "ltssm", "intr2axi";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1197 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&ps_atc0_pcie>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&apciec0>;
+@@ -78,7 +79,7 @@
+ 		ranges;
+ 
+ 		apciec1_dart: iommu@b21008000 {
+-			compatible = "apple,t6000-dart";
++			compatible = "apple,t8110-dart";
+ 			reg = <0xb 0x21008000 0x0 0x4000>;
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1215 IRQ_TYPE_LEVEL_HIGH>;
+@@ -96,11 +97,12 @@
+ 				<0xb 0x20200000 0x0 0x4000>,
+ 				<0xb 0x21010000 0x0 0x4000>,
+ 				<0xb 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug", "ltssm", "intr2axi";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1214 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&ps_atc1_pcie>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&apciec1>;
+@@ -145,7 +147,7 @@
+ 		ranges;
+ 
+ 		apciec2_dart: iommu@f21008000 {
+-			compatible = "apple,t6000-dart";
++			compatible = "apple,t8110-dart";
+ 			reg = <0xf 0x21008000 0x0 0x4000>;
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1232 IRQ_TYPE_LEVEL_HIGH>;
+@@ -163,11 +165,12 @@
+ 				<0xf 0x20200000 0x0 0x4000>,
+ 				<0xf 0x21010000 0x0 0x4000>,
+ 				<0xf 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug", "ltssm", "intr2axi";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1231 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&ps_atc2_pcie>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&apciec2>;
+@@ -212,7 +215,7 @@
+ 		ranges;
+ 
+ 		apciec3_dart: iommu@1321008000 {
+-			compatible = "apple,t6000-dart";
++			compatible = "apple,t8110-dart";
+ 			reg = <0x13 0x21008000 0x0 0x4000>;
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1249 IRQ_TYPE_LEVEL_HIGH>;
+@@ -230,11 +233,12 @@
+ 				<0x13 0x20200000 0x0 0x4000>,
+ 				<0x13 0x21010000 0x0 0x4000>,
+ 				<0x13 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug", "ltssm", "intr2axi";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ 0 1248 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&ps_atc3_pcie>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&apciec3>;
+diff --git a/arch/arm64/boot/dts/apple/t600x-pmgr.dtsi b/arch/arm64/boot/dts/apple/t600x-pmgr.dtsi
+index 833a59ecf37922..8b2c2cacce8c1e 100644
+--- a/arch/arm64/boot/dts/apple/t600x-pmgr.dtsi
++++ b/arch/arm64/boot/dts/apple/t600x-pmgr.dtsi
+@@ -509,6 +509,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc0_pcie);
++#ifdef APPLE_T600X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc0_common)>;
+ 	};
+ 
+@@ -527,6 +530,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc1_pcie);
++#ifdef APPLE_T600X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc1_common)>;
+ 	};
+ 
+@@ -545,6 +551,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc2_pcie);
++#ifdef APPLE_T600X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc2_common)>;
+ 	};
+ 
+@@ -563,6 +572,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc3_pcie);
++#ifdef APPLE_T600X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc3_common)>;
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/apple/t602x-dieX.dtsi b/arch/arm64/boot/dts/apple/t602x-dieX.dtsi
+index f904c29520db1b..b171c0ad6d65cb 100644
+--- a/arch/arm64/boot/dts/apple/t602x-dieX.dtsi
++++ b/arch/arm64/boot/dts/apple/t602x-dieX.dtsi
+@@ -497,7 +497,8 @@
+ 
+ 		power-domains = <&DIE_NODE(ps_atc0_cio)>,
+ 				<&DIE_NODE(ps_atc0_cio_pcie)>,
+-				<&DIE_NODE(ps_atc0_cio_usb)>;
++				<&DIE_NODE(ps_atc0_cio_usb)>,
++				<&DIE_NODE(ps_atc0_pcie)>;
+ 
+ 		thunderbolt-switch;
+ 		apple,pcie-tunnel = <&DIE_NODE(usb4_0_pcie_tunnel)>;
+@@ -576,6 +577,8 @@
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1265 IRQ_TYPE_LEVEL_HIGH>;
+ 			#iommu-cells = <1>;
++			apple,dma-range = <0x0 0x80000000 0x0 0x80000000>;
++			apple,dma-offset = <0x100 0x0>;
+ 		};
+ 
+ 		DIE_NODE(apciec0): pcie@730000000 {
+@@ -586,14 +589,13 @@
+ 				<0x7 0x20000000 0x0 0x4000>,
+ 				<0x7 0x21000000 0x0 0x8000>,
+ 				<0x7 0x20004000 0x0 0x4000>,
+-				<0x7 0x20200000 0x0 0x4000>,
+-				<0x7 0x21010000 0x0 0x4000>,
+-				<0x7 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++				<0x7 0x20200000 0x0 0x4000>;
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1264 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&DIE_NODE(ps_atc0_pcie)>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&DIE_NODE(apciec0)>;
+@@ -719,7 +721,8 @@
+ 
+ 		power-domains = <&DIE_NODE(ps_atc1_cio)>,
+ 				<&DIE_NODE(ps_atc1_cio_pcie)>,
+-				<&DIE_NODE(ps_atc1_cio_usb)>;
++				<&DIE_NODE(ps_atc1_cio_usb)>,
++				<&DIE_NODE(ps_atc1_pcie)>;
+ 
+ 		thunderbolt-switch;
+ 		apple,pcie-tunnel = <&DIE_NODE(usb4_1_pcie_tunnel)>;
+@@ -798,6 +801,8 @@
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1283 IRQ_TYPE_LEVEL_HIGH>;
+ 			#iommu-cells = <1>;
++			apple,dma-range = <0x0 0x80000000 0x0 0x80000000>;
++			apple,dma-offset = <0x100 0x0>;
+ 		};
+ 
+ 		DIE_NODE(apciec1): pcie@b30000000 {
+@@ -808,14 +813,13 @@
+ 				<0xb 0x20000000 0x0 0x4000>,
+ 				<0xb 0x21000000 0x0 0x8000>,
+ 				<0xb 0x20004000 0x0 0x4000>,
+-				<0xb 0x20200000 0x0 0x4000>,
+-				<0xb 0x21010000 0x0 0x4000>,
+-				<0xb 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++				<0xb 0x20200000 0x0 0x4000>;
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1282 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&DIE_NODE(ps_atc1_pcie)>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&DIE_NODE(apciec1)>;
+@@ -941,7 +945,8 @@
+ 
+ 		power-domains = <&DIE_NODE(ps_atc2_cio)>,
+ 				<&DIE_NODE(ps_atc2_cio_pcie)>,
+-				<&DIE_NODE(ps_atc2_cio_usb)>;
++				<&DIE_NODE(ps_atc2_cio_usb)>,
++				<&DIE_NODE(ps_atc2_pcie)>;
+ 
+ 		thunderbolt-switch;
+ 		apple,pcie-tunnel = <&DIE_NODE(usb4_2_pcie_tunnel)>;
+@@ -1020,6 +1025,8 @@
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1301 IRQ_TYPE_LEVEL_HIGH>;
+ 			#iommu-cells = <1>;
++			apple,dma-range = <0x0 0x80000000 0x0 0x80000000>;
++			apple,dma-offset = <0x100 0x0>;
+ 		};
+ 
+ 		DIE_NODE(apciec2): pcie@f30000000 {
+@@ -1030,14 +1037,13 @@
+ 				<0xf 0x20000000 0x0 0x4000>,
+ 				<0xf 0x21000000 0x0 0x8000>,
+ 				<0xf 0x20004000 0x0 0x4000>,
+-				<0xf 0x20200000 0x0 0x4000>,
+-				<0xf 0x21010000 0x0 0x4000>,
+-				<0xf 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++				<0xf 0x20200000 0x0 0x4000>;
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1300 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&DIE_NODE(ps_atc2_pcie)>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&DIE_NODE(apciec2)>;
+@@ -1242,6 +1248,8 @@
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1319 IRQ_TYPE_LEVEL_HIGH>;
+ 			#iommu-cells = <1>;
++			apple,dma-range = <0x0 0x80000000 0x0 0x80000000>;
++			apple,dma-offset = <0x100 0x0>;
+ 		};
+ 
+ 		DIE_NODE(apciec3): pcie@1330000000 {
+@@ -1252,14 +1260,13 @@
+ 				<0x13 0x20000000 0x0 0x4000>,
+ 				<0x13 0x21000000 0x0 0x8000>,
+ 				<0x13 0x20004000 0x0 0x4000>,
+-				<0x13 0x20200000 0x0 0x4000>,
+-				<0x13 0x21010000 0x0 0x4000>,
+-				<0x13 0x2100c000 0x0 0x4000>;
+-			reg-names = "config", "rc", "port0", "common",
+-				    "fabric", "debug", "intr2axi";
++				<0x13 0x20200000 0x0 0x4000>;
++			reg-names = "config", "rc", "port0", "fabric",
++				    "debug";
+ 
+ 			interrupt-parent = <&aic>;
+ 			interrupts = <AIC_IRQ DIE_NO 1318 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&DIE_NODE(ps_atc3_pcie)>;
+ 
+ 			msi-controller;
+ 			msi-parent = <&DIE_NODE(apciec3)>;
+diff --git a/arch/arm64/boot/dts/apple/t602x-j414-j416.dtsi b/arch/arm64/boot/dts/apple/t602x-j414-j416.dtsi
+index 62e642a129024b..0f1f984fca8754 100644
+--- a/arch/arm64/boot/dts/apple/t602x-j414-j416.dtsi
++++ b/arch/arm64/boot/dts/apple/t602x-j414-j416.dtsi
+@@ -250,6 +250,18 @@
+ 	apple,always-on;
+ };
+ 
++&usb4_0_acio {
++	apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
++};
++
++&usb4_1_acio {
++	apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
++};
++
++&usb4_2_acio {
++	apple,pcie-tunnel = <&usb4_2_pcie_tunnel>;
++};
++
+ /* Keep dptx_phy_ps on until DCP can sequence it during display bring-up. */
+ &ps_dptx_phy_ps {
+ 	apple,always-on;
+diff --git a/arch/arm64/boot/dts/apple/t602x-j474-j475.dtsi b/arch/arm64/boot/dts/apple/t602x-j474-j475.dtsi
+index 3a22771e3cd627..0da6de6e960e2c 100644
+--- a/arch/arm64/boot/dts/apple/t602x-j474-j475.dtsi
++++ b/arch/arm64/boot/dts/apple/t602x-j474-j475.dtsi
+@@ -194,6 +194,18 @@
+ 	apple,always-on;
+ };
+ 
++&usb4_0_acio {
++	apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
++};
++
++&usb4_1_acio {
++	apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
++};
++
++&usb4_2_acio {
++	apple,pcie-tunnel = <&usb4_2_pcie_tunnel>;
++};
++
+ &usb4_3_acio {
+ 	apple,pcie-tunnel = <&usb4_3_pcie_tunnel>;
+ };
+diff --git a/arch/arm64/boot/dts/apple/t602x-pmgr.dtsi b/arch/arm64/boot/dts/apple/t602x-pmgr.dtsi
+index 4ead781fea6893..fffd0ad79b9bbc 100644
+--- a/arch/arm64/boot/dts/apple/t602x-pmgr.dtsi
++++ b/arch/arm64/boot/dts/apple/t602x-pmgr.dtsi
+@@ -362,6 +362,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc0_pcie);
++#ifdef APPLE_T602X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc0_common)>;
+ 	};
+ 
+@@ -380,6 +383,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc1_pcie);
++#ifdef APPLE_T602X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc1_common)>;
+ 	};
+ 
+@@ -398,6 +404,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc2_pcie);
++#ifdef APPLE_T602X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc2_common)>;
+ 	};
+ 
+@@ -416,6 +425,9 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = DIE_LABEL(atc3_pcie);
++#ifdef APPLE_T602X_NON_ULTRA
++		apple,always-on;
++#endif
+ 		power-domains = <&DIE_NODE(ps_atc3_common)>;
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi b/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi
+index 5d3846d44e3578..4a399bc8f0276b 100644
+--- a/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi
++++ b/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi
+@@ -864,6 +864,7 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = "atc0_pcie";
++		apple,always-on;
+ 		power-domains = <&ps_atc0_common>;
+ 	};
+ 
+@@ -908,6 +909,7 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = "atc1_pcie";
++		apple,always-on;
+ 		power-domains = <&ps_atc1_common>;
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/apple/t8103.dtsi b/arch/arm64/boot/dts/apple/t8103.dtsi
+index d99cb8db4c6d1d..daa23f4ab489e5 100644
+--- a/arch/arm64/boot/dts/apple/t8103.dtsi
++++ b/arch/arm64/boot/dts/apple/t8103.dtsi
+@@ -1580,7 +1580,8 @@
+ 
+ 			power-domains = <&ps_atc0_cio>,
+ 					<&ps_atc0_cio_pcie>,
+-					<&ps_atc0_cio_usb>;
++					<&ps_atc0_cio_usb>,
++					<&ps_atc0_pcie>;
+ 
+ 			thunderbolt-switch;
+ 			apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
+@@ -1670,11 +1671,12 @@
+ 					<0x3 0xa0200000 0x0 0x4000>,
+ 					<0x3 0xa1010000 0x0 0x4000>,
+ 					<0x3 0xa100c000 0x0 0x4000>;
+-				reg-names = "config", "rc", "port0", "common",
+-					    "fabric", "debug", "intr2axi";
++				reg-names = "config", "rc", "port0", "fabric",
++					    "debug", "ltssm", "intr2axi";
+ 
+ 				interrupt-parent = <&aic>;
+ 				interrupts = <AIC_IRQ 770 IRQ_TYPE_LEVEL_HIGH>;
++				power-domains = <&ps_atc0_pcie>;
+ 
+ 				msi-controller;
+ 				msi-parent = <&apciec0>;
+@@ -1797,7 +1799,8 @@
+ 
+ 			power-domains = <&ps_atc1_cio>,
+ 					<&ps_atc1_cio_pcie>,
+-					<&ps_atc1_cio_usb>;
++					<&ps_atc1_cio_usb>,
++					<&ps_atc1_pcie>;
+ 
+ 			thunderbolt-switch;
+ 			apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
+@@ -1887,11 +1890,12 @@
+ 					<0x5 0x20200000 0x0 0x4000>,
+ 					<0x5 0x21010000 0x0 0x4000>,
+ 					<0x5 0x2100c000 0x0 0x4000>;
+-				reg-names = "config", "rc", "port0", "common",
+-					    "fabric", "debug", "intr2axi";
++				reg-names = "config", "rc", "port0", "fabric",
++					    "debug", "ltssm", "intr2axi";
+ 
+ 				interrupt-parent = <&aic>;
+ 				interrupts = <AIC_IRQ 850 IRQ_TYPE_LEVEL_HIGH>;
++				power-domains = <&ps_atc1_pcie>;
+ 
+ 				msi-controller;
+ 				msi-parent = <&apciec1>;
+diff --git a/arch/arm64/boot/dts/apple/t8112-pmgr.dtsi b/arch/arm64/boot/dts/apple/t8112-pmgr.dtsi
+index ab8ec9bd4e4401..128a560dbac73e 100644
+--- a/arch/arm64/boot/dts/apple/t8112-pmgr.dtsi
++++ b/arch/arm64/boot/dts/apple/t8112-pmgr.dtsi
+@@ -866,6 +866,7 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = "atc0_pcie";
++		apple,always-on;
+ 		power-domains = <&ps_atc0_common>;
+ 	};
+ 
+@@ -911,6 +912,7 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = "atc1_pcie";
++		apple,always-on;
+ 		power-domains = <&ps_atc1_common>;
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/apple/t8112.dtsi b/arch/arm64/boot/dts/apple/t8112.dtsi
+index 18f75c32e266db..cdc02310a9334e 100644
+--- a/arch/arm64/boot/dts/apple/t8112.dtsi
++++ b/arch/arm64/boot/dts/apple/t8112.dtsi
+@@ -1845,7 +1845,8 @@
+ 
+ 			power-domains = <&ps_atc0_cio>,
+ 					<&ps_atc0_cio_pcie>,
+-					<&ps_atc0_cio_usb>;
++					<&ps_atc0_cio_usb>,
++					<&ps_atc0_pcie>;
+ 
+ 			thunderbolt-switch;
+ 			apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
+@@ -1936,11 +1937,12 @@
+ 					<0x3 0xa0200000 0x0 0x4000>,
+ 					<0x3 0xa1010000 0x0 0x4000>,
+ 					<0x3 0xa100c000 0x0 0x4000>;
+-				reg-names = "config", "rc", "port0", "common",
+-					    "fabric", "debug", "intr2axi";
++				reg-names = "config", "rc", "port0", "fabric",
++					    "debug", "ltssm", "intr2axi";
+ 
+ 				interrupt-parent = <&aic>;
+ 				interrupts = <AIC_IRQ 1024 IRQ_TYPE_LEVEL_HIGH>;
++				power-domains = <&ps_atc0_pcie>;
+ 
+ 				msi-controller;
+ 				msi-parent = <&apciec0>;
+@@ -2063,7 +2065,8 @@
+ 
+ 			power-domains = <&ps_atc1_cio>,
+ 					<&ps_atc1_cio_pcie>,
+-					<&ps_atc1_cio_usb>;
++					<&ps_atc1_cio_usb>,
++					<&ps_atc1_pcie>;
+ 
+ 			thunderbolt-switch;
+ 			apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
+@@ -2154,11 +2157,12 @@
+ 					<0x5 0x20200000 0x0 0x4000>,
+ 					<0x5 0x21010000 0x0 0x4000>,
+ 					<0x5 0x2100c000 0x0 0x4000>;
+-				reg-names = "config", "rc", "port0", "common",
+-					    "fabric", "debug", "intr2axi";
++				reg-names = "config", "rc", "port0", "fabric",
++					    "debug", "ltssm", "intr2axi";
+ 
+ 				interrupt-parent = <&aic>;
+ 				interrupts = <AIC_IRQ 1105 IRQ_TYPE_LEVEL_HIGH>;
++				power-domains = <&ps_atc1_pcie>;
+ 
+ 				msi-controller;
+ 				msi-parent = <&apciec1>;

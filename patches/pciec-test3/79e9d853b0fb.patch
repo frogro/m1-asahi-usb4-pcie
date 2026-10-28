@@ -1,0 +1,58 @@
+From 79e9d853b0fb083a363cf1278d40b915e892d51b Mon Sep 17 00:00:00 2001
+From: Chris Kearney <303316+iconidentify@users.noreply.github.com>
+Date: Sun, 27 Sep 2026 20:35:13 -0700
+Subject: [PATCH] arm64: dts: apple: t8103: describe tunneled PCIe state
+ restore
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Kensington USB devices can disappear after s2idle even when the initial
+port restart and cable health check succeed. A later PCIe link failure
+must trigger another fresh validation instead of waiting for a cable
+interrupt or manual replug.
+
+Restore the resettable M1 tunneled host and DART state before restarting
+the downstream link. Gate DART commands and fault handling around clock
+shutdown, preserve stream selection, and describe the reset and register
+initialization properties in the binding.
+
+Gate Type-C work across initialization, sleep and removal, read fresh
+cable metadata after resume, and preserve an unchanged healthy session.
+Propagate late link failures through an atomic switch notification into
+bounded process-context revalidation. Keep failure history sticky while
+allowing later notifications from a retained host. Failed reads or health
+checks request a bounded reconnect; successful checks preserve routing.
+Keep failed display-route acquisition retryable.
+
+Add state-machine and DART regression coverage. The native ARM64 build
+and 88 KUnit cases pass. Two M1/j293 Kensington USB-only suspend cycles
+exercised late link-loss recovery and restored usable input without a
+manual replug. The initiating xHCI resume fault remains unresolved.
+
+[ryan: adapted to 7.2.10 — split: DT part only; driver and binding parts go with 170-usb]
+Signed-off-by: Chris Kearney <303316+iconidentify@users.noreply.github.com>
+---
+ arch/arm64/boot/dts/apple/t8103.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/apple/t8103.dtsi b/arch/arm64/boot/dts/apple/t8103.dtsi
+index ba13c756900c55..ea073c207c014b 100644
+--- a/arch/arm64/boot/dts/apple/t8103.dtsi
++++ b/arch/arm64/boot/dts/apple/t8103.dtsi
+@@ -1681,6 +1681,7 @@
+ 				interrupt-parent = <&aic>;
+ 				interrupts = <AIC_IRQ 770 IRQ_TYPE_LEVEL_HIGH>;
+ 				power-domains = <&ps_atc0_pcie>;
++				resets = <&ps_atc0_pcie>;
+ 
+ 				msi-controller;
+ 				msi-parent = <&apciec0>;
+@@ -1906,6 +1907,7 @@
+ 				interrupt-parent = <&aic>;
+ 				interrupts = <AIC_IRQ 850 IRQ_TYPE_LEVEL_HIGH>;
+ 				power-domains = <&ps_atc1_pcie>;
++				resets = <&ps_atc1_pcie>;
+ 
+ 				msi-controller;
+ 				msi-parent = <&apciec1>;

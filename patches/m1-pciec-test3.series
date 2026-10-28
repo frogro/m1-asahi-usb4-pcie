@@ -1,0 +1,11 @@
+# Development seed series for the isolated T8103 test kernel.
+# These are development-branch commit identifiers in joshuaswarren/linux-aurora, not upstream Linux commits.
+# Apply only to a matching 7.2 integration tree and inspect every hunk.
+56ecc44554c7  # PCI: apple: add cable-powered PCIe-C root complexes
+40f2afe0aefd  # PCI: apple: support T8103-family PCIe-C tunnels
+e32f89d3db2d  # PCI: apple: support live tunneled PCIe-C ports
+8904429ab5cc  # thunderbolt: apple: populate cable-powered PCIe-C host
+6243e9d63a90  # arm64: dts: apple: add T8103/T8112 PCIe-C tunnels
+86665d66e67e  # arm64: dts: apple: wire PCIe-C (retain T8103 hunks only)
+e08681891d79  # arm64: dts: apple: describe T8103 enumeration resources
+79e9d853b0fb  # arm64: dts: apple: describe T8103 restore state
