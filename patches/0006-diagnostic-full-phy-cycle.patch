@@ -1,0 +1,25 @@
+--- a/drivers/usb/typec/tipd/core.c
++++ b/drivers/usb/typec/tipd/core.c
+@@ -734,6 +734,22 @@
+ 			return;
+ 	}
+ 
++	/*
++	 * macOS tears down the active PHY mode before changing between USB4
++	 * and native USB and leaves it off for roughly 52 ms. Test the same
++	 * sequence after DWC3 has been quiesced. ACIO must be stopped before
++	 * ATCPHY is powered down.
++	 */
++	if (usb4_changed) {
++		typec_thunderbolt_switch_set(cd321x->tbt_switch, &tbt_switch_data);
++		cd321x->state.alt = NULL;
++		cd321x->state.mode = TYPEC_STATE_SAFE;
++		cd321x->state.data = NULL;
++		dev_info(tps->dev, "USB4TEST full PHY cycle: safe/off for 52 ms\n");
++		typec_mux_set(cd321x->mux, &cd321x->state);
++		msleep(52);
++	}
++
+ 	/* Process partner disconnection or change */
+ 	if (!new_connected || partner_changed) {
+ 		if (!IS_ERR(tps->partner))

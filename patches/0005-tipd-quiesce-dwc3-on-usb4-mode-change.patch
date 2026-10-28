@@ -1,0 +1,50 @@
+--- a/drivers/usb/typec/tipd/core.c
++++ b/drivers/usb/typec/tipd/core.c
+@@ -707,9 +707,32 @@
+ 		 (is_pd && memcmp(&st.partner_identity,
+ 				  &cd321x->cur_partner_identity, sizeof(struct usb_pd_identity))));
+ 
+-	/* If we are switching from an active role, transition to USB_ROLE_NONE first */
+-	if (old_role != USB_ROLE_NONE && (new_role != old_role || was_disconnected))
+-		usb_role_switch_set_role(tps->role_sw, USB_ROLE_NONE);
++	/*
++	 * A USB4 <-> native USB transition can keep USB_ROLE_HOST. DWC3 must
++	 * still be quiesced before the Type-C mux reprograms ATCPHY; otherwise
++	 * the PIPE handler is live and the PHY falls back to USB2.
++	 */
++	bool old_usb4 = !cd321x->state.alt &&
++		cd321x->state.mode == TYPEC_MODE_USB4;
++	bool new_usb4 = (st.data_status & TPS_DATA_STATUS_DATA_CONNECTION) &&
++		!(st.data_status & (TPS_DATA_STATUS_DP_CONNECTION |
++				    TPS_DATA_STATUS_TBT_CONNECTION)) &&
++		(st.data_status & CD321X_DATA_STATUS_USB4_CONNECTION);
++	bool usb4_changed = old_usb4 != new_usb4;
++
++	dev_info(tps->dev,
++		 "USB4TEST transition state=%#lx usb4=%d->%d role=%d->%d data=%#x disconnect=%d\n",
++		 cd321x->state.mode, old_usb4, new_usb4, old_role, new_role,
++		 st.data_status, was_disconnected);
++
++	if (old_role != USB_ROLE_NONE &&
++	    (new_role != old_role || was_disconnected || usb4_changed)) {
++		int ret = usb_role_switch_set_role(tps->role_sw, USB_ROLE_NONE);
++
++		dev_info(tps->dev, "USB4TEST DWC3 quiesce ret=%d\n", ret);
++		if (ret)
++			return;
++	}
+ 
+ 	/* Process partner disconnection or change */
+ 	if (!new_connected || partner_changed) {
+--- a/drivers/phy/apple/atc.c
++++ b/drivers/phy/apple/atc.c
+@@ -2353,6 +2353,9 @@
+ 		target_mode = APPLE_ATCPHY_MODE_OFF;
+ 	}
+ 
++	dev_info(atcphy->dev, "USB4TEST mux state=%#lx mode=%d->%d pipehandler=%d\n",
++		 state->mode, atcphy->mode, target_mode, atcphy->pipehandler_up);
++
+ 	if (atcphy->mode == target_mode)
+ 		return 0;
+ 
