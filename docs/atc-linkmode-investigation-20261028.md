@@ -24,7 +24,7 @@ The v2 TIPD change additionally quiesces DWC3 when the partner identity changes.
 
 The series cover also states that the published implementation supports XDomain and USB3-via-USB4, while PCIe and DisplayPort tunnelling are follow-up work. An NVMe enclosure requires PCIe tunnelling, so the current upstream series cannot by itself expose its SSD.
 
-The current public `AsahiLinux/linux` `asahi` branch was also compared file by file on 2026-10-28. It is not a newer solution for this path: it has no `drivers/thunderbolt/apple.c`, and its ATCPHY driver still lacks the USB4 PIPE-handler selection that is present in the Ubuntu 7.2 test tree. For this investigation, Peter's v2 posting and the Ubuntu 7.2 integration are therefore the relevant code bases rather than the public Asahi branch.
+The current public `AsahiLinux/linux` `asahi` branch (commit `94fb23346d522edf53722357c426a3e58030beea`, compared file by file on 2026-10-28) is not a newer solution for this path: it has no `drivers/thunderbolt/apple.c`, and its ATCPHY driver still lacks the USB4 PIPE-handler selection that is present in the Ubuntu 7.2 test tree. For this investigation, Peter's v2 posting and the Ubuntu 7.2 integration are therefore the relevant code bases rather than the public Asahi branch.
 
 Patch 04 of v2 extends the role quiesce condition with `partner_changed`; patch 16 adds the NHI-to-native-port device-link hook. Neither condition describes the observed fallback: the same partner remains present, the role stays `USB_ROLE_HOST`, and only the negotiated transport changes from USB4 to native USB. This is the specific gap exercised by `usb4-test2`.
 
@@ -70,6 +70,8 @@ The 2026-10-28 boot test met all fallback criteria. The observed sequence was:
 - 17.251 s: ATCPHY receives the native-USB target with `pipehandler=0`;
 - 22.070 s: the ASM2464 enumerates as SuperSpeed Plus Gen 2x1;
 - 23.124 s: the complete 4 TB disk is available through UAS.
+
+The fallback disk then passed two matching 1 GiB SHA-256 reads (`f4d3753545e47372299f282014b1f76206af71757900be9228c002efdd9e9423`) followed by 294 seconds of continuous read traffic. It transferred approximately 273 GB at a steady 932 MB/s with no UAS reset, I/O error, USB disconnect, or ATCPHY warning. The block device was forced read-only for this test and restored afterwards.
 
 The explicit full-PHY power-cycle variant derived from the macOS trace is retained as a diagnostic patch, but was not applied after the narrower teardown fix produced a clean 10 Gb/s fallback. Combining both changes would make it impossible to attribute the successful result and would add an unnecessary 52 ms outage to every transition.
 
