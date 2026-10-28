@@ -1,0 +1,35 @@
+--- a/prototype/apple_apciec_step.c
++++ b/prototype/apple_apciec_step.c
+@@ -269,27 +269,14 @@
+            d->geometry.force_aperture, d->pgsize_bitmap);
+  return 0;
+ }
+-/* Local diagnostic workaround for PCI OF node ownership bug.
+- * Kernel 7.2 of_pci_remove_host_bridge_node mistakes any OF_DYNAMIC root
+- * for a PCI-created node with np->data = changeset. Our node belongs to
+- * native-overlay, and its np->data is NULL. Keep that node out of the PCI
+- * node-removal helper, then restore its borrowed reference for bus release.
+- * Proper kernel fix: Herve Codina v12 10/10, 2026-10-01, store PCI changesets
+- * in pci_dev/pci_host_bridge rather than device_node->data.
+- * This is restricted to our exact owned overlay; not a generic kernel fix.
++/* Kernel 7.2.12-usb4-test1 owns PCI-created OF changesets in PCI objects.
++ * The overlay root itself has no PCI-owned changeset, so normal PCI teardown
++ * must leave it in place until native-overlay removes it.
+  */
+ static int native_stop_root(struct apciec_probe *ctx)
+ {
+- struct pci_bus *bus=ctx->host->bus;
+- struct device_node *np=bus->dev.of_node;
+- if(!np || np!=test_device->dev.of_node || np->data ||
+-    !of_node_check_flag(np,OF_DYNAMIC))return -EINVAL;
+- pr_info("APCIEC_NATIVE preserve overlay-owned root %pOF data=%p during PCI stop\n",np,np->data);
+- msleep(1000);
+- /* device_set_node does not change the held OF reference. */
+- device_set_node(&bus->dev,NULL);
+- pci_stop_root_bus(bus);
+- device_set_node(&bus->dev,of_fwnode_handle(np));
++ pr_info("APCIEC_NATIVE normal root stop using kernel PCI OF ownership tracking\n");
++ pci_stop_root_bus(ctx->host->bus);
+  return 0;
+ }
+ static void apciec_unregister_host(struct apciec_probe *ctx)

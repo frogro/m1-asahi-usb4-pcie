@@ -1,0 +1,129 @@
+From: Local backport based on Herve Codina v12 10/10
+Subject: [PATCH] PCI: of: track node changeset ownership in PCI objects
+
+Based on https://lkml.rescloud.iu.edu/2610.0/01519.html
+Adapted to Ubuntu Asahi 9b97d53812a6fb5c4d270899eb70a145fa762cc6.
+Retains baseline fw_devlink behavior; does not import the entire series.
+Status: prepared for separate test kernel, not yet boot-tested.
+
+--- a/drivers/pci/of.c
++++ b/drivers/pci/of.c
+@@ -654,13 +654,15 @@
+ 	struct device_node *np;
+ 
+ 	np = pci_device_to_OF_node(pdev);
+-	if (!np || !of_node_check_flag(np, OF_DYNAMIC))
++	if (!pdev->cset || !np)
+ 		return;
+ 
+ 	device_remove_of_node(&pdev->dev);
+-	of_changeset_revert(np->data);
+-	of_changeset_destroy(np->data);
++	of_changeset_revert(pdev->cset);
++	of_changeset_destroy(pdev->cset);
+ 	of_node_put(np);
++	kfree(pdev->cset);
++	pdev->cset = NULL;
+ }
+ 
+ void of_pci_make_dev_node(struct pci_dev *pdev)
+@@ -713,18 +715,17 @@
+ 	if (ret)
+ 		goto out_free_node;
+ 
+-	np->data = cset;
+-
+ 	ret = device_add_of_node(&pdev->dev, np);
+ 	if (ret)
+ 		goto out_revert_cset;
+ 
++	pdev->cset = cset;
++
+ 	kfree(name);
+ 
+ 	return;
+ 
+ out_revert_cset:
+-	np->data = NULL;
+ 	of_changeset_revert(cset);
+ out_free_node:
+ 	of_node_put(np);
+@@ -740,14 +741,16 @@
+ 	struct device_node *np;
+ 
+ 	np = pci_bus_to_OF_node(bridge->bus);
+-	if (!np || !of_node_check_flag(np, OF_DYNAMIC))
++	if (!bridge->cset || !np)
+ 		return;
+ 
+ 	device_remove_of_node(&bridge->bus->dev);
+ 	device_remove_of_node(&bridge->dev);
+-	of_changeset_revert(np->data);
+-	of_changeset_destroy(np->data);
++	of_changeset_revert(bridge->cset);
++	of_changeset_destroy(bridge->cset);
+ 	of_node_put(np);
++	kfree(bridge->cset);
++	bridge->cset = NULL;
+ }
+ 
+ void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge)
+@@ -810,8 +813,6 @@
+ 	if (ret)
+ 		goto out_free_node;
+ 
+-	np->data = cset;
+-
+ 	/* Add the of_node to host bridge and the root bus */
+ 	ret = device_add_of_node(&bridge->dev, np);
+ 	if (ret)
+@@ -821,6 +822,8 @@
+ 	if (ret)
+ 		goto out_remove_bridge_dev_of_node;
+ 
++	bridge->cset = cset;
++
+ 	kfree(name);
+ 
+ 	return;
+@@ -828,7 +831,6 @@
+ out_remove_bridge_dev_of_node:
+ 	device_remove_of_node(&bridge->dev);
+ out_revert_cset:
+-	np->data = NULL;
+ 	of_changeset_revert(cset);
+ out_free_node:
+ 	of_node_put(np);
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -339,6 +339,9 @@
+ struct pci_sriov;
+ struct pci_p2pdma;
+ struct rcec_ea;
++#ifdef CONFIG_PCI_DYNAMIC_OF_NODES
++struct of_changeset;
++#endif
+ 
+ /* struct pci_dev - describes a PCI device
+  *
+@@ -597,6 +600,9 @@
+ 	u8		tph_mode;	/* TPH mode */
+ 	u8		tph_req_type;	/* TPH requester type */
+ #endif
++#ifdef CONFIG_PCI_DYNAMIC_OF_NODES
++	struct of_changeset *cset; /* Changeset used for OF node creation */
++#endif
+ };
+ 
+ static inline struct pci_dev *pci_physfn(struct pci_dev *dev)
+@@ -667,6 +673,10 @@
+ 	unsigned int	msi_domain:1;		/* Bridge wants MSI domain */
+ 	unsigned int	broken_l1ss_resume:1;	/* Resuming from L1SS during
+ 						   system suspend is broken */
++
++#ifdef CONFIG_PCI_DYNAMIC_OF_NODES
++	struct of_changeset *cset; /* Changeset used for OF node creation */
++#endif
+ 
+ 	/* Resource alignment requirements */
+ 	resource_size_t (*align_resource)(struct pci_dev *dev,
