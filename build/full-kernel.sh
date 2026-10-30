@@ -11,6 +11,8 @@ export HOSTCC=gcc-15
 export RUSTC=/usr/bin/rustc
 export BINDGEN=/usr/bin/bindgen
 export LIBCLANG_PATH=/usr/lib/llvm-21/lib
+# Kernel Makefile assignments override environment-only tool selections.
+make() { command make CC=gcc-15 HOSTCC=gcc-15 RUSTC=/usr/bin/rustc BINDGEN=/usr/bin/bindgen "$@"; }
 export KBUILD_BUILD_USER=kernel-builder
 export KBUILD_BUILD_HOST=github-actions
 export KBUILD_BUILD_TIMESTAMP='Fri Oct 30 00:00:00 UTC 2026'
