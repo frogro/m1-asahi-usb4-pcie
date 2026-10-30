@@ -20,5 +20,9 @@
   "0019-arm64-apple-consolidate-measured-storage-and-display.patch": "b9c56951f41c18be1dcefeb25d55dbaa95b399d69d3983129591a0a3fce7d76a",
   "0020-drm-apple-avoid-recursive-Kconfig-dependencies-for-o.patch": "49c3c541986fec6b29536564778f7848f21356f8c16e2e4ff53c52ebdb0069a5",
   "0021-docs-describe-consolidated-USB4-storage-and-display-.patch": "8765689c25dfe935398e943f200eb090c158f90891b8570f04b6cc88e4de49a9",
-  "0022-PCI-of-retain-the-tested-changeset-ownership-backpor.patch": "2383354b1382468ae9b41b295a8b04a30d1bd16af852876eff277382cef7f64b"
+  "0022-PCI-of-retain-the-tested-changeset-ownership-backpor.patch": "2383354b1382468ae9b41b295a8b04a30d1bd16af852876eff277382cef7f64b",
+  "0023-phy-apple-retain-shared-USB4-PHY-while-the-USB-PIPE-.patch": "72d1917eea2b5e76fe3c2581f01978da157e92249d41798ef5bb69705dba5191",
+  "0024-thunderbolt-apple-retire-display-clients-before-cont.patch": "ae45a4dadf52d3bfef15fae1471c3dbd1687eb3801836790d00c8cac78bfb57f",
+  "0025-arm64-dts-apple-enable-J274-external-DCP-audio-endpo.patch": "8a3df30a170d07126b8c3693e4ff322aae6567dd58c9a5eced6ce5b9b1e1f743",
+  "0026-docs-record-whole-dock-hotplug-and-opt-in-DCP-audio-.patch": "d37278e4ff2ec39ec2f96248da1572cd12c8c1618810507349f75f30443a5ecb"
 }

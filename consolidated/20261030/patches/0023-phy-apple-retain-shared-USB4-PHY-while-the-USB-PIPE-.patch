@@ -1,0 +1,41 @@
+From 58f204fb7ac67392bf6dd3fcb05835ca1b98c834 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 10:34:51 +0100
+Subject: [PATCH 23/26] phy: apple: retain shared USB4 PHY while the USB PIPE
+ stops
+
+DWC3 owns the USB3 PIPE rather than the complete Type-C PHY. Keep CIO and the tunneled display clock alive until the Type-C SAFE transition after CIO retirement. Native USB3 power-off is unchanged.
+
+Measured in DP126 and DP127/DP128 whole-dock tests. AI-assisted downstream adaptation; no upstream review or sign-off claimed.
+---
+ drivers/phy/apple/atc.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/phy/apple/atc.c b/drivers/phy/apple/atc.c
+index 44b5c16d3..aba311c13 100644
+--- a/drivers/phy/apple/atc.c
++++ b/drivers/phy/apple/atc.c
+@@ -2371,6 +2371,20 @@ static int atcphy_usb3_power_off(struct phy *phy)
+ 
+ 	atcphy->pipehandler_up = false;
+ 
++	/*
++	 * DWC3 owns the USB3 PIPE, not the complete Type-C PHY. In USB4/TBT
++	 * mode the CIO controller and tunneled display clock still use the
++	 * PHY while the USB role is being removed. Leave the shared PHY live
++	 * until the Type-C mux switches to SAFE after CIO has stopped.
++	 */
++	if (atcphy->mode == APPLE_ATCPHY_MODE_USB4 ||
++	    atcphy->mode == APPLE_ATCPHY_MODE_TBT) {
++		dev_info(atcphy->dev,
++			 "DP126 USB PIPE stopped; shared PHY retained mode=%u owner=%llu\n",
++			 atcphy->mode, atcphy->dp90_owner);
++		return 0;
++	}
++
+ 	if (atcphy->mode != APPLE_ATCPHY_MODE_OFF)
+ 		atcphy_configure(atcphy, APPLE_ATCPHY_MODE_OFF);
+ 
+-- 
+2.53.0
+

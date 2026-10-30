@@ -46,13 +46,15 @@ for kind,output in [('certs','canonical-certs.pem'),('revoked-certs','canonical-
  Path('debian',output).write_bytes(b''.join(next(d/n for d in dirs if (d/n).is_file()).read_bytes() for n in names))
 CERTS
 cp "$repo/build/running-kernel.config" .config
-scripts/config --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-usb4sd1' --set-str VERSION_SIGNATURE 'UbuntuAsahi 7.2.12 usb4sd1 consolidated RFC 20261030'
+scripts/config --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-usb4sd2' --set-str VERSION_SIGNATURE 'UbuntuAsahi 7.2.12 usb4sd2 consolidated RFC 20261030'
 make olddefconfig
 python3 "$repo/build/check-config.py" "$repo/build/running-kernel.config" .config "$repo/artifacts/config-comparison.json"
 cp .config "$repo/artifacts/kernel.config"
+cp "$repo/consolidated/20261030/config/tested-storage-boot-parameters.txt" "$repo/artifacts/"
+cp "$repo/consolidated/20261030/config/tested-display-audio-options.txt" "$repo/artifacts/"
 make -s kernelrelease | tee "$repo/artifacts/kernel-release.txt"
 release=$(cat "$repo/artifacts/kernel-release.txt")
-[[ "$release" == 7.2.12-usb4sd1 ]]
+[[ "$release" == 7.2.12-usb4sd2 ]]
 git log --format=fuller "$base"..HEAD > "$repo/artifacts/applied-commits.txt"
 git diff --check "$base"..HEAD
 make -j2 Image modules dtbs

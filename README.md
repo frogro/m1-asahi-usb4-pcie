@@ -1,3 +1,8 @@
+Current consolidated revision: **26 patches / usb4sd2**, including the measured
+DP127 whole-dock lifecycle correction and DP128 opt-in DCP audio. The preceding
+22-patch usb4sd1 build does not contain these additions. Full combined hardware
+validation remains pending; eGPU changes and suspend implementation are excluded.
+
 # Apple Silicon USB4 / Thunderbolt PCIe bring-up
 
 ## Consolidated full-kernel build (30 October 2026)

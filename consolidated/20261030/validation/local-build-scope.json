@@ -1,0 +1,20 @@
+{
+  "result": "pass",
+  "targets": [
+    "drivers/thunderbolt/",
+    "drivers/gpu/drm/apple/",
+    "drivers/phy/apple/atc.o",
+    "drivers/pci/controller/pcie-apple-pciec.o",
+    "apple/t8103-j274.dtb"
+  ],
+  "compiler": "aarch64-linux-gnu-gcc-15",
+  "local_config_adjustments": [
+    "CONFIG_RUST disabled for this C-only crosscompile because bindgen is absent locally",
+    "certificate path strings cleared for local compile-only check",
+    "PCIE_APPLE_PCIEC enabled"
+  ],
+  "github_config_policy": "running configuration including Rust retained; full-feature guard required",
+  "full_link": false,
+  "hardware_boot": false,
+  "external_audio_dts_status": "okay"
+}

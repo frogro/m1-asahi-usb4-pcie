@@ -1,0 +1,282 @@
+From fc944f7a5e3108f9375b1a809c14a5b3825f3b36 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 10:36:55 +0100
+Subject: [PATCH 24/26] thunderbolt: apple: retire display clients before
+ controller shutdown
+
+Close old-domain event admission and drain display callbacks while CIO and the shared PHY are powered. Notify DCP without holding the CIO or domain mutex, then remove children and keep the existing PCIe/DART shutdown sequence. Clear reconnect state only after firmware withdrawal and provider release succeed.
+
+Port the measured DP127 protocol to the consolidated storage tree. Include its diagnostic_cycle entry point in transition serialization, and provide a USB4 reachability stub. Tested in isolated DP127/DP128 modules; combined-kernel validation remains pending. AI-assisted downstream adaptation.
+---
+ drivers/gpu/drm/apple/dpin-binding.inc | 26 +++++++++++++
+ drivers/thunderbolt/apple.c            | 38 ++++++++++++++----
+ drivers/thunderbolt/dp118-ready.inc    | 53 ++++++++++++++++++++++++++
+ drivers/thunderbolt/dpin-provider.inc  |  4 ++
+ include/linux/apple-usb4-dp.h          |  6 +++
+ 5 files changed, 120 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/gpu/drm/apple/dpin-binding.inc b/drivers/gpu/drm/apple/dpin-binding.inc
+index 694721e6a..35f30c0de 100644
+--- a/drivers/gpu/drm/apple/dpin-binding.inc
++++ b/drivers/gpu/drm/apple/dpin-binding.inc
+@@ -136,6 +136,32 @@ static int dp110_before_retirement(struct notifier_block *nb,
+ 		goto out;
+ 	}
+ 	dcp->dp110_last_event = event->sequence;
++	if (action == CODEX_DP_CONTROLLER_RETIRING) {
++		if (!port->dpin_attempted && !port->connected) {
++			ret = 0;
++			goto out;
++		}
++		/* Only an acknowledged firmware withdrawal allows a fresh lease
++		 * for the next controller generation. Do not reset failed state.
++		 */
++		if (port->connected)
++			ret = dp107_withdraw(dcp);
++		else
++			ret = port->dpin_withdrawn ? 0 : -EUCLEAN;
++		if (!ret)
++			ret = codex_dpin_call(port->dpin_provider,
++				READ_ONCE(port->dpin_token), CODEX_DPIN_END, 0);
++		if (!ret) {
++			WRITE_ONCE(port->dpin_token, 0);
++			port->dpin_attempted = false;
++			port->dpin_withdrawn = false;
++			port->dpin_withdraw_attempted = false;
++			port->dpin_reconnect_attempted = false;
++		}
++		dev_info(dcp->dev, "DP127 firmware/provider retired seq=%llu ret=%d\n",
++			 event->sequence, ret);
++		goto out;
++	}
+ 	if (action == CODEX_DP_PATHS_READY) {
+ 		if (dpin_autostart && !port->dpin_attempted) {
+ 			dev_info(dcp->dev, "DP121 initial paths-ready seq=%llu begin\n", event->sequence);
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index 398b485ba..3982f11e1 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -77,6 +77,7 @@
+  * and trigger some internal watchdog that will reset the entire SoC at worst.
+  */
+ 
++#include <linux/apple-usb4-dp.h>
+ #include <linux/bitfield.h>
+ #include <linux/completion.h>
+ #include <linux/interrupt.h>
+@@ -162,6 +163,8 @@
+  * @tbt_switch: USB4/Thunderbolt switch triggered by the Type-C PD driver
+  */
+ struct apple_cio {
++	struct mutex transition_lock;
++	bool dp127_stopping;
+ 	struct device *dev;
+ 	struct device_node *np;
+ 	struct device_node *pcie_tunnel_np;
+@@ -774,7 +777,8 @@ static struct platform_driver apple_nhi_driver = {
+  *
+  * Remove the NHI and DART children before shutting down the co-processor and
+  * dropping the power-domain links. The Type-C PHY must remain configured
+- * until this function returns. The caller must hold @acio->lock.
++ * until this function returns. The caller must hold @acio->transition_lock
++ * and @acio->lock. The latter is dropped while display clients retire.
+  */
+ static void apple_cio_stop(struct apple_cio *acio)
+ {
+@@ -787,8 +791,19 @@ static void apple_cio_stop(struct apple_cio *acio)
+ 	 * After we shut down the ACIO co-processor we will no longer be able to access
+ 	 * the MMIO space of these so make sure nothing tries to do just that.
+ 	 */
+-	dp91_revoke(acio);
++	/*
++	 * Serialize cable transitions, but let DCP callbacks take acio->lock.
++	 * Close new leases and domain event admission before the withdrawal.
++	 * Firmware and PHY remain live throughout the acknowledged teardown.
++	 */
++	lockdep_assert_held(&acio->transition_lock);
++	acio->dp127_stopping = true;
++	mutex_unlock(&acio->lock);
++	ret = codex_dp127_prepare_stop(acio->dev);
++	dev_info(acio->dev, "DP127 display retirement before CIO poweroff ret=%d\n", ret);
+ 	of_platform_depopulate(acio->dev);
++	mutex_lock(&acio->lock);
++	dp91_revoke(acio);
+ 
+ 	/* DART and PCIe teardown must finish before their register clock stops. */
+ 	if (acio->pcie_tunnel_np) {
+@@ -866,6 +881,7 @@ static int apple_cio_start(struct apple_cio *acio)
+ 	 * After the power domains are on we need to signal and wait for the ACIO block
+ 	 * to actually start before we can bring up the co-processor.
+ 	 */
++	acio->dp127_stopping = false;
+ 	ret = reset_control_deassert(acio->reset);
+ 	if (ret) {
+ 		dev_err(acio->dev, "ACIO block failed to start: %d\n", ret);
+@@ -985,6 +1001,7 @@ static int apple_cio_tbt_switch_set(struct typec_thunderbolt_switch_dev *sw,
+ {
+ 	struct apple_cio *acio = typec_thunderbolt_switch_get_drvdata(sw);
+ 
++	guard(mutex)(&acio->transition_lock);
+ 	guard(mutex)(&acio->lock);
+ 
+ 	dev_dbg(acio->dev, "set cable state: %d\n", data->state);
+@@ -1073,6 +1090,7 @@ static ssize_t diagnostic_cycle_store(struct device *dev,
+ 	if (!sysfs_streq(buf, "cycle"))
+ 		return -EINVAL;
+ 
++	guard(mutex)(&acio->transition_lock);
+ 	guard(mutex)(&acio->lock);
+ 	if (!acio->current_cable_info ||
+ 	    acio->current_cable_info != acio->target_cable_info)
+@@ -1104,6 +1122,9 @@ static int apple_cio_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	platform_set_drvdata(pdev, acio);
+ 
++	ret = devm_mutex_init(dev, &acio->transition_lock);
++	if (ret)
++		return ret;
+ 	ret = devm_mutex_init(dev, &acio->lock);
+ 	if (ret)
+ 		return ret;
+@@ -1186,10 +1207,12 @@ static int apple_cio_probe(struct platform_device *pdev)
+ 		if (dp91_registered) {
+ 			up_write(&dp91_registry_lock);
+ 			typec_thunderbolt_switch_unregister(acio->tbt_switch);
++			mutex_lock(&acio->transition_lock);
+ 			mutex_lock(&acio->lock);
+ 			if (acio->current_cable_info)
+ 				apple_cio_stop(acio);
+ 			mutex_unlock(&acio->lock);
++			mutex_unlock(&acio->transition_lock);
+ 			return -EBUSY;
+ 		}
+ 		dp91_registered = acio;
+@@ -1202,15 +1225,16 @@ static void apple_cio_remove(struct platform_device *pdev)
+ {
+ 	struct apple_cio *acio = platform_get_drvdata(pdev);
+ 
++	typec_thunderbolt_switch_unregister(acio->tbt_switch);
++	guard(mutex)(&acio->transition_lock);
++	scoped_guard(mutex, &acio->lock) {
++		if (acio->current_cable_info)
++			apple_cio_stop(acio);
++	}
+ 	down_write(&dp91_registry_lock);
+ 	if (dp91_registered == acio)
+ 		dp91_registered = NULL;
+ 	up_write(&dp91_registry_lock);
+-	typec_thunderbolt_switch_unregister(acio->tbt_switch);
+-
+-	guard(mutex)(&acio->lock);
+-	if (acio->current_cable_info)
+-		apple_cio_stop(acio);
+ 	if (acio->dp91_regs)
+ 		iounmap(acio->dp91_regs);
+ }
+diff --git a/drivers/thunderbolt/dp118-ready.inc b/drivers/thunderbolt/dp118-ready.inc
+index 488ea0795..232d7440b 100644
+--- a/drivers/thunderbolt/dp118-ready.inc
++++ b/drivers/thunderbolt/dp118-ready.inc
+@@ -196,3 +196,56 @@ int codex_dp121_replay_ready(struct device *provider)
+ 	return bus_for_each_dev(&tb_bus_type, NULL, provider, dp121_replay_domain);
+ }
+ EXPORT_SYMBOL_GPL(codex_dp121_replay_ready);
++
++/* Stop admitting old-domain events BEFORE asking DCP to withdraw. The
++ * caller keeps CIO/PHY powered but holds neither CIO nor domain mutex.
++ * This is also used when the peripheral has already disappeared from the
++ * topology: the local DP-IN and its firmware owner still need retirement.
++ */
++static int dp127_prepare_domain_stop(struct device *dev, void *data)
++{
++	struct device *provider = data;
++	struct tb *tb;
++	struct tb_cm *tcm;
++	struct tb_port *port;
++	struct codex_dp110_event event = {};
++	unsigned int index = 0;
++	int ret = 0, err;
++	if (dev->type != &tb_domain_type)
++		return 0;
++	tb = container_of(dev, struct tb, dev);
++	if (tb->cm_ops != &tb_cm_ops || tb->nhi->dev->parent != provider)
++		return 0;
++	tcm = tb_priv(tb);
++	spin_lock(&tcm->dp125_replay_lock);
++	tcm->dp125_replay_stopping = true;
++	spin_unlock(&tcm->dp125_replay_lock);
++	mutex_lock(&tcm->dp118_callback_lock);
++	mutex_lock(&tb->lock);
++	tcm->hotplug_active = false;
++	mutex_unlock(&tb->lock);
++	event.controller = tb->nhi->dev;
++	if (tb->root_switch) {
++		tb_switch_for_each_port(tb->root_switch, port) {
++			if (!tb_port_is_dpin(port))
++				continue;
++			event.input_index = index++;
++			event.sequence = atomic64_inc_return(&dp110_sequence);
++			err = notifier_to_errno(blocking_notifier_call_chain(&dp110_retirement,
++                     CODEX_DP_CONTROLLER_RETIRING, &event));
++			tb_info(tb, "DP127 controller retirement seq=%llu input=%u ret=%d\n",
++           event.sequence, event.input_index, err);
++			if (err && !ret)
++				ret = err;
++		}
++	}
++	mutex_unlock(&tcm->dp118_callback_lock);
++	return ret;
++}
++int codex_dp127_prepare_stop(struct device *provider)
++{
++	if (!provider)
++		return -EINVAL;
++	return bus_for_each_dev(&tb_bus_type, NULL, provider, dp127_prepare_domain_stop);
++}
++EXPORT_SYMBOL_GPL(codex_dp127_prepare_stop);
+diff --git a/drivers/thunderbolt/dpin-provider.inc b/drivers/thunderbolt/dpin-provider.inc
+index f7ee49489..fe7485d16 100644
+--- a/drivers/thunderbolt/dpin-provider.inc
++++ b/drivers/thunderbolt/dpin-provider.inc
+@@ -124,6 +124,10 @@ int codex_dpin_begin(struct device *dev, u64 *token)
+ 		ret = -EOPNOTSUPP;
+ 		goto unlock;
+ 	}
++	if (acio->dp127_stopping) {
++		ret = -ESHUTDOWN;
++		goto unlock;
++	}
+ 	if (!acio->current_cable_info || !acio->rtk || acio->nhi_boot_status) {
+ 		ret = -ENOLINK;
+ 		goto unlock;
+diff --git a/include/linux/apple-usb4-dp.h b/include/linux/apple-usb4-dp.h
+index 20e97ab41..66a97eb89 100644
+--- a/include/linux/apple-usb4-dp.h
++++ b/include/linux/apple-usb4-dp.h
+@@ -8,6 +8,7 @@
+ 
+ #define CODEX_DP_BEFORE_RETIREMENT 0
+ #define CODEX_DP_PATHS_READY 1
++#define CODEX_DP_CONTROLLER_RETIRING 2
+ 
+ /* Experimental display lifecycle notifications, not a complete hotplug API.
+  * The domain mutex is NOT held. Event data is valid only in the call.
+@@ -22,10 +23,15 @@ struct codex_dp110_event {
+ 	u8 input_index;
+ };
+ #if IS_REACHABLE(CONFIG_USB4)
++int codex_dp127_prepare_stop(struct device *provider);
+ int codex_dp121_replay_ready(struct device *provider);
+ int codex_dp110_register(struct notifier_block *nb);
+ int codex_dp110_unregister(struct notifier_block *nb);
+ #else
++static inline int codex_dp127_prepare_stop(struct device *provider)
++{
++	return 0;
++}
+ static inline int codex_dp121_replay_ready(struct device *provider)
+ {
+ 	return -EOPNOTSUPP;
+-- 
+2.53.0
+

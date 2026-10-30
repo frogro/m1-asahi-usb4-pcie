@@ -2,8 +2,8 @@ Konsolidierte Apple-M1-TB/USB4-Serie: SSD + Dock-Video, ohne eGPU
 Stand: 30.10.2026
 
 ERGEBNIS
-22 geordnete RFC-Patches führen die PCIe/NVMe-Arbeit vom 29.10. und die
-Dock-Video-Arbeit bis Test125 auf einer gemeinsamen Quellbasis zusammen.
+26 geordnete RFC-Patches führen die PCIe/NVMe-Arbeit vom 29.10. und die
+Dock-Video-Arbeit bis Test128 auf einer gemeinsamen Quellbasis zusammen.
 Dies ist die Gesamtserie; die frühere dock-video-patchseries-Ablage war nur
 Teil B. Die alten Quellsicherungen wurden nicht überschrieben.
 
@@ -41,12 +41,12 @@ Auf einem sauberen vollständigen Checkout am obigen echten Commit:
 Der erste Aufruf prüft Commit, Ausgangsdateien und Patch-Prüfsummen. Der zweite
 legt danach einen lokalen Branch an und wendet die Serie an. Er installiert
 nichts und führt keinen Push aus. Ein neuer Fork war zur Vorbereitung nicht nötig.
-Die tatsächliche Anwendung auf einem vollständigen Git-Checkout bleibt vor
-Einreichung zu prüfen; die lokale Anwendung auf der rekonstruierten Basis ist
-bereits vollständig geprüft.
+Die 22-Patch-Basis wurde bereits auf dem vollständigen echten Git-Checkout
+angewendet. Alle 26 Patches sind erneut auf derselben Originalbasis angewendet: Ergebnisbaum
+und sämtliche Dateiprüfsummen stimmen. Der Gesamtbuild erhält eine eigene Versionskennung.
 
 VERIFIKATION
-- Alle 22 Patches frisch angewendet; Ergebnisbaum exakt gleich dem Quellbranch.
+- Alle 26 Patches frisch angewendet; Ergebnisbaum exakt gleich dem Quellbranch.
 - Alle 381 Einträge der breiteren alten Quellsicherung abgeglichen: keine
   unerklärten Abweichungen. Früh enthaltene Korrekturen wurden mit übernommen.
 - Kconfig/olddefconfig auf vollständigem Ubuntu-Quellpaket bestanden. Ein in
@@ -83,3 +83,24 @@ bestehenden SSD-Funktionen werden dabei kontrolliert, nicht neu entwickelt.
 Anschließend Diagnosebezeichnungen, Bindings/Stil und Einreichungsform bereinigen.
 Der installierte Kernel, Bootloader und die Verkabelung wurden nicht verändert.
 Es wurde kein PR erstellt und nichts veröffentlicht.
+
+AKTUALISIERUNG DP128 / usb4sd2
+Die vier ergänzten Patches 23--26 erhalten die alten 22 Patchdateien unverändert:
+23: Gemeinsame ATCPHY bleibt beim USB-PIPE-Stopp im USB4/TBT-Modus aktiv.
+24: Vollständige Display-Abmeldung vor CIO-Abschaltung, neue Verbindung erst
+    nach bestätigter Firmware-/Provider-Freigabe; alle Start-/Stopp-Einstiege
+    einschließlich des Storage-Diagnosepfads werden serialisiert.
+25: Externer DCP-Audioendpunkt nur für J274 im Device Tree aktiviert.
+26: Ergebnis, Aktivierung und Grenzen dokumentiert.
+
+DP127 und DP128: je ein physischer Gesamt-Dock-Zyklus; Bild, OWC-Leseprüfsumme
+und Dock-Ethernet zurück. DP128 zusätzlich hörbarer DP-Ton vorher und nachher.
+Während des Abziehens lief keine Audiowiedergabe. Die OWC hing am USB-Port;
+dies ist kein zusätzlicher PCIe-NVMe-Nachweis. Die vorhandene frühe IOMMU-
+Probe-Warnung ist nicht als gelöst deklariert. Vollständiger kombinierter
+Kernelboot, Suspend, ACK-Sonderfall und eGPU bleiben außerhalb dieses Ergebnisses.
+
+Audio benötigt weiterhin den bestehenden Parameter appledrm.hdmi_audio=1.
+Siehe config/tested-display-audio-options.txt. Keine globale Audio-Vorgabe und
+keine eGPU-Treiberänderung. Die Dateien werden nicht automatisch installiert.
+Der neue vollständige Build heißt 7.2.12-usb4sd2; usb4sd1 bleibt ein älterer Stand.

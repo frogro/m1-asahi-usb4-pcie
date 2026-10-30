@@ -1,0 +1,1 @@
+PASS: fresh connection only after acknowledged withdrawal and successful lease release; timeout, release failure and ambiguous state remain blocked

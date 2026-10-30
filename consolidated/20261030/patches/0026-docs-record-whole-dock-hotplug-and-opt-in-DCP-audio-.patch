@@ -1,0 +1,74 @@
+From e5010cbf33d70fbe05a57a7f9753e50df0f2e17d Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 10:38:24 +0100
+Subject: [PATCH 26/26] docs: record whole-dock hotplug and opt-in DCP audio
+ validation
+
+Record DP127 and DP128 evidence and distinguish isolated display/USB-storage results from the pending combined-kernel boot. Keep reset ACK, suspend and eGPU limits explicit.
+---
+ .../gpu/apple-usb4-consolidation.rst          | 45 ++++++++++++++++++-
+ 1 file changed, 44 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/gpu/apple-usb4-consolidation.rst b/Documentation/gpu/apple-usb4-consolidation.rst
+index 832d1581a..3594be9d5 100644
+--- a/Documentation/gpu/apple-usb4-consolidation.rst
++++ b/Documentation/gpu/apple-usb4-consolidation.rst
+@@ -3,7 +3,7 @@ Apple M1 USB4 storage and dock display consolidation
+ 
+ This downstream draft combines the storage preparation of 2026-10-29
+ (Test40 functional source, with Test49 diagnostics preserved separately)
+-and the dock-display source validated through Test125. It does not include
++and the dock-display source validated through Test128. It does not include
+ AMDGPU, TTM, Radeon audio, or FFmpeg changes. Native PCIe transport is generic
+ at the device-enumeration level; that does not imply safe eGPU surprise removal.
+ 
+@@ -89,3 +89,46 @@ compilation and topology results separately. No kernel, bootloader, module or
+ firmware is installed by generating or applying this patch series. Remaining
+ diagnostic identifiers, binding documentation, style and submission cleanup
+ are explicitly not represented as completed upstream review.
++
++Whole-dock retirement and external display audio (DP126--DP128)
++--------------------------------------------------------------
++
++DWC3 PIPE shutdown now retains the shared PHY in USB4/TBT mode. The Type-C
++SAFE transition remains responsible for the final PHY power-off after CIO
++retirement. Native USB3 power-off is unchanged.
++
++CIO closes new display leases and serializes transitions. With the CIO mutex
++released, the connection manager closes old-domain event admission, drains
++callbacks and asks DCP to withdraw HPD and release its display connection while
++CIO/PHY are still powered. Only successful firmware and provider release clear
++the state for a new connection. Child removal and the existing PCIe/DART
++unprepare follow. The storage diagnostic-cycle path takes the same transition
++lock; it does not bypass the retirement protocol.
++
++J274's external audio endpoint is enabled in the board DTS. Audio remains an
++explicit opt-in through the existing driver parameter::
++
++    appledrm.hdmi_audio=1
++
++For a modular driver the equivalent setting is::
++
++    options appledrm hdmi_audio=1
++
++Despite its name this parameter enables DCP DisplayPort audio too. It does
++not enable a Radeon/eGPU audio path and changes no global audio default. The
++runtime option must accompany the DT change in any later diagnostic boot;
++merely compiling this series does not activate audio in an installed system.
++
++DP127 passed one whole-dock physical disconnect/reconnect with returned image,
++USB-storage checksum and dock Ethernet. DP128 repeated the whole-dock cycle
++with audio enabled: the user heard the same bounded 48 kHz stereo test tone
++before and after reconnect, and confirmed the image returned. Playback was
++closed during removal. The OWC was on a USB/SSD dock port, so that checksum
++is USB-storage evidence, not a new native-NVMe test. These isolated module
++runs do not replace a hardware boot of the combined storage/display kernel.
++
++Active-playback removal, HDMI audio, suspend/resume, multi-monitor MST and
++unprepared eGPU removal remain outside this result. A pre-existing early
++IOMMU probe warning was recorded in DP128; the full journal is not claimed
++warning-free. ACK_PENDING belongs to the native PCIe-C reset and is not settled
++by successful DP/audio retirement. Its measured boot override is unchanged.
+-- 
+2.53.0
+

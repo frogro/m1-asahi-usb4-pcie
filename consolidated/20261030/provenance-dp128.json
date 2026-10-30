@@ -1,0 +1,17 @@
+{
+  "based_on": [
+    "DP126 usb4-phy-lifetime.patch",
+    "DP127 controller-retirement.patch",
+    "DP128 device-tree.diff"
+  ],
+  "integration_adaptations": [
+    "Preserve consolidated native PCIe reset, topology and DART teardown",
+    "Serialize storage diagnostic_cycle with same transition_lock",
+    "Use include/linux/apple-usb4-dp.h and unreachable USB4 stub",
+    "Board-scoped audio DT; runtime audio remains opt-in"
+  ],
+  "firmware_changed": false,
+  "nvme_driver_changed": false,
+  "egpu_changes_included": false,
+  "ai_assisted": true
+}

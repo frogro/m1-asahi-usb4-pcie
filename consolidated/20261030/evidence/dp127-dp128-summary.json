@@ -1,0 +1,20 @@
+{
+  "source_runs": [
+    "DP127",
+    "DP128"
+  ],
+  "physical_whole_dock_cycles": 2,
+  "dp_video1_return_user_confirmed": true,
+  "dp128_audio_before_and_after_user_confirmed": true,
+  "audio_format": "S16_LE stereo 48000 Hz",
+  "audio_active_at_unplug": false,
+  "owc_transport": "USB port on dock",
+  "owc_after_hash": "ed28778a6da97be706a93588579d54bfcced8dbdd51653caf7606c1a38bd95bd",
+  "dock_ethernet": "2/2 router replies after each cycle",
+  "regular_boot_return": true,
+  "combined_kernel_boot": false,
+  "known_early_iommu_probe_warning": true,
+  "suspend_tested": false,
+  "egpu_changes_included": false,
+  "ack_semantics_resolved": false
+}

@@ -1,7 +1,7 @@
-Subject: [RFC PATCH 00/22] Apple M1 USB4 native PCIe storage and dock display integration
+Subject: [RFC PATCH 00/26] Apple M1 USB4 native PCIe storage and dock display integration
 
 This downstream review series consolidates the measured M1 native PCIe storage
-path and the Test125 dock-display path. It combines PCIe-C initialization,
+path and the Test128 dock-display path. It combines PCIe-C initialization,
 DART/MSI safety, Type-C transitions, firmware-node port association and topology
 notifications with DCP/DP-IN routing and display hotplug callbacks.
 
@@ -10,9 +10,9 @@ patches are not part of this series. Suspend remains explicitly deferred; the
 existing reset ACK diagnostic ambiguity is not presented as solved.
 
 Target base: UbuntuAsahi/linux f7734f4c91c0f47d9e762786968057bec99a0788.
-The review history was reconstructed from the matching source package; use
-apply-to-checkout.py to verify each preimage against the actual base before
-replaying on a normal fork. Do not upload the sparse reconstruction as a
+The original preparation used a reconstructed matching source package. All 26
+patches now also replay on the actual pinned Git commit with an identical tree.
+Use apply-to-checkout.py to verify each preimage before replaying on a fork. Do not upload the sparse reconstruction as a
 replacement upstream history.
 
 Original unmodified MSI and EPIC commits preserve their authors and trailers.
@@ -20,7 +20,7 @@ The PCIe-C and DT adaptations retain copyright and credit their reference work;
 reference patch files are included in provenance. The local adaptations and
 consolidation are AI-assisted and are not claimed to have upstream endorsement.
 
-Validation: fresh replay of all 22 patches matches the prepared tree;
+Validation: fresh replay of all 26 patches matches the prepared tree;
 olddefconfig and compilation of all affected translation units in the complete
 source tree pass; J274 DT compiles and matches the measured storage/display
 relationships. No final vmlinux link or combined hardware boot is claimed.
@@ -31,3 +31,8 @@ checkpatch/style, local DCO decisions, final full-build and hardware regression.
 The integration retains the measured storage policy as explicit boot parameters.
 
 See README.txt, series, config/, provenance/ and validation/ for details.
+
+Patches 23--26 add shared-PHY lifetime, whole-controller display retirement,
+J274 external DCP audio topology and the DP127/128 validation record. Audio is
+opt-in through appledrm.hdmi_audio=1; no AMDGPU/TTM/Radeon audio changes.
+Combined full-kernel hardware validation is still pending.

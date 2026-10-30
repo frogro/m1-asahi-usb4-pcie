@@ -1,0 +1,14 @@
+Not installed automatically. For the later combined diagnostic boot:
+
+appledrm.dpin_autostart=1
+appledrm.hdmi_audio=1
+
+Equivalent module configuration (do not use together with stale test overrides):
+options appledrm dpin_autostart=1 hdmi_audio=1
+
+The existing hdmi_audio parameter also enables DCP DisplayPort audio. The
+external J274 DCP audio endpoint is enabled by patch 25; no global audio default
+is changed. DP128 verified stereo S16_LE 48000 Hz on Dock DP Video1 before and
+after a whole-dock disconnect/reconnect, with playback closed during removal.
+HDMI audio, active-playback removal and suspend are not claimed tested.
+Retain the separate tested-storage-boot-parameters.txt for the PCIe/NVMe path.

@@ -13,5 +13,5 @@ report={'changes':changes,'unexpected_changes':errors,'baseline_enabled':sum(v i
 Path(sys.argv[3]).write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))
 if errors:sys.exit('Refusing a build with changed pre-existing configuration options')
-for key in ['CONFIG_RUST','CONFIG_DRM_APPLE','CONFIG_USB4_APPLE_SOC','CONFIG_PCIE_APPLE_PCIEC','CONFIG_BLK_DEV_NVME','CONFIG_DEBUG_INFO_BTF_MODULES']:
+for key in ['CONFIG_RUST','CONFIG_DRM_APPLE','CONFIG_DRM_APPLE_AUDIO','CONFIG_USB4_APPLE_SOC','CONFIG_PCIE_APPLE_PCIEC','CONFIG_BLK_DEV_NVME','CONFIG_DEBUG_INFO_BTF_MODULES']:
  if b.get(key) not in ('y','m'):sys.exit('Missing required option '+key)

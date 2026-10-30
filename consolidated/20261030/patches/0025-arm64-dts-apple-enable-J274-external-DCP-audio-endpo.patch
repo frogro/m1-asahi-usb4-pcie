@@ -1,0 +1,27 @@
+From 9bab993efe644712530976875c56cbfa074bde3c Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 10:36:55 +0100
+Subject: [PATCH 25/26] arm64: dts: apple: enable J274 external DCP audio
+ endpoint
+
+Describe the audio endpoint used by the tested external DCP path. The existing appledrm hdmi_audio parameter still controls runtime activation; no global driver default is changed. DP128 confirmed 48 kHz stereo playback before and after whole-dock reconnection. AI-assisted downstream integration.
+---
+ arch/arm64/boot/dts/apple/t8103-j274.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/apple/t8103-j274.dts b/arch/arm64/boot/dts/apple/t8103-j274.dts
+index 31334a06b..788545261 100644
+--- a/arch/arm64/boot/dts/apple/t8103-j274.dts
++++ b/arch/arm64/boot/dts/apple/t8103-j274.dts
+@@ -235,3 +235,8 @@ &apciec1_port {
+ 	usb4-host-interface = <&usb4_1_nhi>;
+ 	usb4-port-number = <0>;
+ };
++
++/* External DCP audio, tested through the Dynabook DP tunnel in DP128. */
++&dpaudio1 {
++	status = "okay";
++};
+-- 
+2.53.0
+

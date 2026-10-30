@@ -1,0 +1,20 @@
+{
+  "direct_property_matches": [
+    "/aliases:dcpext",
+    "/soc/dcp@271c00000:status",
+    "/soc/dcp@271c00000:apple,connector-type",
+    "/soc/dcp@271c00000:apple,dcp-index",
+    "/soc/dcp@271c00000:apple,dptx-die",
+    "/soc/dcp@271c00000:apple,dptx-phy",
+    "/soc/iommu@271304000:status",
+    "/soc/iommu@27130c000:status",
+    "/soc/mbox@271c08000:status",
+    "/soc/cio@501ac0000:codex,dpin-callback-test",
+    "/soc/cio@501ac0000:mux-control-names",
+    "/soc/phy@503000000:codex,dpin-clock-test",
+    "/soc/mux@50304c000:codex,dpin-staged-test"
+  ],
+  "phandle_semantic_checks": 4,
+  "runtime_DCP_memory_not_copied": true,
+  "note": "Primary DCP status remains bootloader-controlled; full DT need not be byte-identical because source package and installed bundle can differ outside this scope."
+}
