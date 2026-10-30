@@ -24,5 +24,8 @@
   "0023-phy-apple-retain-shared-USB4-PHY-while-the-USB-PIPE-.patch": "72d1917eea2b5e76fe3c2581f01978da157e92249d41798ef5bb69705dba5191",
   "0024-thunderbolt-apple-retire-display-clients-before-cont.patch": "ae45a4dadf52d3bfef15fae1471c3dbd1687eb3801836790d00c8cac78bfb57f",
   "0025-arm64-dts-apple-enable-J274-external-DCP-audio-endpo.patch": "8a3df30a170d07126b8c3693e4ff322aae6567dd58c9a5eced6ce5b9b1e1f743",
-  "0026-docs-record-whole-dock-hotplug-and-opt-in-DCP-audio-.patch": "d37278e4ff2ec39ec2f96248da1572cd12c8c1618810507349f75f30443a5ecb"
+  "0026-docs-record-whole-dock-hotplug-and-opt-in-DCP-audio-.patch": "d37278e4ff2ec39ec2f96248da1572cd12c8c1618810507349f75f30443a5ecb",
+  "0027-phy-apple-retain-active-USB4-lane-state-across-s2idl.patch": "bb84528a139d7ee29f639cc490e0d3f10b2be4bf237f1901f7ec979049a87b3b",
+  "0028-thunderbolt-apple-coordinate-retained-power-system-s.patch": "a1394e8d2bf2051ca7d4c1c928f5ec18cd8a09e2ca087aa73b77b217368d08c0",
+  "0029-docs-record-retained-power-USB4-suspend-integration-.patch": "5272eaefdc7f8aed027ca6f708ba2cddb4a69f3c04f9f12d21c639ce2b1efdde"
 }

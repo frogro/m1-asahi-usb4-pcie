@@ -1,0 +1,93 @@
+From 3db8cee06e739ec4fe7c695313cdc6c45e887ef7 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 14:47:53 +0100
+Subject: [PATCH 29/29] docs: record retained-power USB4 suspend integration
+ and validation
+
+Describe automatic per-device retention, NHI and DART ordering, and the Test154-157 results. Distinguish matched module validation from a boot of the consolidated kernel and retain the untested power-loss, display and device-change cases.
+---
+ .../gpu/apple-usb4-consolidation.rst          | 57 ++++++++++++++++++-
+ 1 file changed, 54 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/gpu/apple-usb4-consolidation.rst b/Documentation/gpu/apple-usb4-consolidation.rst
+index 3594be9d5..236464e3a 100644
+--- a/Documentation/gpu/apple-usb4-consolidation.rst
++++ b/Documentation/gpu/apple-usb4-consolidation.rst
+@@ -11,7 +11,8 @@ The Linux NVMe host driver and its firmware are unchanged. The storage side
+ provides the Apple PCIe-C host, DART stream/lifetime handling, MSI offline
+ handling, CD321x mode transitions, native-port association and topology-driven
+ PCIe hotplug. Read/write and the recorded storage hotplug cases were validated
+-in earlier test configurations. Suspend/resume remains deliberately deferred.
++in earlier test configurations. Retained-power suspend-to-idle is implemented in the follow-up described below;
++full controller power-loss restoration remains deferred.
+ The reset ACK completion semantics are a separate unresolved diagnostic point.
+ 
+ Configuration and topology
+@@ -44,8 +45,9 @@ For the later combined boot comparison retain the measured storage policy::
+     pci=hpbussize=16
+ 
+ The ACK override preserves the earlier measured condition. It does not settle
+-whether ACK_PENDING means request admission or completion. No suspend bypass
+-is added. The separate Test49 diagnostic module is not a production dependency.
++whether ACK_PENDING means request admission or completion. ACK classification
++changes remain excluded. The separate Test49 diagnostic module is not a
++production dependency.
+ 
+ What was consolidated
+ ---------------------
+@@ -132,3 +134,52 @@ unprepared eGPU removal remain outside this result. A pre-existing early
+ IOMMU probe warning was recorded in DP128; the full journal is not claimed
+ warning-free. ACK_PENDING belongs to the native PCIe-C reset and is not settled
+ by successful DP/audio retirement. Its measured boot override is unchanged.
++
++Retained-power system suspend
++-----------------------------
++
++The follow-up uses the power domains already attached to each ACIO instance
++and the power domain owned by its Type-C PHY. It requires no port addresses,
++synthetic always-on domain, or user-selected diagnostic suspend mode.
++
++A genpd power-off notifier rejects power loss while ACIO is running. Startup
++errors and completed shutdown release the restriction before dropping the
++runtime-PM links. A PHY notifier applies the corresponding restriction only
++in USB4/Thunderbolt mode. The existing Type-C teardown order stops ACIO before
++switching the PHY away from that mode. The notifiers do not access MMIO or
++acquire driver mutexes under the genpd lock. All notifiers are removed before
++the managed power-domain attachments are released.
++
++The NHI uses the existing domain freeze/thaw helpers at the normal device-PM
++stage to stop control DMA before DART suspend and restart it after DART resume.
++Existing supplier links order the native PCIe consumers. The active-cable
++prepare veto is replaced with power-readiness checks for s2idle. Hibernation
++and deeper suspend with an active connection are still unsupported, because
++these require restoration after loss of controller state.
++
++Rejected power-off counters for retained domains may increase: this records
++the deliberate decision not to invoke the hardware power-off operation. No
++reset-ACK error is reclassified or suppressed. Energy consumption has not
++been measured, and this implementation does not claim minimum sleep power.
++
++Validation used matched diagnostic Test40 modules with the same new retention
++and NHI PM logic, rather than a boot of the entire consolidated kernel:
++
++* Test154: late/noirq PM rehearsal passed with normal UART and watchdog.
++* Test155: actual s2idle, power-button wake, HDMI returned; 1 GiB direct-read
++  hashes on TB3 Yottamaster NVMe and OWC USB/UAS plus 64 MiB on SD matched.
++* Test156: software ACIO shutdown/start released the PCIe domain (its power-off
++  usage counter incremented); the NVMe device re-enumerated asynchronously
++  and the same three data checks passed.
++* Test157: actual s2idle after that controller restart with normal asynchronous
++  device PM enabled; power-button wake, HDMI and all three hashes passed.
++
++The test-only Apple module retains earlier diagnostics solely for collection;
++those diagnostics and their ACK experiments are not dependencies of this
++source series. No NVMe, UART, watchdog, eGPU or shared TTM change is added.
++
++The existing DCP PMU read diagnostic is still observed with successful HDMI
++resume. Whole-kernel validation, active dock-display sleep, native USB4 NVMe,
++removal while asleep, write-after-resume, and power-loss recovery remain
++separate validation work. Tests are evidence for the measured topology, not
++proof for every supported device or connection state.
+-- 
+2.53.0
+

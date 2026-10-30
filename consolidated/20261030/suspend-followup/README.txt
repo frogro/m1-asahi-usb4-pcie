@@ -1,9 +1,9 @@
 Automatic retained-power USB4 suspend follow-up, 2026-10-30
 
-Apply these three patches after the existing 26-patch usb4sd2 series.
-../series-with-suspend lists the complete 29-patch candidate. The previous
-series and built kernel are preserved. No full-kernel installation or GitHub
-workflow dispatch is performed by this follow-up.
+These three patches are now included after the existing 26 patches in ../series
+and ../patches for the usb4sd3 full-kernel build. This directory retains the
+original follow-up and its test evidence. The prior usb4sd2 build and Git
+revision remain available. The full build performs no installation.
 
 The PHY retains its own domain in USB4/Thunderbolt mode. Each live ACIO
 instance retains its attached domain list and releases retention on startup

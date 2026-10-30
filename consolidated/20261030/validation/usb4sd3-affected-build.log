@@ -1,0 +1,9 @@
+make: Entering directory '/dev/shm/usb4-suspend-integration-20261030'
+make[1]: Verzeichnis „/dev/shm/usb4sd2-check“ wird betreten
+  DESCEND bpf/resolve_btfids
+  INSTALL libsubcmd_headers
+  CC [M]  drivers/phy/apple/atc.o
+  CC [M]  drivers/thunderbolt/apple.o
+  CC [M]  drivers/thunderbolt/domain.o
+make[1]: Verzeichnis „/dev/shm/usb4sd2-check“ wird verlassen
+make: Leaving directory '/dev/shm/usb4-suspend-integration-20261030'

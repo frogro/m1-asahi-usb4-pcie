@@ -1,0 +1,35 @@
+Switched to a new branch 'verify/usb4sd3-full-replay'
+/dev/shm/usb4-kernel-base-20261030/.git/worktrees/usb4sd3-replay/rebase-apply/patch:54: new blank line at EOF.
++
+warning: 1 line adds whitespace errors.
+Applying: iommu: apple-dart: retain tested USB4 stream and lifetime fixes
+Applying: usb: typec: tipd: retain tested CD321x transition sequencing
+Applying: PCI/MSI: Skip MSI/MSI-X programming while the channel is offline
+Applying: PCI: pciehp: retain USB4 topology-triggered hotplug handling
+Applying: PCI: apple: preserve the measured M1 PCIe-C host and nonposted mappings
+Applying: thunderbolt: associate Apple native PCIe hosts and forward topology events
+Applying: arm64: dts: apple: retain tested M1 PCIe-C resources and tunables
+Applying: drm: apple: Accept notify-style EPIC replies on DCP 14.7
+Applying: phy: apple: preserve a scoped DP-IN clock lease on M1
+Applying: mux: apple: stage the M1 display crossbar before enabling its clock
+Applying: thunderbolt: apple: provide scoped M1 DP-IN routing and callbacks
+Applying: thunderbolt: notify display clients before retirement and when paths are ready
+Applying: thunderbolt: defer initial display replay outside component binding
+Applying: drm: apple: validate bounded service replies for DP HPD withdrawal
+Applying: drm: apple: connect and retire M1 USB4 display routes from kernel events
+Applying: drm: apple: make the measured DP-IN path load through normal dependencies
+Applying: arm64: dts: apple: describe the tested J274 USB4 display route
+Applying: docs: record the measured dock display scope and integration limits
+Applying: arm64: apple: consolidate measured storage and display boot dependencies
+Applying: drm: apple: avoid recursive Kconfig dependencies for optional display providers
+Applying: docs: describe consolidated USB4 storage and display scope and test policy
+Applying: PCI: of: retain the tested changeset ownership backport
+Applying: phy: apple: retain shared USB4 PHY while the USB PIPE stops
+Applying: thunderbolt: apple: retire display clients before controller shutdown
+Applying: arm64: dts: apple: enable J274 external DCP audio endpoint
+Applying: docs: record whole-dock hotplug and opt-in DCP audio validation
+Applying: phy: apple: retain active USB4 lane state across s2idle
+Applying: thunderbolt: apple: coordinate retained-power system suspend
+Applying: docs: record retained-power USB4 suspend integration and validation
+Base and all 45 preimages verified; 29 patches verified.
+Applied and final contents verified on local branch verify/usb4sd3-full-replay . No kernel installed, no push performed.

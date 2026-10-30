@@ -1,0 +1,233 @@
+From 8f3840a4c678038ef37ed21f90e3377ef7c358b2 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 14:44:19 +0100
+Subject: [PATCH 28/29] thunderbolt: apple: coordinate retained-power system
+ suspend
+
+Retain the domains already attached to each live ACIO instance through genpd notifiers. Register managed cleanup before exposing the Type-C switch, and release retention on both failed startup and completed shutdown.
+
+Freeze control-channel DMA before DART suspend and thaw it after supplier resume using the existing domain helpers. Replace the active-link prepare veto with readiness checks for s2idle. No fixed device addresses, global retention module, UART changes, watchdog changes or ACK classification are introduced.
+---
+ drivers/thunderbolt/apple.c  | 116 ++++++++++++++++++++++++++++++++++-
+ drivers/thunderbolt/domain.c |   2 +
+ 2 files changed, 115 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index 3982f11e1..09969ffec 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -95,6 +95,7 @@
+ #include <linux/soc/apple/rtkit.h>
+ #include <linux/soc/apple/tunable.h>
+ #include <linux/spinlock.h>
++#include <linux/suspend.h>
+ #include <linux/types.h>
+ #include <linux/usb/pd.h>
+ #include <linux/usb/typec_mux.h>
+@@ -181,6 +182,7 @@ struct apple_cio {
+ 	struct reset_control *pcie_reset;
+ 
+ 	struct dev_pm_domain_list *pd_list;
++	bool retain_power;
+ 
+ 	struct mutex lock;
+ 
+@@ -200,6 +202,59 @@ struct apple_cio {
+ 	struct typec_thunderbolt_switch_dev *tbt_switch;
+ };
+ 
++/* A live ACIO complex cannot lose power without a complete restart. */
++struct apple_cio_power_notifier {
++	struct notifier_block nb;
++	struct apple_cio *acio;
++};
++
++static int apple_cio_power_notify(struct notifier_block *nb,
++				  unsigned long event, void *data)
++{
++	struct apple_cio_power_notifier *pn =
++		container_of(nb, struct apple_cio_power_notifier, nb);
++
++	/* Called under the genpd lock, including the noirq suspend phase. */
++	if (event == GENPD_NOTIFY_PRE_OFF && READ_ONCE(pn->acio->retain_power))
++		return notifier_from_errno(-EBUSY);
++
++	return NOTIFY_OK;
++}
++
++static void apple_cio_remove_power_notifier(void *data)
++{
++	dev_pm_genpd_remove_notifier(data);
++}
++
++static int apple_cio_init_power_retention(struct apple_cio *acio)
++{
++	struct apple_cio_power_notifier *notifiers;
++	unsigned int i;
++	int ret;
++
++	notifiers = devm_kcalloc(acio->dev, acio->pd_list->num_pds,
++				 sizeof(*notifiers), GFP_KERNEL);
++	if (!notifiers)
++		return -ENOMEM;
++
++	for (i = 0; i < acio->pd_list->num_pds; i++) {
++		struct device *pd_dev = acio->pd_list->pd_devs[i];
++
++		notifiers[i].acio = acio;
++		notifiers[i].nb.notifier_call = apple_cio_power_notify;
++		ret = dev_pm_genpd_add_notifier(pd_dev, &notifiers[i].nb);
++		if (ret)
++			return ret;
++		/* These actions run before the managed domain list is detached. */
++		ret = devm_add_action_or_reset(acio->dev,
++					       apple_cio_remove_power_notifier, pd_dev);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
+ /* Isolated test interface, disabled unless explicitly requested at load time. */
+ static bool diagnostic_cycle;
+ module_param(diagnostic_cycle, bool, 0400);
+@@ -282,6 +337,7 @@ struct apple_nhi {
+ 	const char **tx_irq_names;
+ 	const char **rx_irq_names;
+ 	size_t n_rings;
++	bool pm_frozen;
+ };
+ 
+ #define nhi_to_anhi(nhi_) container_of((nhi_), struct apple_nhi, nhi)
+@@ -762,9 +818,45 @@ static const struct of_device_id apple_nhi_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, apple_nhi_match);
+ 
++/*
++ * Preserve the live router and tunnels, but stop control-channel DMA before
++ * the DART supplier is suspended. Device links order the PCIe consumers
++ * before NHI and restore DART before these normal-stage resume callbacks.
++ * The freeze/thaw helpers do not put the retained router into sleep.
++ */
++static int apple_nhi_suspend(struct device *dev)
++{
++	struct apple_nhi *anhi = dev_get_drvdata(dev);
++	int ret;
++
++	ret = tb_domain_freeze_noirq(anhi->tb);
++	if (!ret)
++		anhi->pm_frozen = true;
++	return ret;
++}
++
++static int apple_nhi_resume(struct device *dev)
++{
++	struct apple_nhi *anhi = dev_get_drvdata(dev);
++	int ret;
++
++	if (!anhi->pm_frozen)
++		return 0;
++	ret = tb_domain_thaw_noirq(anhi->tb);
++	if (!ret)
++		anhi->pm_frozen = false;
++	return ret;
++}
++
++static const struct dev_pm_ops apple_nhi_pm_ops = {
++	.suspend = apple_nhi_suspend,
++	.resume = apple_nhi_resume,
++};
++
+ static struct platform_driver apple_nhi_driver = {
+ 	.driver = {
+ 		.name = "thunderbolt-apple-nhi",
++		.pm = pm_sleep_ptr(&apple_nhi_pm_ops),
+ 		.of_match_table = apple_nhi_match,
+ 	},
+ 	.probe = apple_nhi_probe,
+@@ -819,6 +911,8 @@ static void apple_cio_stop(struct apple_cio *acio)
+ 			 "Failed to shutdown M3 RTKit, continuing ACIO shutdown anyway\n");
+ 	apple_rtkit_free(acio->rtk);
+ 
++	WRITE_ONCE(acio->retain_power, false);
++
+ 	/* Finally, remove the links to the PD domains to power everything off */
+ 	for (i = 0; i < acio->pd_list->num_pds; i++) {
+ 		if (acio->pd_list->pd_links[i])
+@@ -866,6 +960,8 @@ static int apple_cio_start(struct apple_cio *acio)
+ 		dev_info(acio->dev, "PCIe-C reset before ACIO start\n");
+ 	}
+ 
++	WRITE_ONCE(acio->retain_power, true);
++
+ 	/* Create device links to the power domains in order to power them on */
+ 	for (i = 0; i < acio->pd_list->num_pds; i++) {
+ 		link = device_link_add(acio->dev, acio->pd_list->pd_devs[i],
+@@ -975,6 +1071,7 @@ static int apple_cio_start(struct apple_cio *acio)
+ err_free_rtkit:
+ 	apple_rtkit_free(acio->rtk);
+ remove_links:
++	WRITE_ONCE(acio->retain_power, false);
+ 	/* Cut power to reset the entire block  */
+ 	for (i = 0; i < acio->pd_list->num_pds; i++) {
+ 		if (acio->pd_list->pd_links[i])
+@@ -1187,6 +1284,10 @@ static int apple_cio_probe(struct platform_device *pdev)
+ 	else if (ret < 3)
+ 		return dev_err_probe(dev, -EINVAL, "Not enough PM domains\n");
+ 
++	ret = apple_cio_init_power_retention(acio);
++	if (ret)
++		return dev_err_probe(dev, ret, "Unable to retain USB4 power domains\n");
++
+ 	ret = dp91_provider_init(acio);
+ 	if (ret)
+ 		return ret;
+@@ -1242,12 +1343,21 @@ static void apple_cio_remove(struct platform_device *pdev)
+ static int apple_cio_prepare(struct device *dev)
+ {
+ 	struct apple_cio *acio = dev_get_drvdata(dev);
++	unsigned int i;
+ 
+ 	guard(mutex)(&acio->lock);
++	if (!acio->current_cable_info)
++		return 0;
+ 
+-	if (acio->current_cable_info) {
+-		dev_err(dev, "unable to suspend while a USB4/Thunderbolt connection is active\n");
+-		return -EBUSY;
++	/* Retained state is only supported for suspend-to-idle. */
++	if (pm_suspend_target_state != PM_SUSPEND_TO_IDLE)
++		return -EOPNOTSUPP;
++	if (!READ_ONCE(acio->retain_power))
++		return -EIO;
++	for (i = 0; i < acio->pd_list->num_pds; i++) {
++		if (!dev_pm_genpd_is_on(acio->pd_list->pd_devs[i]))
++			return dev_err_probe(dev, -EIO,
++					     "Active USB4 power domain is off\n");
+ 	}
+ 
+ 	return 0;
+diff --git a/drivers/thunderbolt/domain.c b/drivers/thunderbolt/domain.c
+index 39f411031..16111ffdf 100644
+--- a/drivers/thunderbolt/domain.c
++++ b/drivers/thunderbolt/domain.c
+@@ -588,6 +588,7 @@ int tb_domain_freeze_noirq(struct tb *tb)
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_FOR_MODULES(tb_domain_freeze_noirq, "thunderbolt_apple");
+ 
+ int tb_domain_thaw_noirq(struct tb *tb)
+ {
+@@ -601,6 +602,7 @@ int tb_domain_thaw_noirq(struct tb *tb)
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_FOR_MODULES(tb_domain_thaw_noirq, "thunderbolt_apple");
+ 
+ void tb_domain_complete(struct tb *tb)
+ {
+-- 
+2.53.0
+

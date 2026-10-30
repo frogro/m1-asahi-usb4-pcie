@@ -1,0 +1,27 @@
+{
+  "patch_count": 29,
+  "base": "f7734f4c91c0f47d9e762786968057bec99a0788",
+  "previous_series_head": "3c1f82464b54cf6f6619dbdeb884b412c059b585",
+  "source_head": "3db8cee06e739ec4fe7c695313cdc6c45e887ef7",
+  "fresh_replay_head": "89692ee143c3be9a304d0cb4a9fbf93dfe0e9411",
+  "tree": "cbc719e93e2c4abd48c5bd0597d5f5eb3172728b",
+  "fresh_replay_matches": true,
+  "prior_26_patch_files_unchanged": true,
+  "verified_preimages": 45,
+  "verified_postimages": 45,
+  "diff_check": "passed",
+  "changes_relative_to_26_patches": [
+    "Documentation/gpu/apple-usb4-consolidation.rst",
+    "drivers/phy/apple/atc.c",
+    "drivers/thunderbolt/apple.c",
+    "drivers/thunderbolt/domain.c"
+  ],
+  "kconfig_device_tree_unchanged_since_usb4sd2": true,
+  "running_config_preservation": "enforced by CI check-config.py after olddefconfig; pending for usb4sd3",
+  "affected_objects": "compiled; suspend-integration compile-final.log",
+  "hardware_evidence": "matched-module tests154-157; full 29-patch kernel not yet booted",
+  "build_release": "7.2.12-usb4sd3",
+  "build_cache_count": 0,
+  "build_mode": "clean full Image/modules/DTBs",
+  "installation": "none"
+}

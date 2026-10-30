@@ -1,20 +1,10 @@
-A locally prepared **29-patch suspend candidate** is available in
-`consolidated/20261030/series-with-suspend`. Its three follow-up patches replace
-the global retention test helper with automatic PHY/ACIO power-domain handling
-and NHI suspend/resume. Matched module tests154–157 passed; a boot of the entire
-29-patch kernel is still pending. The existing26-patch build remains preserved.
-See `consolidated/20261030/suspend-followup/README.txt` for evidence and limits.
-
-Current consolidated revision: **26 patches / usb4sd2**, including the measured
-DP127 whole-dock lifecycle correction and DP128 opt-in DCP audio. The preceding
-22-patch usb4sd1 build does not contain these additions. Full combined hardware
-validation remains pending; eGPU changes and suspend implementation are excluded.
+Current consolidated revision: **29 patches / usb4sd3**. The existing 26 patches remain unchanged; patches 27–29 add automatic retained-power suspend-to-idle handling and its validation record. Matched module Tests154–157 passed; a hardware boot of the complete combined kernel is pending. The previous usb4sd2 build and release remain preserved. Experimental eGPU/TTM and reset-ACK classification changes are excluded.
 
 # Apple Silicon USB4 / Thunderbolt PCIe bring-up
 
 ## Consolidated full-kernel build (30 October 2026)
 
-The current build-only integration is documented in [build/README.md](build/README.md). It combines 22 storage, PCIe/USB4 and dock-display patches on UbuntuAsahi commit `f7734f4c91c0f47d9e762786968057bec99a0788`, using the running Ubuntu kernel configuration. Experimental eGPU changes are excluded. The older prototype below is retained as historical evidence.
+The current build-only integration is documented in [build/README.md](build/README.md). It combines 29 storage, PCIe/USB4, dock-display/audio and retained-power suspend patches on UbuntuAsahi commit `f7734f4c91c0f47d9e762786968057bec99a0788`, using the running Ubuntu kernel configuration. Experimental eGPU changes are excluded. The older prototype below is retained as historical evidence.
 
 Private development snapshot for Mac mini M1 (J274), Ubuntu Asahi, and subsequent Googlebook integration.
 

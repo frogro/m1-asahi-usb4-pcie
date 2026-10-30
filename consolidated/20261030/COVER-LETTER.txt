@@ -1,38 +1,36 @@
-Subject: [RFC PATCH 00/26] Apple M1 USB4 native PCIe storage and dock display integration
+Subject: [RFC PATCH 00/29] Apple M1 USB4 PCIe storage, dock display and retained-power suspend
 
-This downstream review series consolidates the measured M1 native PCIe storage
-path and the Test128 dock-display path. It combines PCIe-C initialization,
-DART/MSI safety, Type-C transitions, firmware-node port association and topology
-notifications with DCP/DP-IN routing and display hotplug callbacks.
+This downstream series combines the measured native PCIe storage path,
+Test128 dock display/audio lifecycle, and automatic retained-power s2idle
+coordination. Patches 1–26 are unchanged from usb4sd2. Patches 27–29 retain
+active PHY/ACIO domains, coordinate NHI control DMA around DART system PM,
+and document validation. No user-selected diagnostic suspend mode is needed.
 
-The ordinary NVMe driver is unchanged. AMDGPU, TTM, GPU audio and application
-patches are not part of this series. Suspend remains explicitly deferred; the
-existing reset ACK diagnostic ambiguity is not presented as solved.
+Base: UbuntuAsahi/linux f7734f4c91c0f47d9e762786968057bec99a0788.
+The full series is replayed against that actual Git commit, with preimage,
+patch and final-content checks. The older sparse reconstruction is provenance,
+not a replacement upstream history. See validation/usb4sd3-replay.json.
 
-Target base: UbuntuAsahi/linux f7734f4c91c0f47d9e762786968057bec99a0788.
-The original preparation used a reconstructed matching source package. All 26
-patches now also replay on the actual pinned Git commit with an identical tree.
-Use apply-to-checkout.py to verify each preimage before replaying on a fork. Do not upload the sparse reconstruction as a
-replacement upstream history.
+The ordinary NVMe driver and firmware are unchanged. Experimental AMDGPU,
+TTM, Radeon audio, UART/watchdog and reset-ACK classification changes are
+excluded. Existing measured storage policy remains in config/. DCP audio
+remains opt-in through appledrm.hdmi_audio=1.
 
-Original unmodified MSI and EPIC commits preserve their authors and trailers.
-The PCIe-C and DT adaptations retain copyright and credit their reference work;
-reference patch files are included in provenance. The local adaptations and
-consolidation are AI-assisted and are not claimed to have upstream endorsement.
+Tests154–157 used matched diagnostic modules with the new PM logic: late/noirq
+rehearsal, real s2idle with power-button wake, release of retained power on
+ACIO shutdown/start, and real s2idle with asynchronous device PM. HDMI and
+fixed-range hashes of TB3 NVMe, USB/UAS storage and SD passed. These results
+do not replace a combined-kernel boot. The previous 26-patch full build passed
+compilation/module checks; the new 29-patch full build and hardware regression
+are tracked separately.
 
-Validation: fresh replay of all 26 patches matches the prepared tree;
-olddefconfig and compilation of all affected translation units in the complete
-source tree pass; J274 DT compiles and matches the measured storage/display
-relationships. No final vmlinux link or combined hardware boot is claimed.
-Earlier SSD read/write/hotplug and dock display tests are recorded separately.
+Active-link hibernation/deeper sleep and restoration after full controller
+power loss remain unsupported. Active dock-display sleep, native USB4 NVMe,
+device changes during sleep, post-resume writes and power draw need further
+validation. The known DCP PMU diagnostic is not declared fixed.
 
-Known review work: diagnostic names/interfaces and binding documentation,
-checkpatch/style, local DCO decisions, final full-build and hardware regression.
-The integration retains the measured storage policy as explicit boot parameters.
-
-See README.txt, series, config/, provenance/ and validation/ for details.
-
-Patches 23--26 add shared-PHY lifetime, whole-controller display retirement,
-J274 external DCP audio topology and the DP127/128 validation record. Audio is
-opt-in through appledrm.hdmi_audio=1; no AMDGPU/TTM/Radeon audio changes.
-Combined full-kernel hardware validation is still pending.
+Original authors and trailers of unchanged imported work are preserved.
+References are retained under provenance/. Local adaptations and consolidation
+are AI-assisted; upstream endorsement and DCO signoffs are not fabricated.
+Diagnostic names/interfaces, bindings, style and submission readiness remain
+review work. No upstream PR is created by this build workflow.

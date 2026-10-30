@@ -24,6 +24,6 @@
 0024-thunderbolt-apple-retire-display-clients-before-cont.patch
 0025-arm64-dts-apple-enable-J274-external-DCP-audio-endpo.patch
 0026-docs-record-whole-dock-hotplug-and-opt-in-DCP-audio-.patch
-suspend-followup/0027-phy-apple-retain-active-USB4-lane-state-across-s2idl.patch
-suspend-followup/0028-thunderbolt-apple-coordinate-retained-power-system-s.patch
-suspend-followup/0029-docs-record-retained-power-USB4-suspend-integration-.patch
+0027-phy-apple-retain-active-USB4-lane-state-across-s2idl.patch
+0028-thunderbolt-apple-coordinate-retained-power-system-s.patch
+0029-docs-record-retained-power-USB4-suspend-integration-.patch
