@@ -13,7 +13,7 @@ The new release is `7.2.12-usb4sd1`. Existing enabled options must remain unchan
 
 ## Outputs
 
-GitHub Actions stores the results for 14 days:
+The workflow stores results as assets of a draft release in this private repository. It does not use Actions artifact or cache storage. Files exceeding the release asset limit are split into numbered `.partNNN` pieces; concatenate them in numeric order before extraction.
 
 - `linux-7.2.12-usb4sd1-arm64.tar.zst`: kernel Image, System.map, configuration, DTBs and all matching staged modules, with module debug symbols stripped and BTF retained.
 - Compressed `vmlinux` with the configured debug information.

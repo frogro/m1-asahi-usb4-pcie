@@ -2,7 +2,7 @@ name: Consolidated M1 kernel (build only)
 on:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: consolidated-m1-full-build
   cancel-in-progress: false
@@ -30,12 +30,23 @@ jobs:
           fi
       - name: Full Image, modules and DTBs
         run: build/full-kernel.sh
-      - name: Save build outputs and diagnostics
+      - name: Save outputs to a private draft release (no Actions artifacts)
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: consolidated-m1-kernel-${{ github.run_number }}
-          path: artifacts/
-          if-no-files-found: warn
-          compression-level: 0
-          retention-days: 14
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          tag="kernel-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          printf 'Private build-only output. No deployment.\nRun: %s/%s/actions/runs/%s\nCommit: %s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_SHA" > artifacts/RUN.txt
+          if test -f artifacts/RESULT.txt; then
+            cp artifacts/RESULT.txt artifacts/release-notes.txt
+          else
+            printf 'Build incomplete or failed. Diagnostics only; not an installable verified kernel.\n' > artifacts/release-notes.txt
+          fi
+          cat artifacts/RUN.txt >> artifacts/release-notes.txt
+          python3 build/prepare-assets.py
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Kernel build ${GITHUB_RUN_ID} (not installed)" --notes-file artifacts/release-notes.txt
+          find artifacts -maxdepth 1 -type f -print0 | xargs -0 -n1 gh release upload "$tag" --repo "$GITHUB_REPOSITORY"
+          printf 'Private draft release: %s/%s/releases\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" >> "$GITHUB_STEP_SUMMARY"
