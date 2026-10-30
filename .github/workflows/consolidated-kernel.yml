@@ -1,6 +1,12 @@
 name: Consolidated M1 kernel (build only)
 on:
   workflow_dispatch:
+    inputs:
+      include_egpu:
+        description: 'Build experimental 42-patch eGPU integration (hardware validation pending)'
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: write
 concurrency:
@@ -31,6 +37,8 @@ jobs:
             exit 1
           fi
       - name: Full Image, modules and DTBs
+        env:
+          INCLUDE_EGPU: ${{ inputs.include_egpu }}
         run: build/full-kernel.sh
       - name: Save outputs to a private draft release (no Actions artifacts)
         if: always()

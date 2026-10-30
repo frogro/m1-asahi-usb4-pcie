@@ -1,0 +1,20 @@
+[
+  {
+    "original_file": "pr188-04-original.patch",
+    "exported_file": "0030-drm-amdgpu-report-no-CPU-visible-VRAM-on-non-posted-.patch",
+    "stable_patch_id": "16749b11901d92749ce685edc8371789d3f65567",
+    "original_author_preserved": true
+  },
+  {
+    "original_file": "pr188-05-original.patch",
+    "exported_file": "0031-drm-amdgpu-place-PSP-CPU-visible-buffers-in-GTT-behi.patch",
+    "stable_patch_id": "78b6ffc9577a429157da568d8677d2ad0a8ac3df",
+    "original_author_preserved": true
+  },
+  {
+    "original_file": "pr188-07-original.patch",
+    "exported_file": "0032-drm-amdgpu-move-a-CPU-faulted-VRAM-BO-to-GTT-behind-.patch",
+    "stable_patch_id": "d3b5ed60973b13376b7b9da5b6f788678884998e",
+    "original_author_preserved": true
+  }
+]

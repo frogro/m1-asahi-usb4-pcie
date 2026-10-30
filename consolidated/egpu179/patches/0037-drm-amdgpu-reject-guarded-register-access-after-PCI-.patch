@@ -1,0 +1,33 @@
+From 9113bf774ce10bf6d0c6d8ad46ed9d44c97ea171 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:57 +0100
+Subject: [PATCH 37/42] drm/amdgpu: reject guarded register access after PCI
+ disconnect
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_device.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+index 83bfeb9..9084eb5 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+@@ -898,6 +898,14 @@ void amdgpu_device_vram_access(struct amdgpu_device *adev, loff_t pos,
+ /* Check if hw access should be skipped because of hotplug or device error */
+ bool amdgpu_device_skip_hw_access(struct amdgpu_device *adev)
+ {
++	/* The endpoint can be gone before driver removal reaches MMIO teardown. */
++	if (pci_dev_is_disconnected(adev->pdev)) {
++		dev_info_once(adev->dev,
++			"test166 blocked GPU register access after PCI disconnect, caller=%pS\n",
++			__builtin_return_address(0));
++		return true;
++	}
++
+ 	if (adev->no_hw_access)
+ 		return true;
+ 
+-- 
+2.53.0
+

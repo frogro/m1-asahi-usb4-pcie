@@ -1,0 +1,149 @@
+From 0d16176cff8fb33c8e480504ceab5385dac2a7e5 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:57 +0100
+Subject: [PATCH 41/42] drm/amd/display: retire offline flips and release HDCP
+ connector references
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_device.c    | 40 +++++++++++++++++++
+ .../gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c | 11 ++++-
+ .../amd/display/amdgpu_dm/amdgpu_dm_hdcp.c    | 31 +++++++++++---
+ 3 files changed, 75 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+index 9084eb5..51723c7 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+@@ -39,6 +39,7 @@
+ #include <linux/nospec.h>
+ 
+ #include <drm/drm_atomic_helper.h>
++#include <drm/drm_vblank.h>
+ #include <drm/drm_client_event.h>
+ #include <drm/drm_crtc_helper.h>
+ #include <drm/drm_probe_helper.h>
+@@ -4377,6 +4378,44 @@ static void amdgpu_device_unmap_mmio(struct amdgpu_device *adev)
+ 	}
+ }
+ 
++/*
++ * A physically removed DC device cannot generate another page-flip interrupt.
++ * Retire events already owned by the IRQ path before atomic shutdown waits on
++ * their commits. Keep the normal atomic shutdown and object cleanup intact.
++ */
++static void amdgpu_device_retire_disconnected_flips(struct amdgpu_device *adev)
++{
++	struct drm_device *dev = adev_to_drm(adev);
++	struct drm_crtc *crtc;
++	unsigned long flags;
++	unsigned int retired = 0;
++
++	if (!pci_dev_is_disconnected(adev->pdev) ||
++	    !amdgpu_device_has_dc_support(adev))
++		return;
++
++	drm_for_each_crtc(crtc, dev) {
++		struct amdgpu_crtc *acrtc = to_amdgpu_crtc(crtc);
++
++		spin_lock_irqsave(&dev->event_lock, flags);
++		if (acrtc->event) {
++			struct drm_pending_vblank_event *event = acrtc->event;
++
++			acrtc->event = NULL;
++			acrtc->pflip_status = AMDGPU_FLIP_NONE;
++			drm_crtc_send_vblank_event(crtc, event);
++			drm_crtc_vblank_put(crtc);
++			retired++;
++		}
++		spin_unlock_irqrestore(&dev->event_lock, flags);
++
++		/* Also retire events queued on the DRM vblank event list. */
++		drm_crtc_vblank_off(crtc);
++	}
++	dev_info(adev->dev, "test174 retired %u disconnected display events\n",
++		 retired);
++}
++
+ /**
+  * amdgpu_device_fini_hw - tear down the driver
+  *
+@@ -4410,6 +4449,7 @@ void amdgpu_device_fini_hw(struct amdgpu_device *adev)
+ 	/* disable all interrupts */
+ 	amdgpu_irq_disable_all(adev);
+ 	if (adev->mode_info.mode_config_initialized) {
++		amdgpu_device_retire_disconnected_flips(adev);
+ 		if (!drm_drv_uses_atomic_modeset(adev_to_drm(adev)))
+ 			drm_helper_force_disable_all(adev_to_drm(adev));
+ 		else
+diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+index 90889b4..b7c37fd 100644
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+@@ -11369,8 +11369,15 @@ static void amdgpu_dm_commit_streams(struct drm_atomic_commit *state,
+ 
+ 	dm_enable_per_frame_crtc_master_sync(dc_state);
+ 	mutex_lock(&dm->dc_lock);
+-	dc_exit_ips_for_hw_access(dm->dc);
+-	WARN_ON(!dc_commit_streams(dm->dc, &params));
++	/* The removed display engine cannot execute a stream commit. Keep
++	 * the surrounding stream/IRQ reference updates and atomic cleanup.
++	 */
++	if (!pci_dev_is_disconnected(adev->pdev)) {
++		dc_exit_ips_for_hw_access(dm->dc);
++		WARN_ON(!dc_commit_streams(dm->dc, &params));
++	} else {
++		dev_info(adev->dev, "test175 skipped offline DC hardware stream commit\n");
++	}
+ 
+ 	bool frl_stream_found = false;
+ 
+diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_hdcp.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_hdcp.c
+index acb3805..202e268 100644
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_hdcp.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_hdcp.c
+@@ -484,15 +484,36 @@ static void event_cpirq(struct work_struct *work)
+ 
+ void hdcp_destroy(struct kobject *kobj, struct hdcp_workqueue *hdcp_work)
+ {
+-	int i = 0;
++	unsigned int conn_index, released = 0;
++	int i;
+ 
++	sysfs_remove_bin_file(kobj, &hdcp_work[0].attr);
+ 	for (i = 0; i < hdcp_work->max_link; i++) {
+-		cancel_delayed_work_sync(&hdcp_work[i].callback_dwork);
+-		cancel_delayed_work_sync(&hdcp_work[i].watchdog_timer_dwork);
+-		cancel_delayed_work_sync(&hdcp_work[i].property_validate_dwork);
++		struct hdcp_workqueue *work = &hdcp_work[i];
++
++		/* The caller has stopped HPD/CPIRQ producers. The delayed
++		 * callbacks can requeue each other, so disable them before
++		 * releasing the connector references they can access.
++		 */
++		cancel_work_sync(&work->cpirq_work);
++		disable_delayed_work_sync(&work->callback_dwork);
++		disable_delayed_work_sync(&work->watchdog_timer_dwork);
++		disable_delayed_work_sync(&work->property_validate_dwork);
++		cancel_work_sync(&work->property_update_work);
++
++		for (conn_index = 0; conn_index < AMDGPU_DM_MAX_DISPLAY_COUNT;
++		     conn_index++) {
++			struct amdgpu_dm_connector *aconnector = work->aconnector[conn_index];
++
++			if (!aconnector)
++				continue;
++			work->aconnector[conn_index] = NULL;
++			drm_connector_put(&aconnector->base);
++			released++;
++		}
+ 	}
+ 
+-	sysfs_remove_bin_file(kobj, &hdcp_work[0].attr);
++	pr_info("test176 HDCP cleanup released %u connector references\n", released);
+ 	kfree(hdcp_work->srm);
+ 	kfree(hdcp_work->srm_temp);
+ 	kfree(hdcp_work);
+-- 
+2.53.0
+

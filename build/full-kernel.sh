@@ -35,6 +35,13 @@ git -C "$work/linux" checkout --detach FETCH_HEAD
 git -C "$work/linux" config user.name 'Kernel Build Automation'
 git -C "$work/linux" config user.email 'kernel-build@users.noreply.github.com'
 python3 "$repo/consolidated/20261030/apply-to-checkout.py" "$work/linux" --apply
+revision=usb4sd3
+if [[ "${INCLUDE_EGPU:-false}" == true ]]; then
+ python3 "$repo/consolidated/egpu179/apply.py" "$work/linux"
+ revision=usb4sd4-egpu1
+ cp "$repo/consolidated/egpu179/README.md" "$repo/artifacts/EGPU-LIMITS.md"
+ cp "$repo/consolidated/egpu179/replay.json" "$repo/artifacts/egpu-replay.json"
+fi
 cd "$work/linux"
 # Match the public certificate concatenation in debian/rules, including flavour overrides.
 python3 - <<'CERTS'
@@ -46,7 +53,7 @@ for kind,output in [('certs','canonical-certs.pem'),('revoked-certs','canonical-
  Path('debian',output).write_bytes(b''.join(next(d/n for d in dirs if (d/n).is_file()).read_bytes() for n in names))
 CERTS
 cp "$repo/build/running-kernel.config" .config
-scripts/config --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-usb4sd3' --set-str VERSION_SIGNATURE 'UbuntuAsahi 7.2.12 usb4sd3 consolidated RFC 20261030'
+scripts/config --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION "-$revision" --set-str VERSION_SIGNATURE "UbuntuAsahi 7.2.12 $revision consolidated RFC 20261030"
 make olddefconfig
 python3 "$repo/build/check-config.py" "$repo/build/running-kernel.config" .config "$repo/artifacts/config-comparison.json"
 cp .config "$repo/artifacts/kernel.config"
@@ -54,7 +61,7 @@ cp "$repo/consolidated/20261030/config/tested-storage-boot-parameters.txt" "$rep
 cp "$repo/consolidated/20261030/config/tested-display-audio-options.txt" "$repo/artifacts/"
 make -s kernelrelease | tee "$repo/artifacts/kernel-release.txt"
 release=$(cat "$repo/artifacts/kernel-release.txt")
-[[ "$release" == 7.2.12-usb4sd3 ]]
+[[ "$release" == "7.2.12-$revision" ]]
 git log --format=fuller "$base"..HEAD > "$repo/artifacts/applied-commits.txt"
 git diff --check "$base"..HEAD
 make -j2 Image modules dtbs

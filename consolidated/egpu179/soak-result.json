@@ -1,0 +1,19 @@
+{
+  "duration_seconds": 720.0,
+  "samples": 36,
+  "ucsi_queries_passed": 36,
+  "gpu_compute_passes": 12,
+  "values_per_compute_pass": 1048576,
+  "policy_sequence": [
+    "auto 4min",
+    "on 4min",
+    "auto 4min"
+  ],
+  "auto_runtime_resume_queries": 24,
+  "restored_power_control": "auto",
+  "connectors": "both connected in every sample",
+  "new_gpu_or_ucsi_errors": "none observed in kernel journal during soak",
+  "physical_hotplug_during_soak": false,
+  "visual_confirmation": "user confirmed both images before autonomous soak; no human visual observation claimed for entire soak",
+  "result": "passed"
+}

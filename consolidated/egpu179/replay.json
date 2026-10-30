@@ -1,0 +1,25 @@
+{
+  "base": "f7734f4c91c0f47d9e762786968057bec99a0788",
+  "prior_patches": 29,
+  "egpu_patches": 13,
+  "total_patches": 42,
+  "replay": "passed against exact pinned-source subset after all 29 prior patches",
+  "full_kernel_compile": "pending",
+  "combined_hardware_boot": "not tested",
+  "independent_extension_replay": "passed",
+  "source_diff_whitespace_check": "passed",
+  "imported_patch_ids": "match original PR188 patches 4,5,7",
+  "direct_tested_source_hash_matches": 25,
+  "workflow_shell_syntax": "passed",
+  "installer": "none",
+  "test179_module_sha256": "3e5cb6845da5b8381553a3842e08ec31ff785b6d8380e98d98821d37d2541163",
+  "amdgpu176_module_sha256": "c09675c07bcf0c7d991524d536d50d42d1cc809a3d8c2cb846607cd0f59340dd",
+  "test179_physical_removals": 2,
+  "usb_c_image_and_mac_hdmi_user_confirmation": "passed after both reconnects",
+  "remaining_diagnostics": [
+    "UCSI PPM initialization timeout after first reconnect",
+    "DMCUB diagnostic during first offline display teardown"
+  ],
+  "i2c_runtime_policy_during_physical_removal": "on",
+  "soak": "passed; see soak-result.json"
+}

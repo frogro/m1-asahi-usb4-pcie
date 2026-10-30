@@ -1,0 +1,100 @@
+From 28373bc409c6f8dcde365b0eab50d5891a842dfb Mon Sep 17 00:00:00 2001
+From: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+Date: Thu, 22 Oct 2026 17:56:47 -0500
+Subject: [PATCH 30/42] drm/amdgpu: report no CPU-visible VRAM on non-posted
+ hosts
+
+Userspace that maps a VRAM buffer through a non-posted BAR gets
+Device-nGnRnE memory, where ordinary memcpy() faults. Report zero
+CPU-accessible VRAM in the INFO and MEMORY_INFO ioctls so that Mesa does not
+offer a host-visible device-local heap, and create buffers that ask for
+VRAM with CPU access required in GTT instead.
+
+The other creation flags are kept. AMDGPU_GEM_CREATE_VRAM_CONTIGUOUS only
+changes a VRAM placement (amdgpu_bo_placement_from_domain() and
+amdgpu_bo_pin()), so it has no effect on a GTT-only buffer.
+
+No change on hosts without non-posted BARs.
+
+Signed-off-by: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_gem.c | 10 ++++++++
+ drivers/gpu/drm/amd/amdgpu/amdgpu_kms.c | 34 +++++++++++++++----------
+ 2 files changed, 30 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_gem.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_gem.c
+index f754a4a..6421b89 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_gem.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_gem.c
+@@ -175,6 +175,16 @@ int amdgpu_gem_object_create(struct amdgpu_device *adev, unsigned long size,
+ 	struct amdgpu_bo_param bp;
+ 	int r;
+ 
++	/*
++	 * Non-posted VRAM requires kernel I/O accessors; userspace needs GTT.
++	 */
++	if ((flags & AMDGPU_GEM_CREATE_CPU_ACCESS_REQUIRED) &&
++	    (initial_domain & AMDGPU_GEM_DOMAIN_VRAM) &&
++	    (pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED)) {
++		flags &= ~AMDGPU_GEM_CREATE_CPU_ACCESS_REQUIRED;
++		initial_domain = AMDGPU_GEM_DOMAIN_GTT;
++	}
++
+ 	memset(&bp, 0, sizeof(bp));
+ 	*obj = NULL;
+ 	flags |= AMDGPU_GEM_CREATE_VRAM_WIPE_ON_RELEASE;
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_kms.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_kms.c
+index 872cce1..4c4f5c6 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_kms.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_kms.c
+@@ -827,10 +827,13 @@ int amdgpu_info_ioctl(struct drm_device *dev, void *data, struct drm_file *filp)
+ 		vram_gtt.vram_size = adev->gmc.real_vram_size -
+ 			atomic64_read(&adev->vram_pin_size) -
+ 			AMDGPU_VM_RESERVED_VRAM;
+-		vram_gtt.vram_cpu_accessible_size =
+-			min(adev->gmc.visible_vram_size -
+-			    atomic64_read(&adev->visible_pin_size),
+-			    vram_gtt.vram_size);
++		if (pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED)
++			vram_gtt.vram_cpu_accessible_size = 0;
++		else
++			vram_gtt.vram_cpu_accessible_size =
++				min(adev->gmc.visible_vram_size -
++				    atomic64_read(&adev->visible_pin_size),
++				    vram_gtt.vram_size);
+ 		vram_gtt.gtt_size = ttm_manager_type(&adev->mman.bdev, TTM_PL_TT)->size;
+ 		vram_gtt.gtt_size -= atomic64_read(&adev->gart_pin_size);
+ 		return copy_to_user(out, &vram_gtt,
+@@ -852,16 +855,19 @@ int amdgpu_info_ioctl(struct drm_device *dev, void *data, struct drm_file *filp)
+ 				ttm_resource_manager_usage(vram_man) : 0;
+ 		mem.vram.max_allocation = mem.vram.usable_heap_size * 3 / 4;
+ 
+-		mem.cpu_accessible_vram.total_heap_size =
+-			adev->gmc.visible_vram_size;
+-		mem.cpu_accessible_vram.usable_heap_size =
+-			min(adev->gmc.visible_vram_size -
+-			    atomic64_read(&adev->visible_pin_size),
+-			    mem.vram.usable_heap_size);
+-		mem.cpu_accessible_vram.heap_usage =
+-			amdgpu_vram_mgr_vis_usage(&adev->mman.vram_mgr);
+-		mem.cpu_accessible_vram.max_allocation =
+-			mem.cpu_accessible_vram.usable_heap_size * 3 / 4;
++		if (!(pci_resource_flags(adev->pdev, 0) &
++		      IORESOURCE_MEM_NONPOSTED)) {
++			mem.cpu_accessible_vram.total_heap_size =
++				adev->gmc.visible_vram_size;
++			mem.cpu_accessible_vram.usable_heap_size =
++				min(adev->gmc.visible_vram_size -
++				    atomic64_read(&adev->visible_pin_size),
++				    mem.vram.usable_heap_size);
++			mem.cpu_accessible_vram.heap_usage =
++				amdgpu_vram_mgr_vis_usage(&adev->mman.vram_mgr);
++			mem.cpu_accessible_vram.max_allocation =
++				mem.cpu_accessible_vram.usable_heap_size * 3 / 4;
++		}
+ 
+ 		mem.gtt.total_heap_size = gtt_man->size;
+ 		mem.gtt.usable_heap_size = mem.gtt.total_heap_size -
+-- 
+2.53.0
+

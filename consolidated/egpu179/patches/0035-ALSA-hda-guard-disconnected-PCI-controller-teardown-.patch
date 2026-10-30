@@ -1,0 +1,147 @@
+From e5e7a9c8ed9dba21bf179d4f2676b5e84439f10e Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:56 +0100
+Subject: [PATCH 35/42] ALSA: hda: guard disconnected PCI controller teardown
+ and commands
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ sound/hda/controllers/intel.c | 57 +++++++++++++++++++++++++++++++++--
+ sound/hda/controllers/intel.h |  4 +++
+ 2 files changed, 59 insertions(+), 2 deletions(-)
+
+diff --git a/sound/hda/controllers/intel.c b/sound/hda/controllers/intel.c
+index 28c55c5..5974b16 100644
+--- a/sound/hda/controllers/intel.c
++++ b/sound/hda/controllers/intel.c
+@@ -785,6 +785,45 @@ static void azx_clear_irq_pending(struct azx *chip)
+ 	}
+ }
+ 
++/* A removed PCI endpoint must not receive HDA MMIO or CORB commands. */
++static int azx_pci_send_cmd(struct hdac_bus *bus, unsigned int val)
++{
++	struct azx *chip = bus_to_azx(bus);
++	struct hda_intel *hda = container_of(chip, struct hda_intel, chip);
++
++	if (pci_dev_is_disconnected(chip->pci)) {
++		dev_info_once(&chip->pci->dev,
++			      "test159 blocked HDA command after PCI disconnect\n");
++		return -ENODEV;
++	}
++	return hda->common_bus_ops->command(bus, val);
++}
++
++static int azx_pci_get_response(struct hdac_bus *bus, unsigned int addr,
++			      unsigned int *res)
++{
++	struct azx *chip = bus_to_azx(bus);
++	struct hda_intel *hda = container_of(chip, struct hda_intel, chip);
++
++	if (pci_dev_is_disconnected(chip->pci)) {
++		if (res)
++			*res = ~0U;
++		dev_info_once(&chip->pci->dev,
++			      "test159 blocked HDA response after PCI disconnect\n");
++		return -ENODEV;
++	}
++	return hda->common_bus_ops->get_response(bus, addr, res);
++}
++
++static irqreturn_t azx_pci_interrupt(int irq, void *dev_id)
++{
++	struct azx *chip = dev_id;
++
++	if (pci_dev_is_disconnected(chip->pci))
++		return IRQ_NONE;
++	return azx_interrupt(irq, dev_id);
++}
++
+ static int azx_acquire_irq(struct azx *chip, int do_disconnect)
+ {
+ 	struct hdac_bus *bus = azx_bus(chip);
+@@ -797,7 +836,7 @@ static int azx_acquire_irq(struct azx *chip, int do_disconnect)
+ 		chip->msi = 0;
+ 	}
+ 
+-	if (request_irq(chip->pci->irq, azx_interrupt,
++	if (request_irq(chip->pci->irq, azx_pci_interrupt,
+ 			chip->msi ? 0 : IRQF_SHARED,
+ 			chip->card->irq_descr, chip)) {
+ 		dev_err(chip->card->dev,
+@@ -977,6 +1016,8 @@ static bool azx_is_pm_ready(struct snd_card *card)
+ 	if (!card)
+ 		return false;
+ 	chip = card->private_data;
++	if (pci_dev_is_disconnected(chip->pci))
++		return false;
+ 	hda = container_of(chip, struct hda_intel, chip);
+ 	if (chip->disabled || hda->init_failed || !chip->running)
+ 		return false;
+@@ -1349,6 +1390,8 @@ static void azx_free(struct azx *chip)
+ 
+ 	if (hda->freed)
+ 		return;
++	dev_info(&pci->dev, "test159 HDA free: disconnected=%d chip_init=%d\n",
++		 pci_dev_is_disconnected(pci), bus->chip_init);
+ 
+ 	if (azx_has_pm_runtime(chip) && chip->running) {
+ 		pm_runtime_get_noresume(&pci->dev);
+@@ -1383,7 +1426,8 @@ static void azx_free(struct azx *chip)
+ 		}
+ 	}
+ 
+-	if (bus->chip_init) {
++	/* A disconnected endpoint cannot service controller MMIO. */
++	if (bus->chip_init && !pci_dev_is_disconnected(pci)) {
+ 		azx_clear_irq_pending(chip);
+ 		azx_stop_all_streams(chip);
+ 		azx_stop_chip(chip);
+@@ -1402,6 +1446,7 @@ static void azx_free(struct azx *chip)
+ 		snd_hdac_i915_exit(bus);
+ 
+ 	hda->freed = 1;
++	dev_info(&pci->dev, "test159 HDA free completed\n");
+ }
+ 
+ static int azx_dev_disconnect(struct snd_device *device)
+@@ -1830,6 +1875,12 @@ static int azx_create(struct snd_card *card, struct pci_dev *pci,
+ 	if (err < 0)
+ 		return err;
+ 
++	hda->common_bus_ops = azx_bus(chip)->ops;
++	hda->pci_bus_ops = *hda->common_bus_ops;
++	hda->pci_bus_ops.command = azx_pci_send_cmd;
++	hda->pci_bus_ops.get_response = azx_pci_get_response;
++	azx_bus(chip)->ops = &hda->pci_bus_ops;
++
+ 	/* use the non-cached pages in non-snoop mode */
+ 	if (!azx_snoop(chip))
+ 		azx_bus(chip)->dma_type = SNDRV_DMA_TYPE_DEV_WC;
+@@ -2450,6 +2501,8 @@ static void azx_remove(struct pci_dev *pci)
+ 	struct azx *chip;
+ 	struct hda_intel *hda;
+ 
++	dev_info(&pci->dev, "test159 HDA remove: disconnected=%d\n",
++		 pci_dev_is_disconnected(pci));
+ 	if (card) {
+ 		/* cancel the pending probing work */
+ 		chip = card->private_data;
+diff --git a/sound/hda/controllers/intel.h b/sound/hda/controllers/intel.h
+index 4efb3b0..96b9d29 100644
+--- a/sound/hda/controllers/intel.h
++++ b/sound/hda/controllers/intel.h
+@@ -9,6 +9,10 @@
+ struct hda_intel {
+ 	struct azx chip;
+ 
++	/* PCI-specific guards around the common HDA command callbacks. */
++	const struct hdac_bus_ops *common_bus_ops;
++	struct hdac_bus_ops pci_bus_ops;
++
+ 	/* sync probing */
+ 	struct completion probe_wait;
+ 	struct delayed_work probe_work;
+-- 
+2.53.0
+

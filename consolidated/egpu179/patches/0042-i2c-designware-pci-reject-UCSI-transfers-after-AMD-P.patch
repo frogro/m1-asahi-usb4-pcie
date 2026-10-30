@@ -1,0 +1,84 @@
+From 1042d76e5860f273214331863e0bc5e7937e9f71 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:57 +0100
+Subject: [PATCH 42/42] i2c: designware-pci: reject UCSI transfers after AMD
+ PCI disconnect
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/i2c/busses/i2c-designware-pcidrv.c | 40 ++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/drivers/i2c/busses/i2c-designware-pcidrv.c b/drivers/i2c/busses/i2c-designware-pcidrv.c
+index e6e1393..fddbeda 100644
+--- a/drivers/i2c/busses/i2c-designware-pcidrv.c
++++ b/drivers/i2c/busses/i2c-designware-pcidrv.c
+@@ -204,6 +204,30 @@ static const struct software_node dgpu_node = {
+ 	.properties = dgpu_properties,
+ };
+ 
++/* Keep the transfer guard local to each AMD PCI adapter. */
++struct dw_pci_guarded_algorithm {
++	struct i2c_algorithm algo;
++	const struct i2c_algorithm *original;
++};
++
++static int i2c_dw_pci_guarded_xfer(struct i2c_adapter *adap,
++				struct i2c_msg *msgs, int num)
++{
++	const struct dw_pci_guarded_algorithm *guard =
++		container_of(adap->algo, struct dw_pci_guarded_algorithm, algo);
++	struct dw_i2c_dev *dev = i2c_get_adapdata(adap);
++
++	/* UCSI unregister may submit a command after surprise removal. */
++	if (pci_dev_is_disconnected(to_pci_dev(dev->dev))) {
++		dev_info_ratelimited(dev->dev,
++			"test179 blocked I2C transfer after PCI disconnect: msgs=%d\n",
++			num);
++		return -ENODEV;
++	}
++
++	return guard->original->xfer(adap, msgs, num);
++}
++
+ static int i2c_dw_pci_probe(struct pci_dev *pdev,
+ 			    const struct pci_device_id *id)
+ {
+@@ -213,6 +237,7 @@ static int i2c_dw_pci_probe(struct pci_dev *pdev,
+ 	int r;
+ 	struct dw_pci_controller *controller;
+ 	struct dw_scl_sda_cfg *cfg;
++	struct dw_pci_guarded_algorithm *guard = NULL;
+ 
+ 	if (id->driver_data >= ARRAY_SIZE(dw_pci_controllers))
+ 		return dev_err_probe(device, -EINVAL, "Invalid driver data %ld\n",
+@@ -272,11 +297,26 @@ static int i2c_dw_pci_probe(struct pci_dev *pdev,
+ 	adap->class = 0;
+ 	adap->nr = controller->bus_num;
+ 
++	if ((dev->flags & MODEL_MASK) == MODEL_AMD_NAVI_GPU) {
++		guard = devm_kzalloc(device, sizeof(*guard), GFP_KERNEL);
++		if (!guard)
++			return -ENOMEM;
++	}
++
+ 	r = i2c_dw_probe(dev);
+ 	if (r)
+ 		return r;
+ 
+ 	if ((dev->flags & MODEL_MASK) == MODEL_AMD_NAVI_GPU) {
++		/* Install before creating the UCSI client; serialize transfers. */
++		i2c_lock_bus(adap, I2C_LOCK_ROOT_ADAPTER);
++		guard->original = adap->algo;
++		guard->algo = *adap->algo;
++		guard->algo.xfer = i2c_dw_pci_guarded_xfer;
++		adap->algo = &guard->algo;
++		i2c_unlock_bus(adap, I2C_LOCK_ROOT_ADAPTER);
++		dev_info(device, "test179 AMD PCI I2C transfer guard installed\n");
++
+ 		dev->slave = i2c_new_ccgx_ucsi(&dev->adapter, dev->irq, &dgpu_node);
+ 		if (IS_ERR(dev->slave)) {
+ 			i2c_del_adapter(&dev->adapter);
+-- 
+2.53.0
+

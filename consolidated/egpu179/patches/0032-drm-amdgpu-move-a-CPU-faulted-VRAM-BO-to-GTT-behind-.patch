@@ -1,0 +1,63 @@
+From e62109465febd05290b34e372c0aafd883bfd07f Mon Sep 17 00:00:00 2001
+From: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+Date: Thu, 22 Oct 2026 18:01:10 -0500
+Subject: [PATCH 32/42] drm/amdgpu: move a CPU-faulted VRAM BO to GTT behind a
+ non-posted BAR
+
+Userspace maps a VRAM buffer through the BAR as Device-nGnRnE memory.
+There, memcpy() and any unaligned store raise an alignment fault, so the
+first write from the Vulkan driver into such a buffer ended in SIGBUS
+(Mesa RADV, llama.cpp KV-cache initialisation). When the VRAM BAR is
+non-posted, a CPU fault on a VRAM buffer now moves the buffer to GTT and
+restricts its preferred and allowed domains to GTT.
+
+Two consequences. The move is permanent: a large VRAM-only buffer that
+userspace maps once stays in system memory behind the tunnel, so the GPU
+reaches it over the link. A pinned buffer cannot move and a CPU fault on it
+now fails with SIGBUS, where it used to map through the BAR. Scanout and
+cursor buffers are pinned in VRAM; no display was attached when this was
+tested, so that case is untested.
+
+No change when the BAR is not flagged non-posted.
+
+Signed-off-by: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_object.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_object.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_object.c
+index 7189377..dcec304 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_object.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_object.c
+@@ -1367,6 +1367,28 @@ vm_fault_t amdgpu_bo_fault_reserve_notify(struct ttm_buffer_object *bo)
+ 	/* Remember that this BO was accessed by the CPU */
+ 	abo->flags |= AMDGPU_GEM_CREATE_CPU_ACCESS_REQUIRED;
+ 
++	/*
++	 * Behind a non-posted BAR the CPU reaches VRAM as Device-nGnRnE memory, where memcpy() and unaligned stores in userspace take an
++	 * alignment fault. A BO the CPU faults on moves to GTT and stays there; a pinned BO cannot move.
++	 */
++	if (pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) {
++		if (bo->resource->mem_type != TTM_PL_VRAM)
++			return 0;
++		if (abo->tbo.pin_count > 0)
++			return VM_FAULT_SIGBUS;
++
++		abo->preferred_domains = AMDGPU_GEM_DOMAIN_GTT;
++		abo->allowed_domains = AMDGPU_GEM_DOMAIN_GTT;
++		amdgpu_bo_placement_from_domain(abo, AMDGPU_GEM_DOMAIN_GTT);
++		r = ttm_bo_validate(bo, &abo->placement, &ctx);
++		if (unlikely(r == -EBUSY || r == -ERESTARTSYS))
++			return VM_FAULT_NOPAGE;
++		if (unlikely(r) || bo->resource->mem_type == TTM_PL_VRAM)
++			return VM_FAULT_SIGBUS;
++		ttm_bo_move_to_lru_tail_unlocked(bo);
++		return 0;
++	}
++
+ 	if (amdgpu_res_cpu_visible(adev, bo->resource))
+ 		return 0;
+ 
+-- 
+2.53.0
+

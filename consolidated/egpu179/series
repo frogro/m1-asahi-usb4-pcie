@@ -1,0 +1,13 @@
+0030-drm-amdgpu-report-no-CPU-visible-VRAM-on-non-posted-.patch
+0031-drm-amdgpu-place-PSP-CPU-visible-buffers-in-GTT-behi.patch
+0032-drm-amdgpu-move-a-CPU-faulted-VRAM-BO-to-GTT-behind-.patch
+0033-drm-amdgpu-retain-tested-M1-non-posted-mapping-and-I.patch
+0034-drm-ttm-classify-non-posted-mappings-per-owning-PCI-.patch
+0035-ALSA-hda-guard-disconnected-PCI-controller-teardown-.patch
+0036-i2c-designware-pci-guard-offline-runtime-and-removal.patch
+0037-drm-amdgpu-reject-guarded-register-access-after-PCI-.patch
+0038-drm-amdgpu-select-no-hardware-teardown-after-surpris.patch
+0039-usb-xhci-retain-software-teardown-when-PCI-MMIO-is-u.patch
+0040-drm-amdgpu-skip-HIQ-hardware-unmap-during-offline-te.patch
+0041-drm-amd-display-retire-offline-flips-and-release-HDC.patch
+0042-i2c-designware-pci-reject-UCSI-transfers-after-AMD-P.patch

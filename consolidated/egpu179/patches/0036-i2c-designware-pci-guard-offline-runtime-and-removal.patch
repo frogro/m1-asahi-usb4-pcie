@@ -1,0 +1,92 @@
+From 080f4de207af2e67d0ac3e32de7935e381d2fb83 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:56 +0100
+Subject: [PATCH 36/42] i2c: designware-pci: guard offline runtime and removal
+ callbacks
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/i2c/busses/i2c-designware-pcidrv.c | 45 ++++++++++++++++++++--
+ 1 file changed, 41 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-designware-pcidrv.c b/drivers/i2c/busses/i2c-designware-pcidrv.c
+index 4682879..e6e1393 100644
+--- a/drivers/i2c/busses/i2c-designware-pcidrv.c
++++ b/drivers/i2c/busses/i2c-designware-pcidrv.c
+@@ -293,12 +293,35 @@ static int i2c_dw_pci_probe(struct pci_dev *pdev,
+ 	return 0;
+ }
+ 
++/* PCI hot removal can runtime-resume the device before ->remove(). */
++static int i2c_dw_pci_runtime_resume(struct device *device)
++{
++	if (pci_dev_is_disconnected(to_pci_dev(device))) {
++		dev_info_once(device, "test163 blocked I2C runtime resume after PCI disconnect\n");
++		return -ENODEV;
++	}
++	return i2c_dw_dev_pm_ops.runtime_resume(device);
++}
++
++static int i2c_dw_pci_runtime_suspend(struct device *device)
++{
++	if (pci_dev_is_disconnected(to_pci_dev(device)))
++		return 0;
++	return i2c_dw_dev_pm_ops.runtime_suspend(device);
++}
++
++/* Preserve all existing system-sleep callbacks; override only PCI runtime PM. */
++static struct dev_pm_ops i2c_dw_pci_pm_ops;
++
+ static void i2c_dw_pci_remove(struct pci_dev *pdev)
+ {
+ 	struct dw_i2c_dev *dev = pci_get_drvdata(pdev);
+ 	struct device *device = &pdev->dev;
+ 
+-	i2c_dw_disable(dev);
++	if (!pci_dev_is_disconnected(pdev))
++		i2c_dw_disable(dev);
++	else
++		dev_info(device, "test163 skipped I2C MMIO during disconnected removal\n");
+ 
+ 	pm_runtime_forbid(device);
+ 	pm_runtime_get_noresume(device);
+@@ -365,7 +388,8 @@ static void i2c_dw_pci_shutdown(struct pci_dev *pdev)
+ 		return;
+ 
+ 	pm_runtime_disable(&pdev->dev);
+-	if (!pm_runtime_status_suspended(&pdev->dev))
++	if (!pci_dev_is_disconnected(pdev) &&
++	    !pm_runtime_status_suspended(&pdev->dev))
+ 		i2c_dw_shutdown(i_dev);
+ }
+ 
+@@ -375,11 +399,24 @@ static struct pci_driver dw_i2c_driver = {
+ 	.remove		= i2c_dw_pci_remove,
+ 	.shutdown	= i2c_dw_pci_shutdown,
+ 	.driver         = {
+-		.pm	= pm_ptr(&i2c_dw_dev_pm_ops),
++		.pm	= pm_ptr(&i2c_dw_pci_pm_ops),
+ 	},
+ 	.id_table	= i2c_designware_pci_ids,
+ };
+-module_pci_driver(dw_i2c_driver);
++static int __init i2c_dw_pci_init(void)
++{
++	i2c_dw_pci_pm_ops = i2c_dw_dev_pm_ops;
++	i2c_dw_pci_pm_ops.runtime_suspend = i2c_dw_pci_runtime_suspend;
++	i2c_dw_pci_pm_ops.runtime_resume = i2c_dw_pci_runtime_resume;
++	return pci_register_driver(&dw_i2c_driver);
++}
++module_init(i2c_dw_pci_init);
++
++static void __exit i2c_dw_pci_exit(void)
++{
++	pci_unregister_driver(&dw_i2c_driver);
++}
++module_exit(i2c_dw_pci_exit);
+ 
+ MODULE_AUTHOR("Baruch Siach <baruch@tkos.co.il>");
+ MODULE_DESCRIPTION("Synopsys DesignWare PCI I2C bus adapter");
+-- 
+2.53.0
+

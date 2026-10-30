@@ -1,0 +1,31 @@
+From 669580659049f6e9c876064fcb907f2c0bb59cc3 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:57 +0100
+Subject: [PATCH 40/42] drm/amdgpu: skip HIQ hardware unmap during offline
+ teardown
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_amdkfd.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_amdkfd.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_amdkfd.c
+index 299baec..0777d29 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_amdkfd.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_amdkfd.c
+@@ -870,6 +870,12 @@ int amdgpu_amdkfd_unmap_hiq(struct amdgpu_device *adev, u32 doorbell_off,
+ 	struct amdgpu_ring *ring;
+ 	int r = 0;
+ 
++	/* No hardware queue remains to unmap after loss of the device. */
++	if (adev->no_hw_access) {
++		dev_info(adev->dev, "test171 skipped HIQ hardware unmap without GPU access\n");
++		return 0;
++	}
++
+ 	if (!kiq->pmf || !kiq->pmf->kiq_unmap_queues)
+ 		return -EINVAL;
+ 
+-- 
+2.53.0
+

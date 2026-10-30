@@ -1,0 +1,15 @@
+{
+  "0030-drm-amdgpu-report-no-CPU-visible-VRAM-on-non-posted-.patch": "b0a19e977e34bba80950bc6a32e277b5768f186d759ee61f3a8bf3937d71810e",
+  "0031-drm-amdgpu-place-PSP-CPU-visible-buffers-in-GTT-behi.patch": "c81bc706c0a46d85c7414c59983b175b945bf49d096c5a20f4c778c8fbe3a512",
+  "0032-drm-amdgpu-move-a-CPU-faulted-VRAM-BO-to-GTT-behind-.patch": "802a0dc742337602bd5a3e0856f46c2ff13ad76dd0ce203fe7b0af1a85611d65",
+  "0033-drm-amdgpu-retain-tested-M1-non-posted-mapping-and-I.patch": "b7c96d178768b4abd8d7a98ffc48369667e844333ce334938680a821f6d672db",
+  "0034-drm-ttm-classify-non-posted-mappings-per-owning-PCI-.patch": "d40b64d0e72fda362ce50c810a95990a823ae8812794dd992484467aa00518fc",
+  "0035-ALSA-hda-guard-disconnected-PCI-controller-teardown-.patch": "24002813728e7e48dc474eca0948f922f5e0877f2d36051ef1d2bfc94699fdf6",
+  "0036-i2c-designware-pci-guard-offline-runtime-and-removal.patch": "7a079f2a2c4663052bca7222815fd4a57c04fc7d37e33b679024f37e98665b93",
+  "0037-drm-amdgpu-reject-guarded-register-access-after-PCI-.patch": "ce4a4278ac9b07d24ebdc7ecd0191b6a07303763d791f434c834e43c1041d9a8",
+  "0038-drm-amdgpu-select-no-hardware-teardown-after-surpris.patch": "114aa60aa30ba50ccc6e752f10144f1993f8842b38c4cebc5126a5728c224e6b",
+  "0039-usb-xhci-retain-software-teardown-when-PCI-MMIO-is-u.patch": "4878cc88e1dd763f110a35167a31563d6e51bc880619833bd41e03e0ccb55eca",
+  "0040-drm-amdgpu-skip-HIQ-hardware-unmap-during-offline-te.patch": "730827f5b5c253ca24298ffcc8c49da86996fc6c9159de3f296fbe3c18ccc762",
+  "0041-drm-amd-display-retire-offline-flips-and-release-HDC.patch": "93aa5c7c1725950e57b1d1f16165e6440caa30248a2e0659c5af1a6a9b0ac609",
+  "0042-i2c-designware-pci-reject-UCSI-transfers-after-AMD-P.patch": "59068cd880aff4369e5a165b5fbc7178c0794fe12dff1221b789483e4c019eb9"
+}

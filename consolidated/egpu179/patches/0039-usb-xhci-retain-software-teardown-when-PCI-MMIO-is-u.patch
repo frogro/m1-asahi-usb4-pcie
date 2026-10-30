@@ -1,0 +1,176 @@
+From 241a9b9e90f0315e45c1f561be5757043487f4c4 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:57 +0100
+Subject: [PATCH 39/42] usb: xhci: retain software teardown when PCI MMIO is
+ unavailable
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/usb/host/xhci-dbgcap.c   |  3 ++-
+ drivers/usb/host/xhci-hub.c      |  8 ++++++++
+ drivers/usb/host/xhci-mem.c      |  2 +-
+ drivers/usb/host/xhci-pci-core.c | 11 +++++++++++
+ drivers/usb/host/xhci-ring.c     |  4 ++++
+ drivers/usb/host/xhci.c          | 24 +++++++++++++++++-------
+ 6 files changed, 43 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/usb/host/xhci-dbgcap.c b/drivers/usb/host/xhci-dbgcap.c
+index 48ee6a4..e5f1549 100644
+--- a/drivers/usb/host/xhci-dbgcap.c
++++ b/drivers/usb/host/xhci-dbgcap.c
+@@ -756,7 +756,8 @@ static void xhci_dbc_stop(struct xhci_dbc *dbc)
+ 	cancel_delayed_work_sync(&dbc->event_work);
+ 
+ 	spin_lock_irqsave(&dbc->lock, flags);
+-	writel(0, &dbc->regs->control);
++	if (HCD_HW_ACCESSIBLE(xhci_to_hcd(dbc->xhci)))
++		writel(0, &dbc->regs->control);
+ 
+ 	if (dbc->state == DS_CONNECTED || dbc->state == DS_CONFIGURED ||
+ 	    dbc->pending_rpm_put)
+diff --git a/drivers/usb/host/xhci-hub.c b/drivers/usb/host/xhci-hub.c
+index b0264bd..410cd7f 100644
+--- a/drivers/usb/host/xhci-hub.c
++++ b/drivers/usb/host/xhci-hub.c
+@@ -1203,6 +1203,10 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
+ 	bus_state = &rhub->bus_state;
+ 
+ 	spin_lock_irqsave(&xhci->lock, flags);
++	if (!HCD_HW_ACCESSIBLE(hcd)) {
++		spin_unlock_irqrestore(&xhci->lock, flags);
++		return -ENODEV;
++	}
+ 	switch (typeReq) {
+ 	case GetHubStatus:
+ 		/* No power source, over-current reported per port */
+@@ -1635,6 +1639,10 @@ int xhci_hub_status_data(struct usb_hcd *hcd, char *buf)
+ 	 * a non-zero value even if there are no status changes.
+ 	 */
+ 	spin_lock_irqsave(&xhci->lock, flags);
++	if (!HCD_HW_ACCESSIBLE(hcd)) {
++		spin_unlock_irqrestore(&xhci->lock, flags);
++		return 0;
++	}
+ 
+ 	status = bus_state->resuming_ports;
+ 
+diff --git a/drivers/usb/host/xhci-mem.c b/drivers/usb/host/xhci-mem.c
+index a5e7f36..fe2d3e2 100644
+--- a/drivers/usb/host/xhci-mem.c
++++ b/drivers/usb/host/xhci-mem.c
+@@ -1834,7 +1834,7 @@ xhci_remove_interrupter(struct xhci_hcd *xhci, struct xhci_interrupter *ir)
+ 	 * low or high 32 bits of ERSTBA immediately causes the controller to
+ 	 * dereference the partially cleared 64 bit address, causing IOMMU error.
+ 	 */
+-	if (ir->ir_set) {
++	if (ir->ir_set && HCD_HW_ACCESSIBLE(xhci_to_hcd(xhci))) {
+ 		tmp = readl(&ir->ir_set->erst_size);
+ 		tmp &= ~ERST_SIZE_MASK;
+ 		writel(tmp, &ir->ir_set->erst_size);
+diff --git a/drivers/usb/host/xhci-pci-core.c b/drivers/usb/host/xhci-pci-core.c
+index 45b67cf..41b2258 100644
+--- a/drivers/usb/host/xhci-pci-core.c
++++ b/drivers/usb/host/xhci-pci-core.c
+@@ -733,11 +733,22 @@ void xhci_pci_remove(struct pci_dev *dev)
+ {
+ 	struct xhci_hcd *xhci;
+ 	bool set_power_d3;
++	unsigned long flags;
+ 
+ 	xhci = hcd_to_xhci(pci_get_drvdata(dev));
+ 	set_power_d3 = xhci->quirks & XHCI_SPURIOUS_WAKEUP;
+ 
++	spin_lock_irqsave(&xhci->lock, flags);
+ 	xhci->xhc_state |= XHCI_STATE_REMOVING;
++	if (pci_dev_is_disconnected(dev)) {
++		/* The PCI core has already declared the MMIO target absent. */
++		clear_bit(HCD_FLAG_HW_ACCESSIBLE, &xhci_to_hcd(xhci)->flags);
++		if (xhci->shared_hcd)
++			clear_bit(HCD_FLAG_HW_ACCESSIBLE, &xhci->shared_hcd->flags);
++		xhci_hc_died(xhci);
++		dev_info(&dev->dev, "test168: offline xHCI software teardown\n");
++	}
++	spin_unlock_irqrestore(&xhci->lock, flags);
+ 
+ 	if (pci_choose_state(dev, PMSG_SUSPEND) == PCI_D0)
+ 		pm_runtime_put(&dev->dev);
+diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
+index 8908f5c..c759ff9 100644
+--- a/drivers/usb/host/xhci-ring.c
++++ b/drivers/usb/host/xhci-ring.c
+@@ -3190,6 +3190,10 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd)
+ 	u32 status;
+ 
+ 	spin_lock(&xhci->lock);
++	if (!HCD_HW_ACCESSIBLE(hcd)) {
++		ret = IRQ_NONE;
++		goto out;
++	}
+ 	/* Check if the xHC generated the interrupt, or the irq is shared */
+ 	status = readl(&xhci->op_regs->status);
+ 	if (status == ~(u32)0) {
+diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
+index 5c759ad..cdc0452 100644
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -705,8 +705,10 @@ void xhci_stop(struct usb_hcd *hcd)
+ 	spin_lock_irq(&xhci->lock);
+ 	xhci->xhc_state |= XHCI_STATE_HALTED;
+ 	xhci->cmd_ring_state = CMD_RING_STATE_STOPPED;
+-	xhci_halt(xhci);
+-	xhci_reset(xhci, XHCI_RESET_SHORT_USEC);
++	if (HCD_HW_ACCESSIBLE(hcd)) {
++		xhci_halt(xhci);
++		xhci_reset(xhci, XHCI_RESET_SHORT_USEC);
++	}
+ 	spin_unlock_irq(&xhci->lock);
+ 
+ 	/* Deleting Compliance Mode Recovery Timer */
+@@ -723,16 +725,18 @@ void xhci_stop(struct usb_hcd *hcd)
+ 
+ 	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
+ 			"// Disabling event ring interrupts");
+-	temp = readl(&xhci->op_regs->status);
+-	writel((temp & ~0x1fff) | STS_EINT, &xhci->op_regs->status);
+-	xhci_disable_interrupter(xhci, ir);
++	if (HCD_HW_ACCESSIBLE(hcd)) {
++		temp = readl(&xhci->op_regs->status);
++		writel((temp & ~0x1fff) | STS_EINT, &xhci->op_regs->status);
++		xhci_disable_interrupter(xhci, ir);
++	}
+ 
+ 	xhci_dbg_trace(xhci, trace_xhci_dbg_init, "cleaning up memory");
+ 	xhci_mem_cleanup(xhci);
+ 	xhci_debugfs_exit(xhci);
+ 	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
+ 			"xhci_stop completed - status = %x",
+-			readl(&xhci->op_regs->status));
++			HCD_HW_ACCESSIBLE(hcd) ? readl(&xhci->op_regs->status) : ~0U);
+ 	mutex_unlock(&xhci->mutex);
+ }
+ EXPORT_SYMBOL_GPL(xhci_stop);
+@@ -1786,6 +1790,11 @@ static int xhci_urb_dequeue(struct usb_hcd *hcd, struct urb *urb, int status)
+ 	if (!ep || !ep_ring)
+ 		goto err_giveback;
+ 
++	/* Do not probe an MMIO target already declared inaccessible. */
++	if (!HCD_HW_ACCESSIBLE(hcd) || (xhci->xhc_state & XHCI_STATE_DYING)) {
++		xhci_hc_died(xhci);
++		goto done;
++	}
+ 	/* If xHC is dead take it down and return ALL URBs in xhci_hc_died() */
+ 	temp = readl(&xhci->op_regs->status);
+ 	if (temp == ~(u32)0 || xhci->xhc_state & XHCI_STATE_DYING) {
+@@ -4154,7 +4163,8 @@ int xhci_disable_slot(struct xhci_hcd *xhci, u32 slot_id)
+ 
+ 	spin_lock_irqsave(&xhci->lock, flags);
+ 	/* Don't disable the slot if the host controller is dead. */
+-	state = readl(&xhci->op_regs->status);
++	state = HCD_HW_ACCESSIBLE(xhci_to_hcd(xhci)) ?
++		readl(&xhci->op_regs->status) : ~0U;
+ 	if (state == 0xffffffff || (xhci->xhc_state & XHCI_STATE_DYING) ||
+ 			(xhci->xhc_state & XHCI_STATE_HALTED)) {
+ 		spin_unlock_irqrestore(&xhci->lock, flags);
+-- 
+2.53.0
+

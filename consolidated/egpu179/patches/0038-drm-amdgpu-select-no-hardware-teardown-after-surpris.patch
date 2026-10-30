@@ -1,0 +1,31 @@
+From 0418665ba79a8d91e364fff0876e0109f6bd540a Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:57 +0100
+Subject: [PATCH 38/42] drm/amdgpu: select no-hardware teardown after surprise
+ removal
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
+index 14b539d..573cf0c 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
+@@ -2540,6 +2540,12 @@ amdgpu_pci_remove(struct pci_dev *pdev)
+ 	struct drm_device *dev = pci_get_drvdata(pdev);
+ 	struct amdgpu_device *adev = drm_to_adev(dev);
+ 
++	/* Reuse the existing no-hardware cleanup path for surprise removal. */
++	if (pci_dev_is_disconnected(pdev)) {
++		adev->no_hw_access = true;
++		dev_info(&pdev->dev, "test167 offline GPU: no-hardware teardown selected\n");
++	}
++
+ 	amdgpu_ras_eeprom_check_and_recover(adev);
+ 	amdgpu_xcp_dev_unplug(adev);
+ 	amdgpu_gmc_prepare_nps_mode_change(adev);
+-- 
+2.53.0
+

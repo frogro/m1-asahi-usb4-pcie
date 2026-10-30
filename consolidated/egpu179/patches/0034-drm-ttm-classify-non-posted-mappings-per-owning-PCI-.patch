@@ -1,0 +1,149 @@
+From cfe35cdb07d6808bcbd256f5d9c85804b4eca8d0 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:56 +0100
+Subject: [PATCH 34/42] drm/ttm: classify non-posted mappings per owning PCI
+ BAR
+
+Preserve the exact locally built and hardware-tested diagnostic implementation. Experimental snapshot; integration hardware boot and wider device coverage remain pending. See provenance and validation records. AI-assisted development.
+---
+ drivers/gpu/drm/ttm/ttm_bo_util.c          | 11 ++++++-
+ drivers/gpu/drm/ttm/ttm_nonposted_test64.h | 36 ++++++++++++++++++++++
+ drivers/gpu/drm/ttm/ttm_resource.c         | 17 ++++++++--
+ 3 files changed, 60 insertions(+), 4 deletions(-)
+ create mode 100644 drivers/gpu/drm/ttm/ttm_nonposted_test64.h
+
+diff --git a/drivers/gpu/drm/ttm/ttm_bo_util.c b/drivers/gpu/drm/ttm/ttm_bo_util.c
+index 3e3c201..cb532a0 100644
+--- a/drivers/gpu/drm/ttm/ttm_bo_util.c
++++ b/drivers/gpu/drm/ttm/ttm_bo_util.c
+@@ -29,6 +29,7 @@
+  * Authors: Thomas Hellstrom <thellstrom-at-vmware-dot-com>
+  */
+ 
++#include "ttm_nonposted_test64.h"
+ #include <linux/export.h>
+ #include <linux/swap.h>
+ #include <linux/vmalloc.h>
+@@ -298,6 +299,11 @@ pgprot_t ttm_io_prot(struct ttm_buffer_object *bo, struct ttm_resource *res,
+ 	struct ttm_resource_manager *man;
+ 	enum ttm_caching caching;
+ 
++	if (ttm_resource_is_nonposted(bo->bdev, res)) {
++		pr_info_once("ttm test64: per-resource NP page protection selected\n");
++		return pgprot_noncached(tmp);
++	}
++
+ 	man = ttm_manager_type(bo->bdev, res->mem_type);
+ 	if (man->use_tt) {
+ 		caching = bo->ttm->caching;
+@@ -325,7 +331,10 @@ static int ttm_bo_ioremap(struct ttm_buffer_object *bo,
+ 		resource_size_t res = mem->bus.offset + offset;
+ 
+ 		map->bo_kmap_type = ttm_bo_map_iomap;
+-		if (mem->bus.caching == ttm_write_combined)
++		if (ttm_resource_is_nonposted(bo->bdev, mem)) {
++			pr_info_once("ttm test64: per-resource NP kernel mapping selected\n");
++			map->virtual = ioremap_np(res, size);
++		} else if (mem->bus.caching == ttm_write_combined)
+ 			map->virtual = ioremap_wc(res, size);
+ #ifdef CONFIG_X86
+ 		else if (mem->bus.caching == ttm_cached)
+diff --git a/drivers/gpu/drm/ttm/ttm_nonposted_test64.h b/drivers/gpu/drm/ttm/ttm_nonposted_test64.h
+new file mode 100644
+index 0000000..6e24894
+--- /dev/null
++++ b/drivers/gpu/drm/ttm/ttm_nonposted_test64.h
+@@ -0,0 +1,36 @@
++/* SPDX-License-Identifier: GPL-2.0 OR MIT */
++#ifndef TTM_TEST64_NONPOSTED_H
++#define TTM_TEST64_NONPOSTED_H
++#include <linux/pci.h>
++#include <drm/ttm/ttm_device.h>
++#include <drm/ttm/ttm_resource.h>
++/* Test64: derive the mapping requirement from this device's owning BAR.
++ * No global override, device IDs, public structure changes, or BAR writes.
++ * Mapping policy follows Joshua Warren linux-aurora PR188 patch 2;
++ * resource lookup is a diagnostic alternative to its new placement field.
++ */
++static inline bool ttm_resource_is_nonposted(struct ttm_device *bdev,
++                                            const struct ttm_resource *mem)
++{
++    struct device *dev = bdev->pool.dev;
++    struct pci_dev *pdev;
++    int bar;
++
++    if (!mem->bus.is_iomem || !mem->size || !dev || !dev_is_pci(dev))
++        return false;
++    pdev = to_pci_dev(dev);
++    for (bar = 0; bar < PCI_STD_NUM_BARS; bar++) {
++        const struct resource *r = &pdev->resource[bar];
++        if ((r->flags & (IORESOURCE_MEM | IORESOURCE_MEM_NONPOSTED)) !=
++            (IORESOURCE_MEM | IORESOURCE_MEM_NONPOSTED))
++            continue;
++        if (r->end < r->start || mem->bus.offset < r->start ||
++            mem->bus.offset > r->end)
++            continue;
++        /* Subtraction avoids wrapping offset + size on malformed input. */
++        if (mem->size - 1 <= r->end - mem->bus.offset)
++            return true;
++    }
++    return false;
++}
++#endif
+diff --git a/drivers/gpu/drm/ttm/ttm_resource.c b/drivers/gpu/drm/ttm/ttm_resource.c
+index 154d673..54ca589 100644
+--- a/drivers/gpu/drm/ttm/ttm_resource.c
++++ b/drivers/gpu/drm/ttm/ttm_resource.c
+@@ -22,6 +22,7 @@
+  * Authors: Christian König
+  */
+ 
++#include "ttm_nonposted_test64.h"
+ #include <linux/debugfs.h>
+ #include <linux/export.h>
+ #include <linux/io-mapping.h>
+@@ -848,6 +849,7 @@ ttm_kmap_iter_linear_io_init(struct ttm_kmap_iter_linear_io *iter_io,
+ 			     struct ttm_device *bdev,
+ 			     struct ttm_resource *mem)
+ {
++	bool nonposted;
+ 	int ret;
+ 
+ 	ret = ttm_mem_io_reserve(bdev, mem);
+@@ -858,13 +860,22 @@ ttm_kmap_iter_linear_io_init(struct ttm_kmap_iter_linear_io *iter_io,
+ 		goto out_io_free;
+ 	}
+ 
++	nonposted = ttm_resource_is_nonposted(bdev, mem);
++	if (nonposted)
++		pr_info_once("ttm test64: per-resource NP iterator selected\n");
++
+ 	if (mem->bus.addr) {
+-		iosys_map_set_vaddr(&iter_io->dmap, mem->bus.addr);
++		if (nonposted)
++			iosys_map_set_vaddr_iomem(&iter_io->dmap, (void __iomem *)mem->bus.addr);
++		else
++			iosys_map_set_vaddr(&iter_io->dmap, mem->bus.addr);
+ 		iter_io->needs_unmap = false;
+ 	} else {
+ 		iter_io->needs_unmap = true;
+ 		memset(&iter_io->dmap, 0, sizeof(iter_io->dmap));
+-		if (mem->bus.caching == ttm_write_combined)
++		if (nonposted)
++			iosys_map_set_vaddr_iomem(&iter_io->dmap, ioremap_np(mem->bus.offset, mem->size));
++		else if (mem->bus.caching == ttm_write_combined)
+ 			iosys_map_set_vaddr_iomem(&iter_io->dmap,
+ 						  ioremap_wc(mem->bus.offset,
+ 							     mem->size));
+@@ -876,7 +887,7 @@ ttm_kmap_iter_linear_io_init(struct ttm_kmap_iter_linear_io *iter_io,
+ 						     MEMREMAP_WC));
+ 
+ 		/* If uncached requested or if mapping cached or wc failed */
+-		if (iosys_map_is_null(&iter_io->dmap))
++		if (!nonposted && iosys_map_is_null(&iter_io->dmap))
+ 			iosys_map_set_vaddr_iomem(&iter_io->dmap,
+ 						  ioremap(mem->bus.offset,
+ 							  mem->size));
+-- 
+2.53.0
+

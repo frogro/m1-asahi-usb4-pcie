@@ -1,0 +1,362 @@
+From 37e5a868d71285ac33d7da2595774649c3801770 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 19:57:56 +0100
+Subject: [PATCH 33/42] drm/amdgpu: retain tested M1 non-posted mapping and I/O
+ adaptations
+
+Experimental exact Test63 source snapshot, including diagnostic phase logging. Mapping and I/O-copy approaches derive from Joshua Warren linux-aurora PR188 patches 2, 3 and 6; GFX11 staging adapted to GFX10. Imported patches 4, 5 and 7 retain their original authors in preceding commits. AI-assisted development; no claim of upstream readiness.
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_bios.c      |  6 ++++-
+ drivers/gpu/drm/amd/amdgpu/amdgpu_device.c    | 24 ++++++++++++++++---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_psp.c       | 10 ++++++--
+ drivers/gpu/drm/amd/amdgpu/amdgpu_ttm.c       | 20 ++++++++++++++--
+ drivers/gpu/drm/amd/amdgpu/gfx_v10_0.c        | 24 +++++++++++++++++--
+ .../gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c | 18 ++++++++++++--
+ drivers/gpu/drm/amd/pm/swsmu/smu_cmn.c        | 10 ++++++--
+ 7 files changed, 98 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_bios.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_bios.c
+index 8525c45..e2ad957 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_bios.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_bios.c
+@@ -132,7 +132,11 @@ static bool amdgpu_read_bios_from_vram(struct amdgpu_device *adev)
+ 			return false;
+ 		}
+ 	} else {
+-		bios = ioremap_wc(vram_base, size);
++		/* Test51: BIOS reads use ordered I/O on non-posted hosts. */
++		if (pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED)
++			bios = ioremap_np(vram_base, size);
++		else
++			bios = ioremap_wc(vram_base, size);
+ 		if (!bios) {
+ 			amdgpu_bios_release(adev);
+ 			return false;
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+index ea9a6ed..83bfeb9 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+@@ -2291,7 +2291,9 @@ static int amdgpu_device_ip_hw_init_phase1(struct amdgpu_device *adev)
+ 		if (adev->ip_blocks[i].version->type == AMD_IP_BLOCK_TYPE_COMMON ||
+ 		    (amdgpu_sriov_vf(adev) && (adev->ip_blocks[i].version->type == AMD_IP_BLOCK_TYPE_PSP)) ||
+ 		    adev->ip_blocks[i].version->type == AMD_IP_BLOCK_TYPE_IH) {
++			dev_info(adev->dev, "test63 before hw_init %s\n", adev->ip_blocks[i].version->funcs->name);
+ 			r = adev->ip_blocks[i].version->funcs->hw_init(&adev->ip_blocks[i]);
++			dev_info(adev->dev, "test63 after hw_init %s rc=%d\n", adev->ip_blocks[i].version->funcs->name, r);
+ 			if (r) {
+ 				dev_err(adev->dev,
+ 					"hw_init of IP block <%s> failed %d\n",
+@@ -2318,7 +2320,9 @@ static int amdgpu_device_ip_hw_init_phase2(struct amdgpu_device *adev)
+ 		if (!amdgpu_ip_member_of_hwini(
+ 			    adev, adev->ip_blocks[i].version->type))
+ 			continue;
+-		r = adev->ip_blocks[i].version->funcs->hw_init(&adev->ip_blocks[i]);
++		dev_info(adev->dev, "test63 before hw_init %s\n", adev->ip_blocks[i].version->funcs->name);
++			r = adev->ip_blocks[i].version->funcs->hw_init(&adev->ip_blocks[i]);
++			dev_info(adev->dev, "test63 after hw_init %s rc=%d\n", adev->ip_blocks[i].version->funcs->name, r);
+ 		if (r) {
+ 			dev_err(adev->dev,
+ 				"hw_init of IP block <%s> failed %d\n",
+@@ -2358,7 +2362,9 @@ static int amdgpu_device_fw_loading(struct amdgpu_device *adev)
+ 				if (r)
+ 					return r;
+ 			} else {
+-				r = adev->ip_blocks[i].version->funcs->hw_init(&adev->ip_blocks[i]);
++				dev_info(adev->dev, "test63 before hw_init %s\n", adev->ip_blocks[i].version->funcs->name);
++			r = adev->ip_blocks[i].version->funcs->hw_init(&adev->ip_blocks[i]);
++			dev_info(adev->dev, "test63 after hw_init %s rc=%d\n", adev->ip_blocks[i].version->funcs->name, r);
+ 				if (r) {
+ 					dev_err(adev->dev,
+ 						"hw_init of IP block <%s> failed %d\n",
+@@ -2471,7 +2477,9 @@ static int amdgpu_device_ip_init(struct amdgpu_device *adev)
+ 		if (!adev->ip_blocks[i].status.valid)
+ 			continue;
+ 		if (adev->ip_blocks[i].version->funcs->sw_init) {
++			dev_info(adev->dev, "test63 before sw_init %s\n", adev->ip_blocks[i].version->funcs->name);
+ 			r = adev->ip_blocks[i].version->funcs->sw_init(&adev->ip_blocks[i]);
++			dev_info(adev->dev, "test63 after sw_init %s rc=%d\n", adev->ip_blocks[i].version->funcs->name, r);
+ 			if (r) {
+ 				dev_err(adev->dev,
+ 					"sw_init of IP block <%s> failed %d\n",
+@@ -2488,7 +2496,9 @@ static int amdgpu_device_ip_init(struct amdgpu_device *adev)
+ 
+ 		if (adev->ip_blocks[i].version->type == AMD_IP_BLOCK_TYPE_COMMON) {
+ 			/* need to do common hw init early so everything is set up for gmc */
++			dev_info(adev->dev, "test63 before hw_init %s\n", adev->ip_blocks[i].version->funcs->name);
+ 			r = adev->ip_blocks[i].version->funcs->hw_init(&adev->ip_blocks[i]);
++			dev_info(adev->dev, "test63 after hw_init %s rc=%d\n", adev->ip_blocks[i].version->funcs->name, r);
+ 			if (r) {
+ 				dev_err(adev->dev, "hw_init %d failed %d\n", i,
+ 					r);
+@@ -2508,7 +2518,9 @@ static int amdgpu_device_ip_init(struct amdgpu_device *adev)
+ 					r);
+ 				goto init_failed;
+ 			}
++			dev_info(adev->dev, "test63 before hw_init %s\n", adev->ip_blocks[i].version->funcs->name);
+ 			r = adev->ip_blocks[i].version->funcs->hw_init(&adev->ip_blocks[i]);
++			dev_info(adev->dev, "test63 after hw_init %s rc=%d\n", adev->ip_blocks[i].version->funcs->name, r);
+ 			if (r) {
+ 				dev_err(adev->dev, "hw_init %d failed %d\n", i,
+ 					r);
+@@ -4003,7 +4015,13 @@ int amdgpu_device_init(struct amdgpu_device *adev,
+ 	for (i = 0; i < AMD_IP_BLOCK_TYPE_NUM; i++)
+ 		atomic_set(&adev->pm.pwr_state[i], POWER_STATE_UNKNOWN);
+ 
+-	adev->rmmio = ioremap(adev->rmmio_base, adev->rmmio_size);
++	/* Test51: honor the host's non-posted PCIe MMIO requirement. */
++	if (pci_resource_flags(adev->pdev,
++			adev->asic_type >= CHIP_BONAIRE ? 5 : 2) &
++	    IORESOURCE_MEM_NONPOSTED)
++		adev->rmmio = ioremap_np(adev->rmmio_base, adev->rmmio_size);
++	else
++		adev->rmmio = ioremap(adev->rmmio_base, adev->rmmio_size);
+ 	if (!adev->rmmio)
+ 		return -ENOMEM;
+ 
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_psp.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_psp.c
+index 41db559..9492464 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_psp.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_psp.c
+@@ -4632,8 +4632,14 @@ int psp_copy_fw(struct psp_context *psp, uint8_t *start_addr, uint32_t bin_size)
+ 		return -EINVAL;
+ 	}
+ 
+-	memset(psp->fw_pri_buf, 0, PSP_1_MEG);
+-	memcpy(psp->fw_pri_buf, start_addr, bin_size);
++	if ((pci_resource_flags(psp->adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) &&
++            psp->fw_pri_bo->tbo.resource->bus.is_iomem) {
++        memset_io((void __iomem *)psp->fw_pri_buf, 0, PSP_1_MEG);
++        memcpy_toio((void __iomem *)psp->fw_pri_buf, start_addr, bin_size);
++    } else {
++        memset(psp->fw_pri_buf, 0, PSP_1_MEG);
++        memcpy(psp->fw_pri_buf, start_addr, bin_size);
++    }
+ 
+ 	drm_dev_exit(idx);
+ 	return 0;
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_ttm.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_ttm.c
+index 7375fc8..d85db16 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_ttm.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_ttm.c
+@@ -41,6 +41,7 @@
+ #include <linux/dma-buf.h>
+ #include <linux/sizes.h>
+ #include <linux/module.h>
++#include <linux/dma-map-ops.h>
+ 
+ #include <drm/drm_drv.h>
+ #include <drm/ttm/ttm_bo.h>
+@@ -1206,7 +1207,9 @@ static struct ttm_tt *amdgpu_ttm_tt_create(struct ttm_buffer_object *bo,
+ 	else
+ 		gtt->pool_id = abo->xcp_id;
+ 
+-	if (abo->flags & AMDGPU_GEM_CREATE_CPU_GTT_USWC)
++	if ((abo->flags & AMDGPU_GEM_CREATE_CPU_GTT_USWC) ||
++        ((pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) &&
++         !dev_is_dma_coherent(adev->dev)))
+ 		caching = ttm_write_combined;
+ 	else
+ 		caching = ttm_cached;
+@@ -2136,7 +2139,10 @@ int amdgpu_ttm_init(struct amdgpu_device *adev)
+ 			"No need to ioremap when real vram size is 0\n");
+ 	else
+ #endif
+-		adev->mman.aper_base_kaddr = ioremap_wc(adev->gmc.aper_base,
++		adev->mman.aper_base_kaddr =
++            (pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) ?
++            ioremap_np(adev->gmc.aper_base, adev->gmc.visible_vram_size) :
++            ioremap_wc(adev->gmc.aper_base,
+ 				adev->gmc.visible_vram_size);
+ #endif
+ 
+@@ -2201,33 +2207,43 @@ int amdgpu_ttm_init(struct amdgpu_device *adev)
+ 	}
+ 
+ 	/* Initialize doorbell pool on PCI BAR */
++	dev_info(adev->dev, "test63 before amdgpu_ttm_init_on_chip\n");
+ 	r = amdgpu_ttm_init_on_chip(adev, AMDGPU_PL_DOORBELL, adev->doorbell.size / PAGE_SIZE);
++	dev_info(adev->dev, "test63 after amdgpu_ttm_init_on_chip rc=%d\n", r);
+ 	if (r) {
+ 		dev_err(adev->dev, "Failed initializing doorbell heap.\n");
+ 		return r;
+ 	}
+ 
+ 	/* Create a boorbell page for kernel usages */
++	dev_info(adev->dev, "test63 before amdgpu_doorbell_create_kernel_doorbells\n");
+ 	r = amdgpu_doorbell_create_kernel_doorbells(adev);
++	dev_info(adev->dev, "test63 after amdgpu_doorbell_create_kernel_doorbells rc=%d\n", r);
+ 	if (r) {
+ 		dev_err(adev->dev, "Failed to initialize kernel doorbells.\n");
+ 		return r;
+ 	}
+ 
+ 	/* Initialize MMIO-remap pool (single page 4K) */
++	dev_info(adev->dev, "test63 before amdgpu_ttm_init_on_chip\n");
+ 	r = amdgpu_ttm_init_on_chip(adev, AMDGPU_PL_MMIO_REMAP, 1);
++	dev_info(adev->dev, "test63 after amdgpu_ttm_init_on_chip rc=%d\n", r);
+ 	if (r) {
+ 		dev_err(adev->dev, "Failed initializing MMIO-remap heap.\n");
+ 		return r;
+ 	}
+ 
+ 	/* Allocate the singleton MMIO_REMAP BO if supported */
++	dev_info(adev->dev, "test63 before amdgpu_ttm_alloc_mmio_remap_bo\n");
+ 	r = amdgpu_ttm_alloc_mmio_remap_bo(adev);
++	dev_info(adev->dev, "test63 after amdgpu_ttm_alloc_mmio_remap_bo rc=%d\n", r);
+ 	if (r)
+ 		return r;
+ 
+ 	/* Initialize preemptible memory pool */
++	dev_info(adev->dev, "test63 before amdgpu_preempt_mgr_init\n");
+ 	r = amdgpu_preempt_mgr_init(adev);
++	dev_info(adev->dev, "test63 after amdgpu_preempt_mgr_init rc=%d\n", r);
+ 	if (r) {
+ 		dev_err(adev->dev, "Failed initializing PREEMPT heap.\n");
+ 		return r;
+diff --git a/drivers/gpu/drm/amd/amdgpu/gfx_v10_0.c b/drivers/gpu/drm/amd/amdgpu/gfx_v10_0.c
+index a9961d5..5142bd7 100644
+--- a/drivers/gpu/drm/amd/amdgpu/gfx_v10_0.c
++++ b/drivers/gpu/drm/amd/amdgpu/gfx_v10_0.c
+@@ -7147,6 +7147,15 @@ static int gfx_v10_0_kiq_init_queue(struct amdgpu_ring *ring)
+ {
+ 	struct amdgpu_device *adev = ring->adev;
+ 	struct v10_compute_mqd *mqd = ring->mqd_ptr;
++    bool np_mqd = (pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) &&
++                  ring->mqd_obj->tbo.resource->bus.is_iomem;
++
++    /* PR188 GFX11 approach adapted to Navi21/GFX10: compose in RAM. */
++    if (np_mqd) {
++        if (!adev->gfx.kiq[0].mqd_backup)
++            return -ENOMEM;
++        ring->mqd_ptr = adev->gfx.kiq[0].mqd_backup;
++    }
+ 
+ 	gfx_v10_0_kiq_setting(ring);
+ 
+@@ -7165,20 +7174,23 @@ static int gfx_v10_0_kiq_init_queue(struct amdgpu_ring *ring)
+ 		nv_grbm_select(adev, 0, 0, 0, 0);
+ 		mutex_unlock(&adev->srbm_mutex);
+ 	} else {
+-		memset((void *)mqd, 0, sizeof(*mqd));
++		memset(ring->mqd_ptr, 0, sizeof(*mqd));
+ 		if (amdgpu_sriov_vf(adev) && adev->in_suspend)
+ 			amdgpu_ring_clear_ring(ring);
+ 		mutex_lock(&adev->srbm_mutex);
+ 		nv_grbm_select(adev, ring->me, ring->pipe, ring->queue, 0);
+ 		amdgpu_ring_init_mqd(ring);
++        if (np_mqd)
++            memcpy_toio((void __iomem *)mqd, ring->mqd_ptr, sizeof(*mqd));
+ 		gfx_v10_0_kiq_init_register(ring);
+ 		nv_grbm_select(adev, 0, 0, 0, 0);
+ 		mutex_unlock(&adev->srbm_mutex);
+ 
+-		if (adev->gfx.kiq[0].mqd_backup)
++		if (!np_mqd && adev->gfx.kiq[0].mqd_backup)
+ 			memcpy_fromio(adev->gfx.kiq[0].mqd_backup, mqd, sizeof(*mqd));
+ 	}
+ 
++    ring->mqd_ptr = mqd;
+ 	return 0;
+ }
+ 
+@@ -7252,11 +7264,15 @@ static int gfx_v10_0_cp_resume(struct amdgpu_device *adev)
+ 			return r;
+ 	}
+ 
++	dev_info(adev->dev, "test63 before gfx_v10_0_kiq_resume\n");
+ 	r = gfx_v10_0_kiq_resume(adev);
++	dev_info(adev->dev, "test63 after gfx_v10_0_kiq_resume rc=%d\n", r);
+ 	if (r)
+ 		return r;
+ 
++	dev_info(adev->dev, "test63 before gfx_v10_0_kcq_resume\n");
+ 	r = gfx_v10_0_kcq_resume(adev);
++	dev_info(adev->dev, "test63 after gfx_v10_0_kcq_resume rc=%d\n", r);
+ 	if (r)
+ 		return r;
+ 
+@@ -7516,7 +7532,9 @@ static int gfx_v10_0_hw_init(struct amdgpu_ip_block *ip_block)
+ 
+ 	gfx_v10_0_constants_init(adev);
+ 
++	dev_info(adev->dev, "test63 before gfx_v10_0_rlc_resume\n");
+ 	r = gfx_v10_0_rlc_resume(adev);
++	dev_info(adev->dev, "test63 after gfx_v10_0_rlc_resume rc=%d\n", r);
+ 	if (r)
+ 		return r;
+ 
+@@ -7529,7 +7547,9 @@ static int gfx_v10_0_hw_init(struct amdgpu_ip_block *ip_block)
+ 	    amdgpu_ip_version(adev, GC_HWIP, 0) == IP_VERSION(10, 1, 2))
+ 		gfx_v10_0_tcp_harvest(adev);
+ 
++	dev_info(adev->dev, "test63 before gfx_v10_0_cp_resume\n");
+ 	r = gfx_v10_0_cp_resume(adev);
++	dev_info(adev->dev, "test63 after gfx_v10_0_cp_resume rc=%d\n", r);
+ 	if (r)
+ 		return r;
+ 
+diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+index b92d129..90889b4 100644
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+@@ -2820,13 +2820,27 @@ static int dm_dmub_sw_init(struct amdgpu_device *adev)
+ 		return -EINVAL;
+ 	}
+ 
++	/*
++	 * Behind a non-posted BAR the buffer lives in GTT. The backdoor loader of a directly
++	 * loaded firmware converts addresses as VRAM addresses and fills the buffer with plain
++	 * CPU copies, so only PSP firmware loading is supported there.
++	 */
++	if ((pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) &&
++	    adev->firmware.load_type != AMDGPU_FW_LOAD_PSP) {
++		drm_err(adev_to_drm(adev),
++			"Direct DMUB firmware loading is not supported behind a non-posted BAR\n");
++		return -EOPNOTSUPP;
++	}
++
+ 	/*
+ 	 * Allocate a framebuffer based on the total size of all the regions.
+ 	 * TODO: Move this into GART.
+ 	 */
+ 	r = amdgpu_bo_create_kernel(adev, region_info.fb_size, PAGE_SIZE,
+-				    AMDGPU_GEM_DOMAIN_VRAM |
+-				    AMDGPU_GEM_DOMAIN_GTT,
++				    (pci_resource_flags(adev->pdev, 0) &
++				     IORESOURCE_MEM_NONPOSTED) ?
++				    AMDGPU_GEM_DOMAIN_GTT :
++				    AMDGPU_GEM_DOMAIN_VRAM | AMDGPU_GEM_DOMAIN_GTT,
+ 				    &adev->dm.dmub_bo,
+ 				    &adev->dm.dmub_bo_gpu_addr,
+ 				    &adev->dm.dmub_bo_cpu_addr);
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/smu_cmn.c b/drivers/gpu/drm/amd/pm/swsmu/smu_cmn.c
+index d365f06..875ded5 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/smu_cmn.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/smu_cmn.c
+@@ -1129,7 +1129,10 @@ int smu_cmn_update_table_read_arg(struct smu_context *smu,
+ 	table_size = smu_table->tables[table_index].size;
+ 
+ 	if (drv2smu) {
+-		memcpy(table->cpu_addr, table_data, table_size);
++		if ((pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) && table->bo->tbo.resource->bus.is_iomem)
++            memcpy_toio((void __iomem *)table->cpu_addr, table_data, table_size);
++        else
++            memcpy(table->cpu_addr, table_data, table_size);
+ 		/*
+ 		 * Flush hdp cache: to guard the content seen by
+ 		 * GPU is consitent with CPU.
+@@ -1151,7 +1154,10 @@ int smu_cmn_update_table_read_arg(struct smu_context *smu,
+ 
+ 	if (!drv2smu) {
+ 		amdgpu_hdp_invalidate(adev, NULL);
+-		memcpy(table_data, table->cpu_addr, table_size);
++		if ((pci_resource_flags(adev->pdev, 0) & IORESOURCE_MEM_NONPOSTED) && table->bo->tbo.resource->bus.is_iomem)
++            memcpy_fromio(table_data, (const void __iomem *)table->cpu_addr, table_size);
++        else
++            memcpy(table_data, table->cpu_addr, table_size);
+ 	}
+ 
+ 	return 0;
+-- 
+2.53.0
+
