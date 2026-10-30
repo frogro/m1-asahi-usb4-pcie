@@ -1,0 +1,23 @@
+{
+  "base_commit": "3c1f82464b54cf6f6619dbdeb884b412c059b585",
+  "head_commit": "3db8cee06e739ec4fe7c695313cdc6c45e887ef7",
+  "patch_count": 3,
+  "combined_patch_count": 29,
+  "verified_tree": "cbc719e93e2c4abd48c5bd0597d5f5eb3172728b",
+  "patch_application": "passed",
+  "affected_object_compile": "passed",
+  "module_build": "passed on matched Test40 build",
+  "hardware_tests": [
+    154,
+    155,
+    156,
+    157
+  ],
+  "full_consolidated_kernel_boot": "not tested",
+  "installed_default_kernel": "unchanged",
+  "patches": {
+    "0027-phy-apple-retain-active-USB4-lane-state-across-s2idl.patch": "bb84528a139d7ee29f639cc490e0d3f10b2be4bf237f1901f7ec979049a87b3b",
+    "0028-thunderbolt-apple-coordinate-retained-power-system-s.patch": "a1394e8d2bf2051ca7d4c1c928f5ec18cd8a09e2ca087aa73b77b217368d08c0",
+    "0029-docs-record-retained-power-USB4-suspend-integration-.patch": "5272eaefdc7f8aed027ca6f708ba2cddb4a69f3c04f9f12d21c639ce2b1efdde"
+  }
+}

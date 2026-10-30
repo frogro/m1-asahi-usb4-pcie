@@ -1,3 +1,10 @@
+A locally prepared **29-patch suspend candidate** is available in
+`consolidated/20261030/series-with-suspend`. Its three follow-up patches replace
+the global retention test helper with automatic PHY/ACIO power-domain handling
+and NHI suspend/resume. Matched module tests154–157 passed; a boot of the entire
+29-patch kernel is still pending. The existing26-patch build remains preserved.
+See `consolidated/20261030/suspend-followup/README.txt` for evidence and limits.
+
 Current consolidated revision: **26 patches / usb4sd2**, including the measured
 DP127 whole-dock lifecycle correction and DP128 opt-in DCP audio. The preceding
 22-patch usb4sd1 build does not contain these additions. Full combined hardware

@@ -1,0 +1,136 @@
+From 2cc636bd9f87ffd1a167efe38ae2958e1ae9c7f2 Mon Sep 17 00:00:00 2001
+From: Kernel Build Automation <kernel-build@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 14:44:18 +0100
+Subject: [PATCH 27/29] phy: apple: retain active USB4 lane state across s2idle
+
+Register a power-domain notifier on the PHY device. Refuse domain power-off while the negotiated mode is USB4 or Thunderbolt, and release that constraint when the Type-C lifecycle moves the PHY out of those modes. Keep callbacks free of MMIO and mutex acquisition under the genpd lock.
+
+Validate retention during system prepare and reject active-link hibernation or deeper suspend until power-loss restoration is implemented. This does not introduce a user-selectable diagnostic mode.
+---
+ drivers/phy/apple/atc.c | 66 +++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 64 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/phy/apple/atc.c b/drivers/phy/apple/atc.c
+index aba311c13..74fff1ad9 100644
+--- a/drivers/phy/apple/atc.c
++++ b/drivers/phy/apple/atc.c
+@@ -34,8 +34,10 @@
+ #include <linux/of_device.h>
+ #include <linux/phy/phy.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_domain.h>
+ #include <linux/reset-controller.h>
+ #include <linux/soc/apple/tunable.h>
++#include <linux/suspend.h>
+ #include <linux/types.h>
+ #include <linux/usb/pd.h>
+ #include <linux/usb/typec.h>
+@@ -638,6 +640,8 @@ struct atcphy_hw {
+  * @lock: Mutex for synchronizing register access across PHY, Type-C switch/mux and reset controller
+  */
+ struct apple_atcphy {
++	struct notifier_block power_nb;
++	bool power_notifier_registered;
+ 	struct device_node *np;
+ 	struct device *dev;
+ 
+@@ -2289,7 +2293,7 @@ static int atcphy_configure(struct apple_atcphy *atcphy, enum atcphy_mode mode)
+ 
+ 	if (mode == APPLE_ATCPHY_MODE_OFF) {
+ 		ret = atcphy_power_off(atcphy);
+-		atcphy->mode = mode;
++		WRITE_ONCE(atcphy->mode, mode);
+ 		return ret;
+ 	}
+ 
+@@ -2328,7 +2332,7 @@ static int atcphy_configure(struct apple_atcphy *atcphy, enum atcphy_mode mode)
+ 		}
+ 	}
+ 
+-	atcphy->mode = mode;
++	WRITE_ONCE(atcphy->mode, mode);
+ 
+ 	return 0;
+ }
+@@ -2835,6 +2839,52 @@ static int atcphy_probe_finalize(struct apple_atcphy *atcphy)
+ 	return 0;
+ }
+ 
++/*
++ * ACIO retains its live router across s2idle. Its Type-C PHY must retain
++ * the matching lane configuration too. The Type-C controller stops ACIO
++ * before changing the PHY out of USB4/TBT mode, releasing this constraint.
++ */
++static bool atcphy_retains_usb4(struct apple_atcphy *atcphy)
++{
++	enum atcphy_mode mode = READ_ONCE(atcphy->mode);
++
++	return mode == APPLE_ATCPHY_MODE_USB4 || mode == APPLE_ATCPHY_MODE_TBT;
++}
++
++static int atcphy_power_notify(struct notifier_block *nb,
++			       unsigned long event, void *data)
++{
++	struct apple_atcphy *atcphy = container_of(nb, struct apple_atcphy, power_nb);
++
++	/* No mutex or MMIO: genpd invokes this with its own lock held. */
++	if (event == GENPD_NOTIFY_PRE_OFF && atcphy_retains_usb4(atcphy))
++		return notifier_from_errno(-EBUSY);
++	return NOTIFY_OK;
++}
++
++static void atcphy_remove_power_notifier(void *data)
++{
++	dev_pm_genpd_remove_notifier(data);
++}
++
++static int atcphy_pm_prepare(struct device *dev)
++{
++	struct apple_atcphy *atcphy = dev_get_drvdata(dev);
++
++	guard(mutex)(&atcphy->lock);
++	if (!atcphy_retains_usb4(atcphy))
++		return 0;
++	if (pm_suspend_target_state != PM_SUSPEND_TO_IDLE)
++		return -EOPNOTSUPP;
++	if (!atcphy->power_notifier_registered || !dev_pm_genpd_is_on(dev))
++		return dev_err_probe(dev, -EIO, "USB4 PHY power retention unavailable\n");
++	return 0;
++}
++
++static const struct dev_pm_ops atcphy_pm_ops = {
++	.prepare = atcphy_pm_prepare,
++};
++
+ static int atcphy_probe(struct platform_device *pdev)
+ {
+ 	struct apple_atcphy *atcphy;
+@@ -2864,6 +2914,17 @@ static int atcphy_probe(struct platform_device *pdev)
+ 	atcphy->mode = APPLE_ATCPHY_MODE_OFF;
+ 	atcphy->pipehandler_up = false;
+ 
++	if (dev->pm_domain) {
++		atcphy->power_nb.notifier_call = atcphy_power_notify;
++		ret = dev_pm_genpd_add_notifier(dev, &atcphy->power_nb);
++		if (ret)
++			return dev_err_probe(dev, ret, "Unable to retain USB4 PHY power\n");
++		ret = devm_add_action_or_reset(dev, atcphy_remove_power_notifier, dev);
++		if (ret)
++			return ret;
++		atcphy->power_notifier_registered = true;
++	}
++
+ 	ret = atcphy_probe_finalize(atcphy);
+ 	if (ret)
+ 		return ret;
+@@ -2894,6 +2955,7 @@ MODULE_DEVICE_TABLE(of, atcphy_match);
+ static struct platform_driver atcphy_driver = {
+ 	.driver = {
+ 		.name = "phy-apple-atc",
++		.pm = pm_sleep_ptr(&atcphy_pm_ops),
+ 		.of_match_table = atcphy_match,
+ 	},
+ 	.probe = atcphy_probe,
+-- 
+2.53.0
+
