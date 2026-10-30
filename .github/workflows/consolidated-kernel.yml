@@ -18,6 +18,8 @@ jobs:
           set -euo pipefail
           # Disposable hosted runner only: remove unused preinstalled SDK caches.
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+          sudo rm -rf /usr/lib/jvm /usr/share/swift /opt/google /opt/microsoft /opt/az /usr/share/miniconda /usr/share/gradle /usr/share/maven
+          sudo docker image prune --all --force
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends gcc-15 g++-15 make bc bison flex libssl-dev libelf-dev libncurses-dev pkg-config python3 git kmod zstd xz-utils rustc rust-src bindgen libclang-21-dev llvm-21 lld-21 pahole cpio rsync
           sudo apt-get clean
