@@ -1,0 +1,131 @@
+From fc87b980f051c5e226893459d5223f8ace8576ba Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:16:02 +0100
+Subject: [PATCH RFC 13/22] thunderbolt: defer initial display replay outside
+ component binding
+
+Test124 showed component bind holding component_mutex while waiting for tb->lock, and domain start holding tb->lock while component_add waited for component_mutex. Queue replay on embedded domain work instead of taking the domain mutex in the caller. Close queue admission before domain stop and drain before release. Test125 completed normal modprobe loading without an artificial delay, stable initial display, physical DP unplug/replug and OWC checksum checks.
+
+Prepared with AI assistance from the recorded local experiments. No maintainer review or DCO sign-off is asserted.
+---
+ drivers/thunderbolt/dp118-ready.inc | 70 ++++++++++++++++++-----------
+ drivers/thunderbolt/tb.c            |  5 +++
+ 2 files changed, 50 insertions(+), 25 deletions(-)
+
+diff --git a/drivers/thunderbolt/dp118-ready.inc b/drivers/thunderbolt/dp118-ready.inc
+index c4ca84df86396a67520a737b334fa1255f58600e..488ea07957c034a6422480defa6689c3d5d9184c 100644
+--- a/drivers/thunderbolt/dp118-ready.inc
++++ b/drivers/thunderbolt/dp118-ready.inc
+@@ -132,8 +132,12 @@ void tb_dp118_stop_begin(struct tb *tb)
+ {
+ 	struct tb_cm *tcm = tb_priv(tb);
+ 
+-	if (tb->cm_ops == &tb_cm_ops)
++	if (tb->cm_ops == &tb_cm_ops) {
++		spin_lock(&tcm->dp125_replay_lock);
++		tcm->dp125_replay_stopping = true;
++		spin_unlock(&tcm->dp125_replay_lock);
+ 		mutex_lock(&tcm->dp118_callback_lock);
++	}
+ }
+ 
+ void tb_dp118_stop_end(struct tb *tb)
+@@ -144,35 +148,51 @@ void tb_dp118_stop_end(struct tb *tb)
+ 		mutex_unlock(&tcm->dp118_callback_lock);
+ }
+ 
+-/* Replay existing routes for a late-registering display consumer. This only
+- * queues the same pinned, revalidated ready event; no firmware call here.
+- * The bus iterator pins the domain device. Taking tb->lock excludes stop,
+- * whose hotplug_active=false prevents queues after domain shutdown.
++/* Component bind may hold component_mutex, while domain start holds
++ * tb->lock and adds USB4 components. Never take tb->lock in the caller.
++ * The embedded work runs on the domain's ordered queue. Queue admission
++ * closes before domain stop; domain removal/release drains this queue
++ * before freeing tcm, so no last device reference is dropped by this work.
+  */
++static void dp125_replay_work(struct work_struct *work)
++{
++	struct tb_cm *tcm = container_of(work, struct tb_cm, dp125_replay_work);
++	struct tb *tb = tcm_to_tb(tcm);
++	struct tb_tunnel *tunnel;
++
++	mutex_lock(&tb->lock);
++	if (tcm->hotplug_active && tb->root_switch)
++		list_for_each_entry(tunnel, &tcm->tunnel_list, list)
++			if (tunnel->type == TB_TUNNEL_DP)
++				dp118_queue_paths_ready(tunnel);
++	mutex_unlock(&tb->lock);
++	tb_dbg(tb, "DP125 asynchronous ready replay complete\n");
++}
++
+ static int dp121_replay_domain(struct device *dev, void *data)
+ {
+- struct device *provider = data;
+- struct tb *tb;
+- struct tb_cm *tcm;
+- struct tb_tunnel *tunnel;
+- if (dev->type != &tb_domain_type)
+-  return 0;
+- tb = container_of(dev, struct tb, dev);
+- if (tb->cm_ops != &tb_cm_ops || tb->nhi->dev->parent != provider)
+-  return 0;
+- tcm = tb_priv(tb);
+- mutex_lock(&tb->lock);
+- if (tcm->hotplug_active && tb->root_switch)
+-  list_for_each_entry(tunnel, &tcm->tunnel_list, list)
+-   if (tunnel->type == TB_TUNNEL_DP)
+-    dp118_queue_paths_ready(tunnel);
+- mutex_unlock(&tb->lock);
+- return 0;
++	struct device *provider = data;
++	struct tb *tb;
++	struct tb_cm *tcm;
++
++	if (dev->type != &tb_domain_type)
++		return 0;
++	tb = container_of(dev, struct tb, dev);
++	if (tb->cm_ops != &tb_cm_ops || tb->nhi->dev->parent != provider)
++		return 0;
++	tcm = tb_priv(tb);
++	/* bus_for_each_dev pins the device through queue admission. */
++	spin_lock(&tcm->dp125_replay_lock);
++	if (!tcm->dp125_replay_stopping)
++		queue_work(tb->wq, &tcm->dp125_replay_work);
++	spin_unlock(&tcm->dp125_replay_lock);
++	return 0;
+ }
++
+ int codex_dp121_replay_ready(struct device *provider)
+ {
+- if (!provider)
+-  return -EINVAL;
+- return bus_for_each_dev(&tb_bus_type, NULL, provider, dp121_replay_domain);
++	if (!provider)
++		return -EINVAL;
++	return bus_for_each_dev(&tb_bus_type, NULL, provider, dp121_replay_domain);
+ }
+ EXPORT_SYMBOL_GPL(codex_dp121_replay_ready);
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index a68d094daf402c5eb251c97064617f531c3e4af0..059cd446eec17be7a563ddd96990faea5bf83a96 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -71,6 +71,9 @@ static atomic64_t dp110_sequence = ATOMIC64_INIT(0);
+ static const struct tb_cm_ops tb_cm_ops;
+ 
+ struct tb_cm {
++	spinlock_t dp125_replay_lock;
++	bool dp125_replay_stopping;
++	struct work_struct dp125_replay_work;
+ 	struct mutex dp118_callback_lock;
+ 	struct list_head tunnel_list;
+ 	struct list_head dp_resources;
+@@ -3601,6 +3604,8 @@ struct tb *tb_probe(struct tb_nhi *nhi)
+ 
+ 	tcm = tb_priv(tb);
+ 	mutex_init(&tcm->dp118_callback_lock);
++	spin_lock_init(&tcm->dp125_replay_lock);
++	INIT_WORK(&tcm->dp125_replay_work, dp125_replay_work);
+ 	INIT_LIST_HEAD(&tcm->tunnel_list);
+ 	INIT_LIST_HEAD(&tcm->dp_resources);
+ 	INIT_DELAYED_WORK(&tcm->remove_work, tb_remove_work);

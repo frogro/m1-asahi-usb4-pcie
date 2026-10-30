@@ -1,0 +1,592 @@
+From d7cc7409690b8cb8ffb6cb6c485d8e30febe1977 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:32:08 +0100
+Subject: [PATCH RFC 06/22] thunderbolt: associate Apple native PCIe hosts and
+ forward topology events
+
+Retain tested storage snapshot including host lifecycle ordering and NHI guard. Based in part on DjDeveloperr 8904429ab5cc; original mail preserved. Test49 ACK instrumentation is kept outside the functional source.
+
+Consolidation is AI-assisted. No new upstream endorsement or Signed-off-by is asserted.
+---
+ drivers/thunderbolt/Makefile |   2 +-
+ drivers/thunderbolt/apple.c  | 214 +++++++++++++++++++++++++++++++++++
+ drivers/thunderbolt/fwnode.c | 100 ++++++++++++++++
+ drivers/thunderbolt/nhi.h    |   6 +
+ drivers/thunderbolt/tb.c     |  49 +++++++-
+ drivers/thunderbolt/tb.h     |   2 +
+ 6 files changed, 370 insertions(+), 3 deletions(-)
+ create mode 100644 drivers/thunderbolt/fwnode.c
+
+diff --git a/drivers/thunderbolt/Makefile b/drivers/thunderbolt/Makefile
+index edcfe58bc8dea7c08d565bdb704d96383adbbea4..42edb26c3cd4bc2e48b4e091ba43ae0b421c568d 100644
+--- a/drivers/thunderbolt/Makefile
++++ b/drivers/thunderbolt/Makefile
+@@ -3,7 +3,7 @@ ccflags-y := -I$(src)
+ obj-${CONFIG_USB4} := thunderbolt.o
+ thunderbolt-objs := nhi.o ctl.o tb.o switch.o cap.o pci.o path.o tunnel.o eeprom.o
+ thunderbolt-objs += domain.o dma_port.o icm.o property.o xdomain.o lc.o tmu.o usb4.o
+-thunderbolt-objs += usb4_port.o nvm.o retimer.o quirks.o clx.o
++thunderbolt-objs += usb4_port.o nvm.o retimer.o quirks.o clx.o fwnode.o
+ 
+ thunderbolt-${CONFIG_ACPI} += acpi.o
+ thunderbolt-$(CONFIG_DEBUG_FS) += debugfs.o
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index 530008cc8ec5d8cf003f9944e2204ae9b804cd23..8b3a7fab21f2e87e83a24d5b7f4f80740cf12838 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -86,6 +86,7 @@
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
++#include <linux/pci-apple.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/reset.h>
+@@ -162,6 +163,7 @@
+ struct apple_cio {
+ 	struct device *dev;
+ 	struct device_node *np;
++	struct device_node *pcie_tunnel_np;
+ 	struct apple_rtkit *rtk;
+ 
+ 	void __iomem *rc_base;
+@@ -172,6 +174,7 @@ struct apple_cio {
+ 	void __iomem *sram_base;
+ 
+ 	struct reset_control *reset;
++	struct reset_control *pcie_reset;
+ 
+ 	struct dev_pm_domain_list *pd_list;
+ 
+@@ -185,6 +188,53 @@ struct apple_cio {
+ 	struct typec_thunderbolt_switch_dev *tbt_switch;
+ };
+ 
++/* Isolated test interface, disabled unless explicitly requested at load time. */
++static bool diagnostic_cycle;
++module_param(diagnostic_cycle, bool, 0400);
++MODULE_PARM_DESC(diagnostic_cycle, "Enable root-only ACIO power-cycle diagnostic");
++
++static void apple_cio_of_node_put(void *data)
++{
++	of_node_put(data);
++}
++
++static void apple_cio_reset_control_put(void *data)
++{
++	reset_control_put(data);
++}
++
++/*
++ * PCIe-C and its DART share this reset.  Acquire it while the tunneled host
++ * is still absent, then release ownership until the cable-start sequence.
++ */
++static int apple_cio_get_pcie_reset(struct apple_cio *acio)
++{
++	struct reset_control *rst = NULL;
++	struct device_node *child;
++	int ret;
++
++	for_each_available_child_of_node(acio->pcie_tunnel_np, child) {
++		if (!of_device_is_compatible(child, "apple,t8103-pciec"))
++			continue;
++		if (!of_property_read_bool(child, "apple,pciec-kernel-init"))
++			break;
++		rst = of_reset_control_get_optional_exclusive(child, NULL);
++		break;
++	}
++	of_node_put(child);
++	if (IS_ERR(rst))
++		return dev_err_probe(acio->dev, PTR_ERR(rst),
++				     "Unable to get PCIe-C reset\n");
++	if (!rst)
++		return 0;
++
++	reset_control_release(rst);
++	acio->pcie_reset = rst;
++	ret = devm_add_action_or_reset(acio->dev,
++				       apple_cio_reset_control_put, rst);
++	return ret;
++}
++
+ /**
+  * struct apple_nhi - Apple Native Host Interface
+  * @dev: NHI device
+@@ -460,7 +510,58 @@ static void apple_nhi_ring_configure(struct tb_ring *ring, u32 flags, u32 e2e_fl
+ 	writel(flags | e2e_flags, options);
+ }
+ 
++/* Each ACIO instance describes its own native PCIe host in the DT. */
++static int apple_nhi_pci_tunnel_changed(struct tb_nhi *nhi, bool active,
++				      bool surprise)
++{
++	struct apple_cio *acio = dev_get_drvdata(nhi->dev->parent);
++	struct device_node *np;
++	struct platform_device *host;
++	int ret = 0;
++
++	if (!acio->pcie_tunnel_np)
++		return 0;
++
++	for_each_available_child_of_node(acio->pcie_tunnel_np, np) {
++		if (!of_device_is_compatible(np, "apple,t8103-pciec"))
++			continue;
++		host = of_find_device_by_node(np);
++		/* Initial authorization can precede asynchronous host probe. */
++		if (host) {
++			ret = apple_pcie_tunnel_set_active(&host->dev, active,
++						   surprise);
++			put_device(&host->dev);
++		}
++		of_node_put(np);
++		return ret;
++	}
++	return 0;
++}
++
++static void apple_nhi_pci_topology_changed(struct tb_nhi *nhi)
++{
++	struct apple_cio *acio = dev_get_drvdata(nhi->dev->parent);
++	struct device_node *np;
++	struct platform_device *host;
++
++	if (!acio->pcie_tunnel_np)
++		return;
++	for_each_available_child_of_node(acio->pcie_tunnel_np, np) {
++		if (!of_device_is_compatible(np, "apple,t8103-pciec"))
++			continue;
++		host = of_find_device_by_node(np);
++		if (host) {
++			apple_pcie_tunnel_notify_hotplug(&host->dev);
++			put_device(&host->dev);
++		}
++		of_node_put(np);
++		return;
++	}
++}
++
+ static const struct tb_nhi_ops apple_nhi_ops = {
++	.pci_tunnel_changed = apple_nhi_pci_tunnel_changed,
++	.pci_tunnel_topology_changed = apple_nhi_pci_topology_changed,
+ 	.request_ring_irq = apple_nhi_request_irq,
+ 	.release_ring_irq = apple_nhi_release_irq,
+ 	.ring_interrupt_active = apple_nhi_ring_interrupt_active,
+@@ -487,6 +588,14 @@ static int apple_nhi_probe(struct platform_device *pdev)
+ 	int cap_apple;
+ 	int ret = 0;
+ 
++	/* ACIO recreates NHI and DART children on every cable transition.
++	 * Never start DMA if the generic deferred-probe timeout skipped DART.
++	 * Return directly: the parent's boot completion must await a real probe.
++	 */
++	if (!device_iommu_mapped(&pdev->dev))
++		return dev_err_probe(&pdev->dev, -EPROBE_DEFER,
++				     "waiting for NHI DART attachment\n");
++
+ 	anhi = devm_kzalloc(&pdev->dev, sizeof(*anhi), GFP_KERNEL);
+ 	if (!anhi) {
+ 		ret = -ENOMEM;
+@@ -670,6 +779,13 @@ static void apple_cio_stop(struct apple_cio *acio)
+ 	 */
+ 	of_platform_depopulate(acio->dev);
+ 
++	/* DART and PCIe teardown must finish before their register clock stops. */
++	if (acio->pcie_tunnel_np) {
++		ret = apple_pcie_tunnel_unprepare(acio->dev, acio->pcie_tunnel_np);
++		if (ret)
++			dev_warn(acio->dev, "PCIe-C late shutdown incomplete: %d\n", ret);
++	}
++
+ 	/* Try to shut down and power off the co-processor gracefully */
+ 	ret = apple_rtkit_poweroff(acio->rtk);
+ 	if (ret)
+@@ -706,6 +822,24 @@ static int apple_cio_start(struct apple_cio *acio)
+ 
+ 	lockdep_assert_held(&acio->lock);
+ 
++	/*
++	 * Reset PCIe-C while its domain is still off.  macOS performs this
++	 * before enabling the ACIO/PCIe power set; without it a stale DART or
++	 * non-posted fabric transaction can surface as an asynchronous SError.
++	 */
++	if (acio->pcie_reset) {
++		ret = reset_control_acquire(acio->pcie_reset);
++		if (ret)
++			return dev_err_probe(acio->dev, ret,
++					     "PCIe-C reset is still in use\n");
++		ret = reset_control_reset(acio->pcie_reset);
++		reset_control_release(acio->pcie_reset);
++		if (ret)
++			return dev_err_probe(acio->dev, ret,
++					     "failed to reset PCIe-C\n");
++		dev_info(acio->dev, "PCIe-C reset before ACIO start\n");
++	}
++
+ 	/* Create device links to the power domains in order to power them on */
+ 	for (i = 0; i < acio->pd_list->num_pds; i++) {
+ 		link = device_link_add(acio->dev, acio->pd_list->pd_devs[i],
+@@ -773,6 +907,36 @@ static int apple_cio_start(struct apple_cio *acio)
+ 		goto err_depopulate;
+ 	}
+ 
++	/*
++	 * The PCIe-C root complex is outside the ACIO MMIO window but shares
++	 * its cable-controlled power lifetime. Instantiate it only after the
++	 * router and NHI are live; parenting it to ACIO makes depopulation tear
++	 * it down before the co-processor and power domains disappear.
++	 */
++	if (acio->pcie_tunnel_np) {
++		/*
++		 * Clock PCIe-C and open its non-posted fabric before creating the
++		 * DART child.  Otherwise the DART's first MMIO access can surface a
++		 * pending fabric write as an asynchronous SError on T8103.
++		 */
++		ret = apple_pcie_tunnel_prepare(acio->dev, acio->pcie_tunnel_np);
++		if (ret) {
++			dev_err(acio->dev,
++				"failed to prepare tunneled PCIe controller: %d\n",
++				ret);
++			goto err_depopulate;
++		}
++
++		ret = of_platform_populate(acio->pcie_tunnel_np, NULL, NULL,
++					   acio->dev);
++		if (ret) {
++			dev_err(acio->dev,
++				"failed to populate tunneled PCIe controller: %d\n",
++				ret);
++			goto err_depopulate;
++		}
++	}
++
+ 	acio->current_cable_info = acio->target_cable_info;
+ 	return 0;
+ 
+@@ -880,6 +1044,44 @@ static int apple_cio_tbt_switch_set(struct typec_thunderbolt_switch_dev *sw,
+ 	return 0;
+ }
+ 
++/*
++ * Test only, with downstream filesystems unmounted. Keep the Type-C switch
++ * registered and the PHY configured; removing the ACIO driver itself would
++ * leave the PD driver's switch reference without a state replay on rebind.
++ * This is not a system-suspend implementation.
++ */
++static ssize_t diagnostic_cycle_store(struct device *dev,
++				     struct device_attribute *attr,
++				     const char *buf, size_t count)
++{
++	struct apple_cio *acio = dev_get_drvdata(dev);
++	int ret;
++
++	if (!diagnostic_cycle)
++		return -EOPNOTSUPP;
++	if (!sysfs_streq(buf, "cycle"))
++		return -EINVAL;
++
++	guard(mutex)(&acio->lock);
++	if (!acio->current_cable_info ||
++	    acio->current_cable_info != acio->target_cable_info)
++		return -ENOTCONN;
++
++	dev_info(dev, "diagnostic ACIO cycle begin, cable info %#x\n",
++		 acio->current_cable_info);
++	apple_cio_stop(acio);
++	ret = apple_cio_start(acio);
++	dev_info(dev, "diagnostic ACIO cycle restart returned %d\n", ret);
++	return ret ? ret : count;
++}
++static DEVICE_ATTR_WO(diagnostic_cycle);
++
++static struct attribute *apple_cio_diag_attrs[] = {
++	&dev_attr_diagnostic_cycle.attr,
++	NULL,
++};
++ATTRIBUTE_GROUPS(apple_cio_diag);
++
+ static int apple_cio_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -897,6 +1099,17 @@ static int apple_cio_probe(struct platform_device *pdev)
+ 	init_completion(&acio->nhi_boot_completion);
+ 	acio->dev = &pdev->dev;
+ 	acio->np = dev->of_node;
++	acio->pcie_tunnel_np =
++		of_parse_phandle(dev->of_node, "apple,pcie-tunnel", 0);
++	if (acio->pcie_tunnel_np) {
++		ret = devm_add_action_or_reset(dev, apple_cio_of_node_put,
++					       acio->pcie_tunnel_np);
++		if (ret)
++			return ret;
++		ret = apple_cio_get_pcie_reset(acio);
++		if (ret)
++			return ret;
++	}
+ 
+ 	acio->sram_res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "sram");
+ 	if (!acio->sram_res)
+@@ -996,6 +1209,7 @@ MODULE_DEVICE_TABLE(of, apple_acio_match);
+ static struct platform_driver apple_cio_driver = {
+ 	.driver = {
+ 		.name = "thunderbolt-apple-acio",
++		.dev_groups = apple_cio_diag_groups,
+ 		.of_match_table = apple_acio_match,
+ 		.pm = pm_sleep_ptr(&apple_cio_pm_ops),
+ 	},
+diff --git a/drivers/thunderbolt/fwnode.c b/drivers/thunderbolt/fwnode.c
+new file mode 100644
+index 0000000000000000000000000000000000000000..2da4c2eb58eb38fd73aa737544d061f06487e662
+--- /dev/null
++++ b/drivers/thunderbolt/fwnode.c
+@@ -0,0 +1,100 @@
++// SPDX-License-Identifier: GPL-2.0
++/* Firmware-described native PCIe port dependencies, including late ports. */
++
++#include <linux/device.h>
++#include <linux/notifier.h>
++#include <linux/pci.h>
++#include <linux/property.h>
++
++#include "tb.h"
++
++struct tb_fwnode_links {
++	struct notifier_block notifier;
++	struct device *nhi;
++};
++
++static int tb_fwnode_add_link(struct device *dev, void *data)
++{
++	struct tb_fwnode_links *links = data;
++	struct fwnode_handle *reference;
++	struct device_link *link;
++	struct pci_dev *pdev;
++	u32 port = 0;
++	bool matches;
++
++	if (!dev_is_pci(dev) || !dev_fwnode(dev))
++		return 0;
++	pdev = to_pci_dev(dev);
++	if (!pci_is_pcie(pdev) ||
++	    (pci_pcie_type(pdev) != PCI_EXP_TYPE_ROOT_PORT &&
++	     pci_pcie_type(pdev) != PCI_EXP_TYPE_DOWNSTREAM))
++		return 0;
++
++	reference = fwnode_find_reference(dev_fwnode(dev), "usb4-host-interface", 0);
++	if (IS_ERR(reference))
++		return 0;
++	matches = device_match_fwnode(links->nhi, reference);
++	fwnode_handle_put(reference);
++	if (!matches)
++		return 0;
++
++	/* The property identifies the connector within this NHI, not the BDF. */
++	device_property_read_u32(dev, "usb4-port-number", &port);
++	/*
++	 * The consumer must suspend before and resume after its NHI. Managed
++	 * links are purged on consumer deletion or supplier unbind. No extra
++	 * runtime-PM reference is taken here, so a scan racing a PCI add event
++	 * can safely encounter the same consumer twice.
++	 */
++	link = device_link_add(dev, links->nhi,
++			       DL_FLAG_AUTOREMOVE_SUPPLIER | DL_FLAG_PM_RUNTIME);
++	if (!link)
++		dev_warn(links->nhi, "native PCIe link from %s failed\n", dev_name(dev));
++	else
++		dev_info(links->nhi, "native PCIe link from %s (USB4 port %u)\n",
++			 dev_name(dev), port);
++	return 0;
++}
++
++static int tb_fwnode_pci_event(struct notifier_block *notifier,
++			       unsigned long event, void *dev)
++{
++	struct tb_fwnode_links *links =
++		container_of(notifier, struct tb_fwnode_links, notifier);
++
++	/* Device initialization and its firmware-node assignment are complete. */
++	if (event == BUS_NOTIFY_ADD_DEVICE)
++		tb_fwnode_add_link(dev, links);
++	return NOTIFY_DONE;
++}
++
++static void tb_fwnode_remove_notifier(void *data)
++{
++	struct tb_fwnode_links *links = data;
++
++	bus_unregister_notifier(&pci_bus_type, &links->notifier);
++}
++
++bool tb_fwnode_add_links(struct tb_nhi *nhi)
++{
++	struct tb_fwnode_links *links;
++	int ret;
++
++	if (!dev_fwnode(nhi->dev))
++		return false;
++	links = devm_kzalloc(nhi->dev, sizeof(*links), GFP_KERNEL);
++	if (!links)
++		return false;
++	links->nhi = nhi->dev;
++	links->notifier.notifier_call = tb_fwnode_pci_event;
++	/* Watch first, then scan, so a port appearing during setup is not lost. */
++	ret = bus_register_notifier(&pci_bus_type, &links->notifier);
++	if (ret)
++		return false;
++	ret = devm_add_action_or_reset(nhi->dev, tb_fwnode_remove_notifier, links);
++	if (ret)
++		return false;
++	bus_for_each_dev(&pci_bus_type, NULL, links, tb_fwnode_add_link);
++	dev_info(nhi->dev, "watching firmware-described native PCIe ports\n");
++	return true;
++}
+diff --git a/drivers/thunderbolt/nhi.h b/drivers/thunderbolt/nhi.h
+index afd9a11489a93607c592f6d6e5d68cc99f316b18..67ac65809e61c8ec3fa33d03894d52ebdab71ff1 100644
+--- a/drivers/thunderbolt/nhi.h
++++ b/drivers/thunderbolt/nhi.h
+@@ -81,6 +81,10 @@ struct tb_nhi_ring_layout {
+  *		    the standard USB4 NHI registers are used.
+  * @is_present: Whether the device is currently present on the parent bus
+  * @init_interrupts: NHI specific interrupt initialization hook
++ * @pci_tunnel_changed: Notify a native PCIe host before root tunnel removal or
++ *		      after activation; sleepable, serialized by the domain lock
++ * @pci_tunnel_topology_changed: Queue native-host hotplug work after a PCIe
++ *				 tunnel change, including nested tunnels
+  * @reset_interface: Resets the host interface
+  */
+ struct tb_nhi_ops {
+@@ -100,6 +104,8 @@ struct tb_nhi_ops {
+ 	bool (*is_present)(struct tb_nhi *nhi);
+ 	int (*init_interrupts)(struct tb_nhi *nhi);
+ 	void (*reset_interface)(struct tb_nhi *nhi);
++	int (*pci_tunnel_changed)(struct tb_nhi *nhi, bool active, bool surprise);
++	void (*pci_tunnel_topology_changed)(struct tb_nhi *nhi);
+ };
+ 
+ /*
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 1d6e0e75d043f4768baefff4c1a898fb1cbf5883..343eddf929e445c259b042bfc0f85fa97ccf5597 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -1742,6 +1742,30 @@ static void tb_discover_tunnels(struct tb *tb)
+ 	}
+ }
+ 
++/* Root tunnels reach a native host; nested tunnels do not own that host. */
++static int tb_native_pci_tunnel_changed(struct tb_tunnel *tunnel, bool active,
++				      bool surprise)
++{
++	struct tb *tb = tunnel->tb;
++
++	if (!tb_tunnel_is_pci(tunnel) ||
++	    tunnel->src_port->sw != tb->root_switch ||
++	    !tb->nhi->ops || !tb->nhi->ops->pci_tunnel_changed)
++		return 0;
++
++	return tb->nhi->ops->pci_tunnel_changed(tb->nhi, active, surprise);
++}
++
++/* Nested tunnels notify presence, but never reset their native root host. */
++static void tb_native_pci_topology_changed(struct tb_tunnel *tunnel)
++{
++	struct tb_nhi *nhi = tunnel->tb->nhi;
++
++	if (tb_tunnel_is_pci(tunnel) && nhi->ops &&
++	    nhi->ops->pci_tunnel_topology_changed)
++		nhi->ops->pci_tunnel_topology_changed(nhi);
++}
++
+ static void tb_deactivate_and_free_tunnel(struct tb_tunnel *tunnel)
+ {
+ 	struct tb_port *src_port, *dst_port;
+@@ -1750,7 +1774,10 @@ static void tb_deactivate_and_free_tunnel(struct tb_tunnel *tunnel)
+ 	if (!tunnel)
+ 		return;
+ 
++	tb_native_pci_tunnel_changed(tunnel, false,
++				     tunnel->dst_port->sw->is_unplugged);
+ 	tb_tunnel_deactivate(tunnel);
++	tb_native_pci_topology_changed(tunnel);
+ 	list_del(&tunnel->list);
+ 
+ 	tb = tunnel->tb;
+@@ -2285,6 +2312,7 @@ static void tb_disconnect_and_release_dp(struct tb *tb)
+ static int tb_disconnect_pci(struct tb *tb, struct tb_switch *sw)
+ {
+ 	struct tb_tunnel *tunnel;
++	int ret;
+ 	struct tb_port *up;
+ 
+ 	up = tb_switch_find_port(sw, TB_TYPE_PCIE_UP);
+@@ -2295,9 +2323,14 @@ static int tb_disconnect_pci(struct tb *tb, struct tb_switch *sw)
+ 	if (WARN_ON(!tunnel))
+ 		return -ENODEV;
+ 
++	ret = tb_native_pci_tunnel_changed(tunnel, false, false);
++	if (ret)
++		return ret;
++
+ 	tb_switch_xhci_disconnect(sw);
+ 
+ 	tb_tunnel_deactivate(tunnel);
++	tb_native_pci_topology_changed(tunnel);
+ 	list_del(&tunnel->list);
+ 	tb_tunnel_put(tunnel);
+ 	return 0;
+@@ -2305,6 +2338,7 @@ static int tb_disconnect_pci(struct tb *tb, struct tb_switch *sw)
+ 
+ static int tb_tunnel_pci(struct tb *tb, struct tb_switch *sw)
+ {
++	int ret;
+ 	struct tb_port *up, *down, *port;
+ 	struct tb_cm *tcm = tb_priv(tb);
+ 	struct tb_tunnel *tunnel;
+@@ -2333,6 +2367,13 @@ static int tb_tunnel_pci(struct tb *tb, struct tb_switch *sw)
+ 		return -EIO;
+ 	}
+ 
++	ret = tb_native_pci_tunnel_changed(tunnel, true, false);
++	if (ret) {
++		tb_tunnel_deactivate(tunnel);
++		tb_tunnel_put(tunnel);
++		return ret;
++	}
++
+ 	/*
+ 	 * PCIe L1 is needed to enable CL0s for Titan Ridge so enable it
+ 	 * here.
+@@ -2345,8 +2386,11 @@ static int tb_tunnel_pci(struct tb *tb, struct tb_switch *sw)
+ 
+ 	list_add_tail(&tunnel->list, &tcm->tunnel_list);
+ 
++	tb_native_pci_topology_changed(tunnel);
++
+ 	/* Schedule a delayed PCIe bus rescan in case pciehp misses devices */
+-	if (tb->nhi && tb->nhi->dev && to_pci_dev(tb->nhi->dev)->bus) {
++	if (tb->nhi && tb->nhi->dev && dev_is_pci(tb->nhi->dev) &&
++	    to_pci_dev(tb->nhi->dev)->bus) {
+ 		struct pci_bus *bus = to_pci_dev(tb->nhi->dev)->bus;
+ 		struct tb_pci_rescan_work *rescan_work;
+ 
+@@ -3465,7 +3509,8 @@ struct tb *tb_probe(struct tb_nhi *nhi)
+ 	 * before the PCIe/USB stack is resumed so complain here if we
+ 	 * found them missing.
+ 	 */
+-	if (!tb_apple_add_links(nhi) && !tb_acpi_add_links(nhi))
++	if (!tb_apple_add_links(nhi) && !tb_acpi_add_links(nhi) &&
++	    !tb_fwnode_add_links(nhi))
+ 		tb_warn(tb, "device links to tunneled native ports are missing!\n");
+ 
+ 	return tb;
+diff --git a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
+index 8f2ac506f9dd3a8e8ca27bcd0b3845943dfcf19a..74a6b2c11fe4013da47a8bcbb80e6654f94ac773 100644
+--- a/drivers/thunderbolt/tb.h
++++ b/drivers/thunderbolt/tb.h
+@@ -1512,6 +1512,8 @@ static inline bool usb4_port_device_is_offline(const struct usb4_port *usb4)
+ 
+ void tb_check_quirks(struct tb_switch *sw);
+ 
++bool tb_fwnode_add_links(struct tb_nhi *nhi);
++
+ #ifdef CONFIG_ACPI
+ bool tb_acpi_add_links(struct tb_nhi *nhi);
+ 

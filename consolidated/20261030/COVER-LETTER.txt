@@ -1,0 +1,33 @@
+Subject: [RFC PATCH 00/22] Apple M1 USB4 native PCIe storage and dock display integration
+
+This downstream review series consolidates the measured M1 native PCIe storage
+path and the Test125 dock-display path. It combines PCIe-C initialization,
+DART/MSI safety, Type-C transitions, firmware-node port association and topology
+notifications with DCP/DP-IN routing and display hotplug callbacks.
+
+The ordinary NVMe driver is unchanged. AMDGPU, TTM, GPU audio and application
+patches are not part of this series. Suspend remains explicitly deferred; the
+existing reset ACK diagnostic ambiguity is not presented as solved.
+
+Target base: UbuntuAsahi/linux f7734f4c91c0f47d9e762786968057bec99a0788.
+The review history was reconstructed from the matching source package; use
+apply-to-checkout.py to verify each preimage against the actual base before
+replaying on a normal fork. Do not upload the sparse reconstruction as a
+replacement upstream history.
+
+Original unmodified MSI and EPIC commits preserve their authors and trailers.
+The PCIe-C and DT adaptations retain copyright and credit their reference work;
+reference patch files are included in provenance. The local adaptations and
+consolidation are AI-assisted and are not claimed to have upstream endorsement.
+
+Validation: fresh replay of all 22 patches matches the prepared tree;
+olddefconfig and compilation of all affected translation units in the complete
+source tree pass; J274 DT compiles and matches the measured storage/display
+relationships. No final vmlinux link or combined hardware boot is claimed.
+Earlier SSD read/write/hotplug and dock display tests are recorded separately.
+
+Known review work: diagnostic names/interfaces and binding documentation,
+checkpatch/style, local DCO decisions, final full-build and hardware regression.
+The integration retains the measured storage policy as explicit boot parameters.
+
+See README.txt, series, config/, provenance/ and validation/ for details.

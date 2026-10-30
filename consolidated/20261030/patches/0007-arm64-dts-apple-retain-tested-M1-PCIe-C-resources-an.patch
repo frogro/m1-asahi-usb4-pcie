@@ -1,0 +1,308 @@
+From 2774f083f80c993737820a2f291c3f15a5b48b1f Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:32:08 +0100
+Subject: [PATCH RFC 07/22] arm64: dts: apple: retain tested M1 PCIe-C
+ resources and tunables
+
+Adapted from the archived PCIe-C DT work by DjDeveloperr and Chris Kearney (6243e9d63a90, e08681891d79, 79e9d853b0fb), with measured local changes. Original reference mails remain in provenance. No firmware binary included.
+
+Consolidation is AI-assisted. No new upstream endorsement or Signed-off-by is asserted.
+---
+ .../boot/dts/apple/t8103-pciec-tunables.dtsi  |  50 ++++++
+ arch/arm64/boot/dts/apple/t8103-pmgr.dtsi     |   2 +
+ arch/arm64/boot/dts/apple/t8103.dtsi          | 168 +++++++++++++++++-
+ 3 files changed, 214 insertions(+), 6 deletions(-)
+ create mode 100644 arch/arm64/boot/dts/apple/t8103-pciec-tunables.dtsi
+
+diff --git a/arch/arm64/boot/dts/apple/t8103-pciec-tunables.dtsi b/arch/arm64/boot/dts/apple/t8103-pciec-tunables.dtsi
+new file mode 100644
+index 0000000000000000000000000000000000000000..2265bdab1cba3ce2dffce71fcc14902cc1aff047
+--- /dev/null
++++ b/arch/arm64/boot/dts/apple/t8103-pciec-tunables.dtsi
+@@ -0,0 +1,50 @@
++/* t8103 Thunderbolt PCIe configuration, shared by both ports.
++ * Offsets are relative to the region named by each property.
++ */
++apple,pciec-kernel-init;
++apple,tunable-rc =
++	<0x718 0x7c000 0x0>,
++	<0x8bc 0x1 0x0>,
++	<0x78 0x7000 0x0>,
++	<0x814 0xffffffff 0xf060>;
++apple,tunable-fabric =
++	<0x4 0x1f001f 0x180018>,
++	<0x8 0x1 0x1>,
++	<0xc 0x1 0x1>,
++	<0x10 0x801f 0x4>,
++	<0x18 0x3ff 0x280>,
++	<0x44 0x1 0x1>,
++	<0x94 0x801f 0x4>,
++	<0x9c 0x801f 0x4>,
++	<0x20 0x801f 0x4>,
++	<0x28 0x3f 0x20>,
++	<0x2c 0x801f 0x4>,
++	<0x34 0x3f 0x20>,
++	<0x38 0x801f 0x4>,
++	<0x40 0x10001 0x10001>,
++	<0x48 0x1 0x1>,
++	<0x4c 0x801f 0x4>,
++	<0x54 0x7f007f 0x4b004b>,
++	<0x58 0x801f 0x4>,
++	<0x60 0x801f 0x4>,
++	<0x68 0x1 0x1>,
++	<0x6c 0x801f 0x4>,
++	<0x74 0x1 0x1>,
++	<0x78 0x801f 0x4>,
++	<0x84 0x801f 0x4>,
++	<0x8c 0x1 0x1>,
++	<0x90 0x1 0x1>,
++	<0xa4 0x801f 0x4>;
++apple,tunable-debug =
++	<0x1000 0x1 0x0>;
++apple,tunable-oe-fabric =
++	<0x4 0x70007 0x40004>,
++	<0x8 0x1 0x1>,
++	<0xc 0x1 0x1>,
++	<0x10 0x801f 0x4>,
++	<0x18 0x7f007f 0x450045>,
++	<0x1c 0x801f 0x4>,
++	<0x24 0x801f 0x4>,
++	<0x2c 0x1 0x1>,
++	<0x30 0x1 0x1>,
++	<0x34 0x801f 0x4>;
+diff --git a/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi b/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi
+index 5d3846d44e35786ef8a1444aa512f6d79196c610..4a399bc8f0276b8e5632e92d39ffa0cb6c7a2423 100644
+--- a/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi
++++ b/arch/arm64/boot/dts/apple/t8103-pmgr.dtsi
+@@ -864,6 +864,7 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = "atc0_pcie";
++		apple,always-on;
+ 		power-domains = <&ps_atc0_common>;
+ 	};
+ 
+@@ -908,6 +909,7 @@
+ 		#power-domain-cells = <0>;
+ 		#reset-cells = <0>;
+ 		label = "atc1_pcie";
++		apple,always-on;
+ 		power-domains = <&ps_atc1_common>;
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/apple/t8103.dtsi b/arch/arm64/boot/dts/apple/t8103.dtsi
+index a2aa7fb7f2389b2cf748eded0b6eb1c086ce1efb..35714d3fdf8d482a1698dda5736e7c54c2da9c1a 100644
+--- a/arch/arm64/boot/dts/apple/t8103.dtsi
++++ b/arch/arm64/boot/dts/apple/t8103.dtsi
+@@ -1572,17 +1572,22 @@
+ 		usb4_0_acio: cio@381ac0000 {
+ 			compatible = "apple,t8103-usb4-acio";
+ 			reg = <0x3 0x81ac0000 0x0 0xc000>,
+-				<0x3 0x81080000 0x0 0x20000>;
+-			reg-names = "rc", "sram";
++				<0x3 0x81080000 0x0 0x20000>,
++				<0x3 0x81e44000 0x0 0x4000>;
++			reg-names = "rc", "sram", "pcie-adapter";
++			/* PCIe adapter configuration. One record, bits [2:1] at +0x1008. */
++			apple,tunable-pcie-adapter = <0x1008 0x6 0x6>;
+ 
+ 			mboxes = <&usb4_0_mbox>;
+ 			resets = <&cio_reset 0>;
+ 
+ 			power-domains = <&ps_atc0_cio>,
+ 					<&ps_atc0_cio_pcie>,
+-					<&ps_atc0_cio_usb>;
++					<&ps_atc0_cio_usb>,
++					<&ps_atc0_pcie>;
+ 
+ 			thunderbolt-switch;
++			apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio0_pins>;
+ 			pinctrl-names = "default";
+@@ -1645,6 +1650,79 @@
+ 			};
+ 		};
+ 
++		usb4_0_pcie_tunnel: usb4-pcie-tunnel-0 {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			apciec0_dart: iommu@3a1008000 {
++				compatible = "apple,t8103-usb4-dart";
++				reg = <0x3 0xa1008000 0x0 0x4000>;
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 771 IRQ_TYPE_LEVEL_HIGH>;
++				#iommu-cells = <1>;
++			};
++
++			apciec0: pcie@3b0000000 {
++				compatible = "apple,t8103-pciec";
++				device_type = "pci";
++				dma-coherent;
++
++				reg = <0x3 0xb0000000 0x0 0x10000000>,
++					<0x3 0xa0000000 0x0 0x4000>,
++					<0x3 0xa1000000 0x0 0x8000>,
++					<0x3 0xa0004000 0x0 0x4000>,
++					<0x3 0xa0200000 0x0 0x4000>,
++					<0x3 0xa1010000 0x0 0x4000>,
++					<0x3 0xa0008000 0x0 0x4000>;
++				reg-names = "config", "rc", "port0", "fabric",
++					    "debug", "ltssm", "oe-fabric";
++#include "t8103-pciec-tunables.dtsi"
++
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 770 IRQ_TYPE_LEVEL_HIGH>;
++				power-domains = <&ps_atc0_pcie>;
++				resets = <&ps_atc0_pcie>;
++
++				msi-controller;
++				msi-parent = <&apciec0>;
++				msi-ranges = <&aic AIC_IRQ 738 IRQ_TYPE_EDGE_RISING 32>;
++
++				iommu-map = <0x0 &apciec0_dart 0x0 0x40>;
++				iommu-map-mask = <0x3f>;
++
++				bus-range = <0x0 0x7f>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges = <0x43000000 0x4 0x0
++					  0x4 0x0 0x0 0x80000000>,
++					 <0x02000000 0x0 0x80000000
++					  0x4 0x80000000 0x0 0x40000000>,
++					 <0x42000000 0x0 0xc0000000
++					  0x4 0xc0000000 0x0 0x40000000>;
++
++				apciec0_port: pci@0,0 {
++					device_type = "pci";
++					reg = <0x0 0x0 0x0 0x0 0x0>;
++					external-facing;
++					/* Port configuration. One record at +0x140. */
++					apple,tunable = <0x140 0x1 0x1>;
++
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					interrupt-controller;
++					#interrupt-cells = <1>;
++					interrupt-map-mask = <0 0 0 7>;
++					interrupt-map = <0 0 0 1 &apciec0_port 0 0 0 0>,
++							<0 0 0 2 &apciec0_port 0 0 0 1>,
++							<0 0 0 3 &apciec0_port 0 0 0 2>,
++							<0 0 0 4 &apciec0_port 0 0 0 3>;
++				};
++			};
++		};
++
+ 		dwc3_0: usb@382280000 {
+ 			compatible = "apple,t8103-dwc3";
+ 			reg = <0x3 0x82280000 0x0 0xcd00>, <0x3 0x8228cd00 0x0 0x3200>;
+@@ -1721,17 +1799,22 @@
+ 		usb4_1_acio: cio@501ac0000 {
+ 			compatible = "apple,t8103-usb4-acio";
+ 			reg = <0x5 0x01ac0000 0x0 0xc000>,
+-				<0x5 0x01080000 0x0 0x20000>;
+-			reg-names = "rc", "sram";
++				<0x5 0x01080000 0x0 0x20000>,
++				<0x5 0x01e44000 0x0 0x4000>;
++			reg-names = "rc", "sram", "pcie-adapter";
++			/* PCIe adapter configuration. One record, bits [2:1] at +0x1008. */
++			apple,tunable-pcie-adapter = <0x1008 0x6 0x6>;
+ 
+ 			mboxes = <&usb4_1_mbox>;
+ 			resets = <&cio_reset 1>;
+ 
+ 			power-domains = <&ps_atc1_cio>,
+ 					<&ps_atc1_cio_pcie>,
+-					<&ps_atc1_cio_usb>;
++					<&ps_atc1_cio_usb>,
++					<&ps_atc1_pcie>;
+ 
+ 			thunderbolt-switch;
++			apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio1_pins>;
+ 			pinctrl-names = "default";
+@@ -1794,6 +1877,79 @@
+ 			};
+ 		};
+ 
++		usb4_1_pcie_tunnel: usb4-pcie-tunnel-1 {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			apciec1_dart: iommu@521008000 {
++				compatible = "apple,t8103-usb4-dart";
++				reg = <0x5 0x21008000 0x0 0x4000>;
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 851 IRQ_TYPE_LEVEL_HIGH>;
++				#iommu-cells = <1>;
++			};
++
++			apciec1: pcie@530000000 {
++				compatible = "apple,t8103-pciec";
++				device_type = "pci";
++				dma-coherent;
++
++				reg = <0x5 0x30000000 0x0 0x10000000>,
++					<0x5 0x20000000 0x0 0x4000>,
++					<0x5 0x21000000 0x0 0x8000>,
++					<0x5 0x20004000 0x0 0x4000>,
++					<0x5 0x20200000 0x0 0x4000>,
++					<0x5 0x21010000 0x0 0x4000>,
++					<0x5 0x20008000 0x0 0x4000>;
++				reg-names = "config", "rc", "port0", "fabric",
++					    "debug", "ltssm", "oe-fabric";
++#include "t8103-pciec-tunables.dtsi"
++
++				interrupt-parent = <&aic>;
++				interrupts = <AIC_IRQ 850 IRQ_TYPE_LEVEL_HIGH>;
++				power-domains = <&ps_atc1_pcie>;
++				resets = <&ps_atc1_pcie>;
++
++				msi-controller;
++				msi-parent = <&apciec1>;
++				msi-ranges = <&aic AIC_IRQ 818 IRQ_TYPE_EDGE_RISING 32>;
++
++				iommu-map = <0x0 &apciec1_dart 0x0 0x40>;
++				iommu-map-mask = <0x3f>;
++
++				bus-range = <0x0 0x7f>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges = <0x43000000 0x5 0x80000000
++					  0x5 0x80000000 0x0 0x80000000>,
++					 <0x02000000 0x0 0x00100000
++					  0x6 0x00100000 0x0 0x3ff00000>,
++					 <0x42000000 0x0 0x40000000
++					  0x6 0x40000000 0x0 0x40000000>;
++
++				apciec1_port: pci@0,0 {
++					device_type = "pci";
++					reg = <0x0 0x0 0x0 0x0 0x0>;
++					external-facing;
++					/* Port configuration. One record at +0x140. */
++					apple,tunable = <0x140 0x1 0x1>;
++
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					interrupt-controller;
++					#interrupt-cells = <1>;
++					interrupt-map-mask = <0 0 0 7>;
++					interrupt-map = <0 0 0 1 &apciec1_port 0 0 0 0>,
++							<0 0 0 2 &apciec1_port 0 0 0 1>,
++							<0 0 0 3 &apciec1_port 0 0 0 2>,
++							<0 0 0 4 &apciec1_port 0 0 0 3>;
++				};
++			};
++		};
++
+ 		dwc3_1: usb@502280000 {
+ 			compatible = "apple,t8103-dwc3";
+ 			reg = <0x5 0x02280000 0x0 0xcd00>, <0x5 0x0228cd00 0x0 0x3200>;

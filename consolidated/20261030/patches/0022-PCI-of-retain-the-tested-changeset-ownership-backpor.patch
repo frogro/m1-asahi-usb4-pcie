@@ -1,0 +1,165 @@
+From 552486f3c101b6b1b54dfa018cea664bbc808e23 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:43:21 +0100
+Subject: [PATCH RFC 22/22] PCI: of: retain the tested changeset ownership
+ backport
+
+Recover the local backport based on Herve Codina v12 10/10, https://lkml.rescloud.iu.edu/2610.0/01519.html . It was already present in both archived working trees and therefore absent from their incremental comparison. The broader orig-source snapshot retains the exact tested files. Keep per-PCI-object changeset ownership for dynamic-node removal. Original reference patch and adaptation metadata are preserved in the review package; this is not presented as an unchanged upstream commit.
+---
+ .../gpu/apple-usb4-consolidation.rst          |  5 ++--
+ arch/arm64/boot/dts/apple/t8103-j274.dts      |  1 -
+ drivers/pci/of.c                              | 26 ++++++++++---------
+ include/linux/pci.h                           | 10 +++++++
+ 4 files changed, 27 insertions(+), 15 deletions(-)
+
+diff --git a/Documentation/gpu/apple-usb4-consolidation.rst b/Documentation/gpu/apple-usb4-consolidation.rst
+index 98f7cf2763a514af467ec32fd6b90eb72c712f65..832d1581a312cc2dc3dae4578557fc3449430315 100644
+--- a/Documentation/gpu/apple-usb4-consolidation.rst
++++ b/Documentation/gpu/apple-usb4-consolidation.rst
+@@ -50,9 +50,10 @@ is added. The separate Test49 diagnostic module is not a production dependency.
+ What was consolidated
+ ---------------------
+ 
+-The archived storage comparison had two changes already present in its initial
++The archived storage comparison had changes already present in its initial
+ working tree: the USB4 DART bitmap/enable-register correction and CD321x USB4
+-role quiescing. Both are included relative to the reconstructed pristine Ubuntu
++role quiescing, plus the PCI dynamic-OF changeset ownership backport based on
++Herve Codina v12 10/10. All are included relative to the reconstructed pristine Ubuntu
+ source package. Omitting them would silently lose part of the measured setup.
+ 
+ The storage and display series both change thunderbolt/apple.c, tb.c and tb.h.
+diff --git a/arch/arm64/boot/dts/apple/t8103-j274.dts b/arch/arm64/boot/dts/apple/t8103-j274.dts
+index ebc01c3ec536d9644f32e95cc823b2154506159e..31334a06b019b812f3821f5a77e868b0f62cc646 100644
+--- a/arch/arm64/boot/dts/apple/t8103-j274.dts
++++ b/arch/arm64/boot/dts/apple/t8103-j274.dts
+@@ -235,4 +235,3 @@
+ 	usb4-host-interface = <&usb4_1_nhi>;
+ 	usb4-port-number = <0>;
+ };
+-
+diff --git a/drivers/pci/of.c b/drivers/pci/of.c
+index 8b18c4ba845cfdc57cc64aa4d5c578bb151dd9ba..b6af2d3e08c9ca3aedfa680ecceb222fccba181c 100644
+--- a/drivers/pci/of.c
++++ b/drivers/pci/of.c
+@@ -654,13 +654,15 @@ void of_pci_remove_node(struct pci_dev *pdev)
+ 	struct device_node *np;
+ 
+ 	np = pci_device_to_OF_node(pdev);
+-	if (!np || !of_node_check_flag(np, OF_DYNAMIC))
++	if (!pdev->cset || !np)
+ 		return;
+ 
+ 	device_remove_of_node(&pdev->dev);
+-	of_changeset_revert(np->data);
+-	of_changeset_destroy(np->data);
++	of_changeset_revert(pdev->cset);
++	of_changeset_destroy(pdev->cset);
+ 	of_node_put(np);
++	kfree(pdev->cset);
++	pdev->cset = NULL;
+ }
+ 
+ void of_pci_make_dev_node(struct pci_dev *pdev)
+@@ -713,18 +715,17 @@ void of_pci_make_dev_node(struct pci_dev *pdev)
+ 	if (ret)
+ 		goto out_free_node;
+ 
+-	np->data = cset;
+-
+ 	ret = device_add_of_node(&pdev->dev, np);
+ 	if (ret)
+ 		goto out_revert_cset;
+ 
++	pdev->cset = cset;
++
+ 	kfree(name);
+ 
+ 	return;
+ 
+ out_revert_cset:
+-	np->data = NULL;
+ 	of_changeset_revert(cset);
+ out_free_node:
+ 	of_node_put(np);
+@@ -740,14 +741,16 @@ void of_pci_remove_host_bridge_node(struct pci_host_bridge *bridge)
+ 	struct device_node *np;
+ 
+ 	np = pci_bus_to_OF_node(bridge->bus);
+-	if (!np || !of_node_check_flag(np, OF_DYNAMIC))
++	if (!bridge->cset || !np)
+ 		return;
+ 
+ 	device_remove_of_node(&bridge->bus->dev);
+ 	device_remove_of_node(&bridge->dev);
+-	of_changeset_revert(np->data);
+-	of_changeset_destroy(np->data);
++	of_changeset_revert(bridge->cset);
++	of_changeset_destroy(bridge->cset);
+ 	of_node_put(np);
++	kfree(bridge->cset);
++	bridge->cset = NULL;
+ }
+ 
+ void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge)
+@@ -810,8 +813,6 @@ void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge)
+ 	if (ret)
+ 		goto out_free_node;
+ 
+-	np->data = cset;
+-
+ 	/* Add the of_node to host bridge and the root bus */
+ 	ret = device_add_of_node(&bridge->dev, np);
+ 	if (ret)
+@@ -821,6 +822,8 @@ void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge)
+ 	if (ret)
+ 		goto out_remove_bridge_dev_of_node;
+ 
++	bridge->cset = cset;
++
+ 	kfree(name);
+ 
+ 	return;
+@@ -828,7 +831,6 @@ void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge)
+ out_remove_bridge_dev_of_node:
+ 	device_remove_of_node(&bridge->dev);
+ out_revert_cset:
+-	np->data = NULL;
+ 	of_changeset_revert(cset);
+ out_free_node:
+ 	of_node_put(np);
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index d20de3b18df7482cec7f4992d8a07a1ee55fcc44..e16c24e84488610892b0c6692b0f9401e2306dfb 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -339,6 +339,9 @@ struct pcie_link_state;
+ struct pci_sriov;
+ struct pci_p2pdma;
+ struct rcec_ea;
++#ifdef CONFIG_PCI_DYNAMIC_OF_NODES
++struct of_changeset;
++#endif
+ 
+ /* struct pci_dev - describes a PCI device
+  *
+@@ -597,6 +600,9 @@ struct pci_dev {
+ 	u8		tph_mode;	/* TPH mode */
+ 	u8		tph_req_type;	/* TPH requester type */
+ #endif
++#ifdef CONFIG_PCI_DYNAMIC_OF_NODES
++	struct of_changeset *cset; /* Changeset used for OF node creation */
++#endif
+ };
+ 
+ static inline struct pci_dev *pci_physfn(struct pci_dev *dev)
+@@ -668,6 +674,10 @@ struct pci_host_bridge {
+ 	unsigned int	broken_l1ss_resume:1;	/* Resuming from L1SS during
+ 						   system suspend is broken */
+ 
++#ifdef CONFIG_PCI_DYNAMIC_OF_NODES
++	struct of_changeset *cset; /* Changeset used for OF node creation */
++#endif
++
+ 	/* Resource alignment requirements */
+ 	resource_size_t (*align_resource)(struct pci_dev *dev,
+ 			const struct resource *res,

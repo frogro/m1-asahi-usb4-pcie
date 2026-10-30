@@ -1,0 +1,379 @@
+From 36af338078062b170e94b850c21743f3ad8cca50 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:16:01 +0100
+Subject: [PATCH RFC 09/22] phy: apple: preserve a scoped DP-IN clock lease on
+ M1
+
+Carry the ATCPHY source used by DP90 through DP125. Keep the USB4 lane mode while a DCP firmware callback owns the display clock, and restore the saved fields on release. Includes earlier measured USB fallback preparation from this test line. Clock sequence adapted from omacom/linux-aurora 2f725546d6ac6afe0bd5abfa1a844971519f0076; original file license and attribution retained. The diagnostic property remains opt-in; suspend/resume is not implemented here.
+
+Prepared with AI assistance from the recorded local experiments. No maintainer review or DCO sign-off is asserted.
+---
+ drivers/phy/apple/atc.c | 341 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 340 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/phy/apple/atc.c b/drivers/phy/apple/atc.c
+index 0fe15742e78171b394da2807f9dcd131154b957d..44b5c16d38f8433c5443ad6aab62ea6ed8e20291 100644
+--- a/drivers/phy/apple/atc.c
++++ b/drivers/phy/apple/atc.c
+@@ -652,6 +652,11 @@ struct apple_atcphy {
+ 	const struct atcphy_hw *hw;
+ 	enum atcphy_mode mode;
+ 	int dp_link_rate;
++	bool dp88_clock_on;
++	u8 dp88_rate;
++	u64 dp90_owner;
++	u32 dp90_saved[11];
++	int dp90_old_rate;
+ 	bool swap_lanes;
+ 	bool pipehandler_up;
+ 
+@@ -1677,6 +1682,337 @@ static int atcphy_auspll_apb_command(struct apple_atcphy *atcphy, u32 command)
+ 	return 0;
+ }
+ 
++
++int codex_m1_dpin_clock_acquire(struct device *dev, u8 rate, u64 *cookie);
++int codex_m1_dpin_clock_rate(struct device *dev, u64 cookie, u8 rate);
++int codex_m1_dpin_clock_release(struct device *dev, u64 cookie);
++
++/* DP88 isolated M1 clock probe. Clock sequence adapted from
++ * omacom/linux-aurora@2f725546d6ac6afe0bd5abfa1a844971519f0076 atc.c,
++ * retaining its GPL-2.0 OR BSD-2-Clause license. No physical lane mode switch.
++ * This is diagnostic code, not a production tunnel/PM implementation.
++ */
++#define ACIOPHY_CFG0_RX_SMALL GENMASK(7, 6)
++#define ACIOPHY_CFG0_RX_BIG GENMASK(11, 10)
++#define ACIOPHY_CFG0_RX_CLAMP GENMASK(15, 14)
++#define ACIOPHY_SLEEP_CTRL_TX_BIG GENMASK(1, 0)
++#define ACIOPHY_SLEEP_CTRL_TX_SMALL GENMASK(5, 4)
++#define ACIOPHY_SLEEP_CTRL_TX_CLAMP GENMASK(9, 8)
++#define AUSPLL_CLKOUT_MASTER_DRVR_EN (AUSPLL_CLKOUT_MASTER_PCLK_DRVR_EN | \
++ AUSPLL_CLKOUT_MASTER_PCLK2_DRVR_EN | AUSPLL_CLKOUT_MASTER_REFBUFCLK_DRVR_EN)
++static int dp88_apb_command(struct apple_atcphy *atcphy, u32 command)
++{
++	int ret;
++	u32 reg;
++
++	ret = readl_poll_timeout(atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE, reg,
++			 !(reg & (AUSPLL_APB_CMD_OVERRIDE_REQ | AUSPLL_APB_CMD_OVERRIDE_ACK)), 10, 10000);
++	if (ret)
++		return ret;
++	reg = readl(atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE);
++	reg &= ~AUSPLL_APB_CMD_OVERRIDE_CMD;
++	reg |= FIELD_PREP(AUSPLL_APB_CMD_OVERRIDE_CMD, command);
++	reg |= AUSPLL_APB_CMD_OVERRIDE_REQ;
++	reg |= AUSPLL_APB_CMD_OVERRIDE_UNK28;
++	writel(reg, atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE);
++
++	ret = readl_poll_timeout(atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE, reg,
++				 (reg & AUSPLL_APB_CMD_OVERRIDE_ACK), 10, 10000);
++	if (ret)
++		dev_warn(atcphy->dev, "AUSPLL APB command was not acked\n");
++
++	core_clear32(atcphy, AUSPLL_APB_CMD_OVERRIDE, AUSPLL_APB_CMD_OVERRIDE_REQ);
++
++	if (!ret)
++		ret = readl_poll_timeout(atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE, reg,
++			 !(reg & AUSPLL_APB_CMD_OVERRIDE_ACK), 10, 10000);
++	dev_info(atcphy->dev, "DP88 APB command=%x ret=%d final=%08x\n", command, ret, reg);
++	return ret;
++}
++
++static void dp88_pclk(struct apple_atcphy *atcphy, u32 selector)
++{
++ core_set32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, DPTXPHY_PMA_LANE_RESET_N);
++ core_set32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, DPTXPHY_PMA_LANE_RESET_N_OV);
++ core_set32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, DPTX_PCLK1_ENABLE);
++ core_mask32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, DPTX_PCLK1_SELECT,
++             FIELD_PREP(DPTX_PCLK1_SELECT, selector));
++}
++static void dp88_wake(struct apple_atcphy *atcphy)
++{
++	/*
++	 * The PHY is up in USB4/TBT mode here. These overrides only force the
++	 * already awake blocks to stay awake for the DP clock path; the order
++	 * and the 2 us gaps are the ones this was validated with, the USB4
++	 * link stays up across them.
++	 *
++	 * Common block: override small/big sleep off and release the clamp.
++	 */
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_COMMON_SMALL);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_COMMON_SMALL_OV);
++	udelay(2);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_COMMON_BIG);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_COMMON_BIG_OV);
++	udelay(2);
++	core_clear32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_COMMON_CLAMP);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_COMMON_CLAMP_OV);
++	udelay(2);
++	/* same for the TX lanes */
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, ACIOPHY_SLEEP_CTRL_TX_SMALL);
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, ACIOPHY_SLEEP_CTRL_TX_SMALL_OV);
++	udelay(2);
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, ACIOPHY_SLEEP_CTRL_TX_BIG);
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, ACIOPHY_SLEEP_CTRL_TX_BIG_OV);
++	udelay(2);
++	core_clear32(atcphy, ACIOPHY_SLEEP_CTRL, ACIOPHY_SLEEP_CTRL_TX_CLAMP);
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, ACIOPHY_SLEEP_CTRL_TX_CLAMP_OV);
++	udelay(2);
++	/* and for the RX lanes */
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_RX_BIG);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_RX_BIG_OV);
++	udelay(2);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_RX_SMALL);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_RX_SMALL_OV);
++	udelay(2);
++	core_clear32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_RX_CLAMP);
++	core_set32(atcphy, ACIOPHY_CFG0, ACIOPHY_CFG0_RX_CLAMP_OV);
++	udelay(2);
++}
++static int dp88_rate_selector(u8 rate)
++{
++	switch (rate) {
++	case 0x06:	/* RBR */
++		return 4;
++	case 0x0a:	/* HBR */
++		return 3;
++	case 0x14:	/* HBR2 */
++		return 1;
++	case 0x1e:	/* HBR3 */
++		return 0;
++	default:
++		return -EINVAL;
++	}
++}
++static int dp88_start(struct apple_atcphy *atcphy, u8 rate)
++{
++	int selector, ret;
++	u32 value;
++
++	lockdep_assert_held(&atcphy->lock);
++	selector = dp88_rate_selector(rate);
++	if (selector < 0)
++		return selector;
++	if (atcphy->dp88_clock_on) {
++		if (atcphy->dp88_rate == rate)
++			return 0;
++		/*
++		 * Rate change: DCP brackets it with WillChange/DidChange link
++		 * configuration, so the crossbar is already down; reselect the clocks.
++		 */
++		dp88_pclk(atcphy, selector);
++		atcphy->dp88_rate = rate;
++		return 0;
++	}
++	/*
++	 * Don't take the PLL from another clock client or an in-flight command.
++	 * Only live PLL outputs or a pending request mean that: the PCLK gates
++	 * in TX_DP_CTRL0 read set when idle and AUSPLL_LOCK stays set after a
++	 * stop, so neither says anything about another client.
++	 */
++	if (readl(atcphy->regs.core + AUSPLL_CLKOUT_MASTER) & AUSPLL_CLKOUT_MASTER_DRVR_EN ||
++	    readl(atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE) & AUSPLL_APB_CMD_OVERRIDE_REQ)
++		return -EBUSY;
++	ret = readl_poll_timeout(atcphy->regs.core + ACIOPHY_CMN_SHM_STS_REG0, value,
++				 value & ACIOPHY_CMN_SHM_STS_REG0_CMD_READY, 10, 10000);
++	if (ret)
++		return ret;
++	atcphy->dp88_clock_on = true;
++	/* the PLL no longer holds a DP alt mode configuration */
++	atcphy->dp_link_rate = -1;
++
++	dp88_wake(atcphy);
++	dp88_pclk(atcphy, selector);
++
++	/* fixed AUSPLL descriptor */
++	core_clear32(atcphy, AUSPLL_FREQ_CFG, AUSPLL_FREQ_REFCLK);
++	core_mask32(atcphy, AUSPLL_FREQ_DESC_A, U32_MAX,
++		    FIELD_PREP(AUSPLL_FD_FREQ_COUNT_TARGET, 0x21c) |
++		    FIELD_PREP(AUSPLL_FD_KI_MAN, 8) | FIELD_PREP(AUSPLL_FD_KI_EXP, 3) |
++		    FIELD_PREP(AUSPLL_FD_KP_MAN, 8) | FIELD_PREP(AUSPLL_FD_KP_EXP, 7));
++	core_clear32(atcphy, AUSPLL_FREQ_DESC_B,
++		     AUSPLL_FD_FBDIVN_FRAC_DEN | AUSPLL_FD_FBDIVN_FRAC_NUM);
++	core_mask32(atcphy, AUSPLL_FREQ_DESC_C,
++		    AUSPLL_FD_SDM_SSC_STEP | AUSPLL_FD_SDM_SSC_EN | AUSPLL_FD_PCLK_DIV_SEL |
++		    AUSPLL_FD_LFSDM_DIV | AUSPLL_FD_LFCLK_CTRL | AUSPLL_FD_VCLK_OP_DIVN |
++		    AUSPLL_FD_VCLK_PRE_DIVN,
++		    FIELD_PREP(AUSPLL_FD_PCLK_DIV_SEL, 5) | FIELD_PREP(AUSPLL_FD_LFSDM_DIV, 1) |
++		    FIELD_PREP(AUSPLL_FD_LFCLK_CTRL, 5) | FIELD_PREP(AUSPLL_FD_VCLK_OP_DIVN, 2) |
++		    AUSPLL_FD_VCLK_PRE_DIVN);
++	core_mask32(atcphy, AUSPLL_CLKOUT_DIV, AUSPLL_CLKOUT_PLLA_REFBUFCLK_DI,
++		    FIELD_PREP(AUSPLL_CLKOUT_PLLA_REFBUFCLK_DI, 1));
++	core_set32(atcphy, AUSPLL_CLKOUT_DTC_VREG, AUSPLL_DTC_VREG_BYPASS);
++	core_set32(atcphy, AUSPLL_BGR, AUSPLL_BGR_CTRL_AVAIL);
++	core_set32(atcphy, AUSPLL_CLKOUT_MASTER, AUSPLL_CLKOUT_MASTER_PCLK_DRVR_EN);
++	core_set32(atcphy, AUSPLL_CLKOUT_MASTER, AUSPLL_CLKOUT_MASTER_PCLK2_DRVR_EN);
++	core_set32(atcphy, AUSPLL_CLKOUT_MASTER, AUSPLL_CLKOUT_MASTER_REFBUFCLK_DRVR_EN);
++	ret = dp88_apb_command(atcphy, 0);
++	if (ret)
++		goto err_stop;
++	ret = readl_poll_timeout(atcphy->regs.core + ACIOPHY_DP_PCLK_STAT, value,
++				 value & ACIOPHY_AUSPLL_LOCK, 10, 10000);
++	if (ret) {
++		dev_err(atcphy->dev, "DP tunnel clock: AUSPLL did not lock\n");
++		goto err_stop;
++	}
++	ret = dp88_apb_command(atcphy, 0x2000);
++	if (ret)
++		goto err_stop;
++	atcphy->dp88_rate = rate;
++	return 0;
++
++err_stop:
++	/* Caller performs one checked shutdown and restores saved fields. */
++	return ret;
++}
++
++static const struct { u32 offset; u32 mask; } dp88_saved_fields[] = {
++ { ACIOPHY_CFG0, 0x0003ffff }, { ACIOPHY_SLEEP_CTRL, 0x00000fff },
++ { ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, DPTXPHY_PMA_LANE_RESET_N |
++   DPTXPHY_PMA_LANE_RESET_N_OV | DPTX_PCLK1_ENABLE | DPTX_PCLK1_SELECT },
++ { AUSPLL_FREQ_CFG, AUSPLL_FREQ_REFCLK }, { AUSPLL_FREQ_DESC_A, U32_MAX },
++ { AUSPLL_FREQ_DESC_B, AUSPLL_FD_FBDIVN_FRAC_DEN | AUSPLL_FD_FBDIVN_FRAC_NUM },
++ { AUSPLL_FREQ_DESC_C, AUSPLL_FD_SDM_SSC_STEP | AUSPLL_FD_SDM_SSC_EN |
++   AUSPLL_FD_PCLK_DIV_SEL | AUSPLL_FD_LFSDM_DIV | AUSPLL_FD_LFCLK_CTRL |
++   AUSPLL_FD_VCLK_OP_DIVN | AUSPLL_FD_VCLK_PRE_DIVN },
++ { AUSPLL_CLKOUT_DIV, AUSPLL_CLKOUT_PLLA_REFBUFCLK_DI },
++ { AUSPLL_CLKOUT_DTC_VREG, AUSPLL_DTC_VREG_BYPASS },
++ { AUSPLL_BGR, AUSPLL_BGR_CTRL_AVAIL },
++ { AUSPLL_CLKOUT_MASTER, AUSPLL_CLKOUT_MASTER_DRVR_EN },
++};
++
++static bool dp88_mode_valid(struct apple_atcphy *atcphy)
++{
++ return of_machine_is_compatible("apple,t8103") &&
++        of_property_read_bool(atcphy->np, "codex,dpin-clock-test") &&
++        (atcphy->mode == APPLE_ATCPHY_MODE_USB4 || atcphy->mode == APPLE_ATCPHY_MODE_TBT);
++}
++
++/* DRAFT DP90: separate leases for asynchronous DCP callbacks.
++ * The CIO caller must still protect its power lifetime while invoking each API.
++ * No locks are retained across the API return or any firmware request.
++ * Not yet integrated into DCP and not runtime validated.
++ */
++static atomic64_t dp90_generation_counter = ATOMIC64_INIT(0);
++
++static int dp90_restore_locked(struct apple_atcphy *atcphy)
++{
++ int i, ret;
++ lockdep_assert_held(&atcphy->lock);
++ if (!atcphy->dp88_clock_on) {
++  atcphy->dp90_owner = 0;
++  return 0;
++ }
++ core_clear32(atcphy, AUSPLL_CLKOUT_MASTER, AUSPLL_CLKOUT_MASTER_DRVR_EN);
++ ret = dp88_apb_command(atcphy, 3);
++ if (ret)
++  return ret;
++ for (i = ARRAY_SIZE(dp88_saved_fields) - 1; i >= 0; i--)
++  core_mask32(atcphy, dp88_saved_fields[i].offset, dp88_saved_fields[i].mask,
++              atcphy->dp90_saved[i] & dp88_saved_fields[i].mask);
++ for (i = 0; i < ARRAY_SIZE(dp88_saved_fields); i++)
++  if ((readl(atcphy->regs.core + dp88_saved_fields[i].offset) & dp88_saved_fields[i].mask) !=
++      (atcphy->dp90_saved[i] & dp88_saved_fields[i].mask))
++   return -EIO;
++ atcphy->dp88_clock_on = false;
++ atcphy->dp88_rate = 0;
++ atcphy->dp_link_rate = atcphy->dp90_old_rate;
++ atcphy->dp90_owner = 0;
++ return 0;
++}
++
++int codex_m1_dpin_clock_acquire(struct device *dev, u8 rate, u64 *cookie)
++{
++ struct apple_atcphy *atcphy = dev_get_drvdata(dev);
++ u32 apb;
++ int i, ret, cleanup;
++ if (!cookie || !atcphy || !of_device_is_compatible(dev->of_node, "apple,t8103-atcphy"))
++  return -EINVAL;
++ *cookie = 0;
++ if (dp88_rate_selector(rate) < 0)
++  return -EINVAL;
++ guard(mutex)(&atcphy->lock);
++ if (!dp88_mode_valid(atcphy))
++  return -ENOLINK;
++ if (atcphy->dp90_owner || atcphy->dp88_clock_on)
++  return -EBUSY;
++ BUILD_BUG_ON(ARRAY_SIZE(dp88_saved_fields) != ARRAY_SIZE(atcphy->dp90_saved));
++ for (i = 0; i < ARRAY_SIZE(dp88_saved_fields); i++) {
++  atcphy->dp90_saved[i] = readl(atcphy->regs.core + dp88_saved_fields[i].offset);
++  if (atcphy->dp90_saved[i] == U32_MAX)
++   return -EIO;
++ }
++ apb = readl(atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE);
++ if (apb == U32_MAX)
++  return -EIO;
++ if (apb & (AUSPLL_APB_CMD_OVERRIDE_REQ | AUSPLL_APB_CMD_OVERRIDE_ACK))
++  return -EBUSY;
++ atcphy->dp90_old_rate = atcphy->dp_link_rate;
++ atcphy->dp90_owner = atomic64_inc_return(&dp90_generation_counter);
++ if (!atcphy->dp90_owner)
++  atcphy->dp90_owner = atomic64_inc_return(&dp90_generation_counter);
++ *cookie = atcphy->dp90_owner;
++ ret = dp88_start(atcphy, rate);
++ if (ret) {
++  cleanup = dp90_restore_locked(atcphy);
++  if (!cleanup)
++   *cookie = 0;
++  dev_info(dev, "DP90 acquire failed=%d cleanup=%d owner=%llu\n",
++           ret, cleanup, atcphy->dp90_owner);
++  return cleanup ? cleanup : ret;
++ }
++ dev_info(dev, "DP90 acquired owner=%llu rate=%02x\n", *cookie, rate);
++ return 0;
++}
++EXPORT_SYMBOL_GPL(codex_m1_dpin_clock_acquire);
++
++int codex_m1_dpin_clock_rate(struct device *dev, u64 cookie, u8 rate)
++{
++ struct apple_atcphy *atcphy = dev_get_drvdata(dev);
++ int ret;
++ if (!atcphy || !of_device_is_compatible(dev->of_node, "apple,t8103-atcphy"))
++  return -EINVAL;
++ guard(mutex)(&atcphy->lock);
++ /* Reject stale callbacks before reading any powered register. */
++ if (!cookie || atcphy->dp90_owner != cookie)
++  return -ESTALE;
++ if (!dp88_mode_valid(atcphy))
++  return -ENOLINK;
++ if (!atcphy->dp88_clock_on)
++  return -EIO;
++ ret = dp88_start(atcphy, rate);
++ dev_info(dev, "DP90 rate owner=%llu rate=%02x ret=%d\n", cookie, rate, ret);
++ return ret;
++}
++EXPORT_SYMBOL_GPL(codex_m1_dpin_clock_rate);
++
++int codex_m1_dpin_clock_release(struct device *dev, u64 cookie)
++{
++ struct apple_atcphy *atcphy = dev_get_drvdata(dev);
++ int ret;
++ if (!atcphy || !of_device_is_compatible(dev->of_node, "apple,t8103-atcphy"))
++  return -EINVAL;
++ guard(mutex)(&atcphy->lock);
++ if (!cookie || atcphy->dp90_owner != cookie)
++  return -ESTALE;
++ if (!dp88_mode_valid(atcphy))
++  return -ENOLINK;
++ ret = dp90_restore_locked(atcphy);
++ dev_info(dev, "DP90 release owner=%llu ret=%d remaining=%llu\n",
++          cookie, ret, atcphy->dp90_owner);
++ return ret;
++}
++EXPORT_SYMBOL_GPL(codex_m1_dpin_clock_release);
++
+ static int atcphy_dp_configure(struct apple_atcphy *atcphy, enum atcphy_dp_link_rate lr)
+ {
+ 	const struct atcphy_dp_link_rate_configuration *cfg;
+@@ -2514,7 +2850,10 @@ static int atcphy_probe(struct platform_device *pdev)
+ 	atcphy->mode = APPLE_ATCPHY_MODE_OFF;
+ 	atcphy->pipehandler_up = false;
+ 
+-	return atcphy_probe_finalize(atcphy);
++	ret = atcphy_probe_finalize(atcphy);
++	if (ret)
++		return ret;
++	return 0;
+ }
+ 
+ static const struct atcphy_hw atcphy_hw_t8103 = {

@@ -1,0 +1,55 @@
+From b324f6d4a00bc44ae63f5521c4cd19776b7e689e Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:38:04 +0100
+Subject: [PATCH RFC 20/22] drm: apple: avoid recursive Kconfig dependencies
+ for optional display providers
+
+The complete olddefconfig check exposed DRM_APPLE -> USB4_APPLE_SOC -> MUX_APPLE_DPXBAR -> MULTIPLEXER, while DRM_APPLE selects MULTIPLEXER. Remove the newly introduced conditional depends expressions; the shared headers already gate optional calls with IS_REACHABLE. The documented modular configuration enables all providers together. This was not caught by the earlier external-module build against a pre-generated configuration.
+---
+ Documentation/gpu/apple-usb4-dpin-draft.rst | 5 +++--
+ drivers/gpu/drm/apple/Kconfig               | 2 --
+ drivers/thunderbolt/Kconfig                 | 2 --
+ 3 files changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/Documentation/gpu/apple-usb4-dpin-draft.rst b/Documentation/gpu/apple-usb4-dpin-draft.rst
+index 87d0b2925603a62b6283b9a185ab2765377755d6..5cfb01eb9bb3c3d1f055d5f0f9a394e1f243c2f2 100644
+--- a/Documentation/gpu/apple-usb4-dpin-draft.rst
++++ b/Documentation/gpu/apple-usb4-dpin-draft.rst
+@@ -54,8 +54,9 @@ its compiler toolchain. Enable these existing tristates together::
+ 
+ Normal in-tree Kbuild and depmod resolve the dependencies. The source series
+ contains no /run-dependent KBUILD_EXTRA_SYMBOLS paths. New shared interfaces
+-live in include/linux. Built-in consumers cannot depend on modular providers;
+-optional-provider stubs preserve configurations without the USB4 display path.
++live in include/linux. IS_REACHABLE provider stubs preserve configurations without the USB4 display
++path, including built-in consumers with modular optional providers. Enable the
++five providers together as above to use this route.
+ Initial display routing defaults on when the explicit board route exists. The
+ read-only appledrm.dpin_autostart parameter remains available for diagnosis.
+ 
+diff --git a/drivers/gpu/drm/apple/Kconfig b/drivers/gpu/drm/apple/Kconfig
+index 86de961a437a5c8203fc8ef55169d6c9ab5ef4fb..ecf7afd76cedaf6e69eb39e2fabbdc17cb979604 100644
+--- a/drivers/gpu/drm/apple/Kconfig
++++ b/drivers/gpu/drm/apple/Kconfig
+@@ -5,8 +5,6 @@ config DRM_APPLE
+ 	depends on ARCH_APPLE || COMPILE_TEST
+ 	depends on APPLE_RTKIT
+ 	depends on OF_ADDRESS
+-	depends on USB4 || !USB4
+-	depends on USB4_APPLE_SOC || !USB4_APPLE_SOC
+ 	select APPLE_PMP_REPORT
+ 	select DRM_CLIENT_SELECTION
+ 	select DRM_KMS_HELPER
+diff --git a/drivers/thunderbolt/Kconfig b/drivers/thunderbolt/Kconfig
+index 578c41f9a61569959a9109e18382a26bbcec1a17..d9fbe3a0dc3fdb40077749c597559c75b2d499e2 100644
+--- a/drivers/thunderbolt/Kconfig
++++ b/drivers/thunderbolt/Kconfig
+@@ -79,8 +79,6 @@ config USB4_APPLE_SOC
+ 	tristate "Apple Silicon USB4/Thunderbolt Support"
+ 	depends on ARCH_APPLE || COMPILE_TEST
+ 	depends on OF && APPLE_RTKIT
+-	depends on PHY_APPLE_ATC || !PHY_APPLE_ATC
+-	depends on MUX_APPLE_DPXBAR || !MUX_APPLE_DPXBAR
+ 	depends on TYPEC
+ 	select APPLE_TUNABLE
+ 	help

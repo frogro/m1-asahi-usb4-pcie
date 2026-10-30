@@ -1,0 +1,29 @@
+From f91861c0889f9fbcd9f0bfb27838103be361adbd Mon Sep 17 00:00:00 2001
+From: Ramzi Abdiche <abdicheramzi@gmail.com>
+Date: Wed, 2 Sep 2026 19:47:03 +0200
+Subject: [PATCH RFC 08/22] drm: apple: Accept notify-style EPIC replies on DCP
+ 14.7
+
+Signed-off-by: Ramzi Abdiche <abdicheramzi@gmail.com>
+---
+ drivers/gpu/drm/apple/afk.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/apple/afk.c b/drivers/gpu/drm/apple/afk.c
+index b7f16298826925a1a4120cd3e24f72ca9533f823..8a96a5efc03318a61db37bfafeb3386aaca5cc24 100644
+--- a/drivers/gpu/drm/apple/afk.c
++++ b/drivers/gpu/drm/apple/afk.c
+@@ -569,7 +569,12 @@ static void afk_recv_handle(struct apple_dcp_afkep *ep, u32 channel, u32 type,
+ 	    subtype == EPIC_SUBTYPE_TEARDOWN)
+ 		return afk_recv_handle_teardown(ep, channel);
+ 
+-	if (type == EPIC_TYPE_REPLY && eshdr->category == EPIC_CAT_REPLY)
++	/* Firmware 14.7 may label standard-service replies as notifications. */
++	if (eshdr->category == EPIC_CAT_REPLY &&
++	    (type == EPIC_TYPE_REPLY ||
++	     (ep->dcp->fw_compat >= DCP_FIRMWARE_V_14_7 &&
++	      type == EPIC_TYPE_NOTIFY &&
++	      subtype == EPIC_SUBTYPE_STD_SERVICE)))
+ 		return afk_recv_handle_reply(ep, channel,
+ 					     le16_to_cpu(eshdr->tag), payload,
+ 					     payload_size);

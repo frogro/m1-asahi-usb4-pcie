@@ -1,0 +1,424 @@
+From 8cf7f77ab7a93df38be2549e7fdd2be7f9b10ed3 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:16:01 +0100
+Subject: [PATCH RFC 11/22] thunderbolt: apple: provide scoped M1 DP-IN routing
+ and callbacks
+
+Use the DP104 CIO provider used unchanged in DP125. Track clock/route leases and reject stale callbacks after teardown. The current provider intentionally accepts one M1 DP-IN0 route; this is not a generic multi-controller or multi-stream API. Includes the prior test-line CIO lifecycle changes present in the validated module. Do not infer correctness for whole-dock surprise removal or suspend from DP-only hotplug.
+
+Prepared with AI assistance from the recorded local experiments. No maintainer review or DCO sign-off is asserted.
+---
+ drivers/thunderbolt/apple.c           |  37 +++-
+ drivers/thunderbolt/dpin-provider.inc | 290 ++++++++++++++++++++++++++
+ include/linux/apple-usb4-dpin.h       |  10 +
+ 3 files changed, 336 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/thunderbolt/dpin-provider.inc
+ create mode 100644 include/linux/apple-usb4-dpin.h
+
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index 8b3a7fab21f2e87e83a24d5b7f4f80740cf12838..398b485ba43655694c733f14fa8473b3c4b2e0b6 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -84,6 +84,7 @@
+ #include <linux/iopoll.h>
+ #include <linux/module.h>
+ #include <linux/mutex.h>
++#include <linux/mux/consumer.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+ #include <linux/pci-apple.h>
+@@ -180,6 +181,14 @@ struct apple_cio {
+ 
+ 	struct mutex lock;
+ 
++	struct platform_device *dp91_phy;
++	struct mux_control *dp91_mux;
++	void __iomem *dp91_regs;
++	u64 dp91_token, dp91_clock;
++	bool dp91_routed, dp91_poisoned;
++	bool dp104_running;
++	u32 dp98_irq_saved;
++	bool dp98_irq_owned;
+ 	u32 current_cable_info;
+ 	u32 target_cable_info;
+ 	struct completion nhi_boot_completion;
+@@ -234,6 +243,7 @@ static int apple_cio_get_pcie_reset(struct apple_cio *acio)
+ 				       apple_cio_reset_control_put, rst);
+ 	return ret;
+ }
++#include "dpin-provider.inc"
+ 
+ /**
+  * struct apple_nhi - Apple Native Host Interface
+@@ -777,6 +787,7 @@ static void apple_cio_stop(struct apple_cio *acio)
+ 	 * After we shut down the ACIO co-processor we will no longer be able to access
+ 	 * the MMIO space of these so make sure nothing tries to do just that.
+ 	 */
++	dp91_revoke(acio);
+ 	of_platform_depopulate(acio->dev);
+ 
+ 	/* DART and PCIe teardown must finish before their register clock stops. */
+@@ -1155,7 +1166,11 @@ static int apple_cio_probe(struct platform_device *pdev)
+ 	else if (ret < 3)
+ 		return dev_err_probe(dev, -EINVAL, "Not enough PM domains\n");
+ 
+-	/* And finally register the OOB notification for Thunderbolt/USB4 cables */
++	ret = dp91_provider_init(acio);
++	if (ret)
++		return ret;
++
++        /* And finally register the OOB notification for Thunderbolt/USB4 cables */
+ 	struct typec_thunderbolt_switch_desc desc = {
+ 		.fwnode = pdev->dev.fwnode,
+ 		.set = apple_cio_tbt_switch_set,
+@@ -1166,6 +1181,20 @@ static int apple_cio_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(acio->tbt_switch),
+ 				     "Unable to register thunderbolt switch\n");
+ 
++	if (acio->dp91_phy) {
++		down_write(&dp91_registry_lock);
++		if (dp91_registered) {
++			up_write(&dp91_registry_lock);
++			typec_thunderbolt_switch_unregister(acio->tbt_switch);
++			mutex_lock(&acio->lock);
++			if (acio->current_cable_info)
++				apple_cio_stop(acio);
++			mutex_unlock(&acio->lock);
++			return -EBUSY;
++		}
++		dp91_registered = acio;
++		up_write(&dp91_registry_lock);
++	}
+ 	return 0;
+ }
+ 
+@@ -1173,11 +1202,17 @@ static void apple_cio_remove(struct platform_device *pdev)
+ {
+ 	struct apple_cio *acio = platform_get_drvdata(pdev);
+ 
++	down_write(&dp91_registry_lock);
++	if (dp91_registered == acio)
++		dp91_registered = NULL;
++	up_write(&dp91_registry_lock);
+ 	typec_thunderbolt_switch_unregister(acio->tbt_switch);
+ 
+ 	guard(mutex)(&acio->lock);
+ 	if (acio->current_cable_info)
+ 		apple_cio_stop(acio);
++	if (acio->dp91_regs)
++		iounmap(acio->dp91_regs);
+ }
+ 
+ static int apple_cio_prepare(struct device *dev)
+diff --git a/drivers/thunderbolt/dpin-provider.inc b/drivers/thunderbolt/dpin-provider.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..969770bc585da101b9b5c5aed0b4e200b38ad9b5
+--- /dev/null
++++ b/drivers/thunderbolt/dpin-provider.inc
+@@ -0,0 +1,290 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* DP91 diagnostic M1/DP-IN0 provider, not a general multi-stream driver.
++ * Register sequence: DP88-90 and macOS/m1n1 captures; clock implementation
++ * attributed separately in the DP90 PHY source. No firmware calls here.
++ * Lock order: provider registry read lock -> CIO lock -> ATCPHY lock.
++ * Cable shutdown already holds CIO lock and revokes before power removal.
++ */
++#include <linux/apple-usb4-dpin.h>
++#include <linux/apple-display-crossbar.h>
++#include <linux/rwsem.h>
++static DECLARE_RWSEM(dp91_registry_lock);
++static struct apple_cio *dp91_registered;
++extern int codex_m1_dpin_clock_acquire(struct device *, u8, u64 *);
++extern int codex_m1_dpin_clock_rate(struct device *, u64, u8);
++extern int codex_m1_dpin_clock_release(struct device *, u64);
++static atomic64_t dp91_sequence = ATOMIC64_INIT(0);
++
++/* DP97: bounded reads only while holding the validated live CIO lease.
++ * Offsets also read in the macOS DP74 reference; no new register writes.
++ */
++static void dp97_snapshot(struct apple_cio *acio, const char *phase)
++{
++	u32 status, event, config, control, ack;
++	lockdep_assert_held(&acio->lock);
++	status = readl(acio->dp91_regs);
++	event = readl(acio->dp91_regs + 0x4);
++	config = readl(acio->dp91_regs + 0x8);
++	control = readl(acio->dp91_regs + 0xc);
++	ack = readl(acio->dp91_regs + 0x10);
++	dev_info(acio->dev, "DP97 snapshot %s status=%08x event=%08x config=%08x ctrl=%08x ack=%08x\n",
++		 phase, status, event, config, control, ack);
++}
++
++static int dp91_inactive(struct apple_cio *acio)
++{
++	u32 ctrl, ack;
++	int ret;
++	lockdep_assert_held(&acio->lock);
++	ctrl = readl(acio->dp91_regs + 0xc);
++	if (ctrl == U32_MAX)
++		return -EIO;
++	writel(ctrl | 1, acio->dp91_regs + 0xc);
++	ret = readl_poll_timeout(acio->dp91_regs + 0x10, ack,
++				ack != U32_MAX && (ack & 1), 10, 100000);
++	if (ret)
++		return ret;
++	if (acio->dp91_routed) {
++		ret = codex_m1_dpxbar_link(acio->dp91_mux, false);
++		if (ret)
++			return ret;
++	}
++	acio->dp104_running = false;
++	return 0;
++}
++
++static int dp91_revoke(struct apple_cio *acio)
++{
++	int ret = 0;
++	lockdep_assert_held(&acio->lock);
++	/* Invalidate admission before touching hardware or dropping its power. */
++	acio->dp91_token = 0;
++	if (!acio->dp91_regs)
++		return 0;
++	/* Restore only while this provider still owns live, unpoisoned MMIO. */
++	if (!acio->dp91_poisoned && acio->dp98_irq_owned) {
++		writel(acio->dp98_irq_saved, acio->dp91_regs + 0x8);
++		readl(acio->dp91_regs + 0x8);
++		acio->dp98_irq_owned = false;
++	}
++	ret = acio->dp91_poisoned ? -EUCLEAN : dp91_inactive(acio);
++	if (!ret && acio->dp91_routed) {
++		ret = mux_control_deselect(acio->dp91_mux);
++		if (!ret)
++			acio->dp91_routed = false;
++	}
++	if (!ret && acio->dp91_clock)
++		ret = codex_m1_dpin_clock_release(&acio->dp91_phy->dev,
++						acio->dp91_clock);
++	if (ret) {
++		/* Fail closed: no new lease after an incomplete cleanup. */
++		acio->dp91_poisoned = true;
++		/* Keep ownership/power on failure; do not access poisoned MMIO. */
++		dev_err(acio->dev, "DP91 revoke incomplete: %d; new bindings blocked\n", ret);
++	} else {
++		acio->dp91_clock = 0;
++	}
++	/* Keep resources until remove if cleanup failed; never revisit this MMIO. */
++	if (!ret) {
++		iounmap(acio->dp91_regs);
++		acio->dp91_regs = NULL;
++	}
++	return ret;
++}
++
++int codex_dpin_begin(struct device *dev, u64 *token)
++{
++	struct apple_cio *acio;
++	u32 ctrl, ack, status;
++	int ret = -ENODEV;
++	if (!token)
++		return -EINVAL;
++	*token = 0;
++	down_read(&dp91_registry_lock);
++	acio = dp91_registered;
++	if (!acio || acio->dev != dev)
++		goto out;
++	mutex_lock(&acio->lock);
++	if (!acio->dp91_phy || acio->dp91_poisoned) {
++		ret = -EOPNOTSUPP;
++		goto unlock;
++	}
++	if (!acio->current_cable_info || !acio->rtk || acio->nhi_boot_status) {
++		ret = -ENOLINK;
++		goto unlock;
++	}
++	if (acio->dp91_token || acio->dp91_regs) {
++		ret = -EBUSY;
++		goto unlock;
++	}
++	acio->dp91_regs = ioremap_np(acio->rc_res->start + 0x390000, 0x4000);
++	if (!acio->dp91_regs) {
++		ret = -ENOMEM;
++		goto unlock;
++	}
++	ctrl = readl(acio->dp91_regs + 0xc);
++	ack = readl(acio->dp91_regs + 0x10);
++	status = readl(acio->dp91_regs);
++	if (ctrl == U32_MAX || ack == U32_MAX || status == U32_MAX ||
++	    !(ctrl & 1) || !(ack & 1) || !(status & BIT(2))) {
++		ret = -EBUSY;
++		iounmap(acio->dp91_regs);
++		acio->dp91_regs = NULL;
++		goto unlock;
++	}
++	ret = codex_m1_dpin_clock_acquire(&acio->dp91_phy->dev, 0x14,
++					&acio->dp91_clock);
++	if (ret) {
++		int cleanup = dp91_revoke(acio);
++		if (cleanup)
++			ret = cleanup;
++		goto unlock;
++	}
++	/* DP98 bounded experiment. Register semantics checked against our macOS
++	 * DP74 capture and omacom/linux-aurora apple_dpin_up at
++	 * 2f725546d6ac6afe0bd5abfa1a844971519f0076. Not a complete IRQ handler.
++	 * Preserve the original enable mask for orderly lease retirement.
++	 */
++	{
++		u32 pending = readl(acio->dp91_regs + 0x4);
++		u32 mask = readl(acio->dp91_regs + 0x8);
++		if (pending == U32_MAX || mask == U32_MAX) {
++			ret = -EIO;
++			dp91_revoke(acio);
++			goto unlock;
++		}
++		acio->dp98_irq_saved = mask;
++		acio->dp98_irq_owned = true;
++		writel(pending, acio->dp91_regs + 0x4);
++		if (pending & BIT(0))
++			writel(readl(acio->dp91_regs), acio->dp91_regs);
++		writel(mask | 3, acio->dp91_regs + 0x8);
++		dp97_snapshot(acio, "DP98-events-enabled");
++	}
++	acio->dp91_token = atomic64_inc_return(&dp91_sequence);
++	if (!acio->dp91_token)
++		acio->dp91_token = atomic64_inc_return(&dp91_sequence);
++	*token = acio->dp91_token;
++unlock:
++	mutex_unlock(&acio->lock);
++out:
++	up_read(&dp91_registry_lock);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(codex_dpin_begin);
++
++int codex_dpin_call(struct device *dev, u64 token, enum codex_dpin_op op, u8 rate)
++{
++	struct apple_cio *acio;
++	u32 ctrl, ack;
++	int ret = -ENODEV;
++	down_read(&dp91_registry_lock);
++	acio = dp91_registered;
++	if (!acio || acio->dev != dev)
++		goto out;
++	mutex_lock(&acio->lock);
++	/* No register access until both generation and power are validated. */
++	if (!token || token != acio->dp91_token || acio->dp91_poisoned) {
++		ret = -ESTALE;
++		goto unlock;
++	}
++	if (!acio->current_cable_info || !acio->rtk || acio->nhi_boot_status) {
++		ret = -ENOLINK;
++		goto unlock;
++	}
++	ret = 0;
++	switch (op) {
++	case CODEX_DPIN_CHECK:
++		break;
++	case CODEX_DPIN_RATE:
++		if (acio->dp104_running) {
++			ret = -EBUSY;
++			break;
++		}
++		ret = codex_m1_dpin_clock_rate(&acio->dp91_phy->dev,
++					     acio->dp91_clock, rate);
++		break;
++	case CODEX_DPIN_ACTIVE:
++		if (acio->dp104_running)
++			break;
++		dp97_snapshot(acio, "before-active");
++		if (!acio->dp91_routed) {
++			ret = mux_control_try_select(acio->dp91_mux, 0);
++			if (ret)
++				break;
++			acio->dp91_routed = true;
++		}
++		ctrl = readl(acio->dp91_regs + 0xc);
++		if (ctrl == U32_MAX) {
++			ret = -EIO;
++		} else {
++			writel(ctrl & ~1U, acio->dp91_regs + 0xc);
++			ret = readl_poll_timeout(acio->dp91_regs + 0x10, ack,
++				ack != U32_MAX && !(ack & 1), 10, 100000);
++		}
++		if (!ret) {
++			dev_info(dev, "DP104 handshake confirmed; enabling clocks\n");
++			ret = codex_m1_dpxbar_link(acio->dp91_mux, true);
++		}
++		if (!ret) {
++			acio->dp104_running = true;
++			dp97_snapshot(acio, "after-active");
++		}
++		if (ret) {
++			int cleanup = dp91_revoke(acio);
++			if (cleanup)
++				ret = cleanup;
++		}
++		break;
++	case CODEX_DPIN_INACTIVE:
++		ret = dp91_inactive(acio);
++		if (ret) {
++			acio->dp91_token = 0;
++			acio->dp91_poisoned = true;
++		}
++		break;
++	case CODEX_DPIN_END:
++		ret = dp91_revoke(acio);
++		break;
++	default:
++		ret = -EINVAL;
++	}
++	dev_info(dev, "DP91 callback token=%llu op=%u rate=%02x ret=%d\n",
++		 token, op, rate, ret);
++unlock:
++	mutex_unlock(&acio->lock);
++out:
++	up_read(&dp91_registry_lock);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(codex_dpin_call);
++
++static void dp91_put_phy(void *data)
++{
++	put_device(data);
++}
++
++static int dp91_provider_init(struct apple_cio *acio)
++{
++	struct device_node *np;
++	int ret;
++	if (!of_property_read_bool(acio->np, "codex,dpin-callback-test"))
++		return 0;
++	if (!of_machine_is_compatible("apple,t8103"))
++		return -EOPNOTSUPP;
++	np = of_parse_phandle(acio->np, "codex,atcphy", 0);
++	if (!np)
++		return -EINVAL;
++	acio->dp91_phy = of_find_device_by_node(np);
++	of_node_put(np);
++	if (!acio->dp91_phy)
++		return -EPROBE_DEFER;
++	ret = devm_add_action_or_reset(acio->dev, dp91_put_phy, &acio->dp91_phy->dev);
++	if (ret)
++		return ret;
++	if (!device_link_add(acio->dev, &acio->dp91_phy->dev,
++			     DL_FLAG_AUTOREMOVE_CONSUMER))
++		return -ENODEV;
++	acio->dp91_mux = devm_mux_control_get(acio->dev, "dp-xbar");
++	return PTR_ERR_OR_ZERO(acio->dp91_mux);
++}
+diff --git a/include/linux/apple-usb4-dpin.h b/include/linux/apple-usb4-dpin.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4c09b06176a11c628ced7b005a190677b53dbd4
+--- /dev/null
++++ b/include/linux/apple-usb4-dpin.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef CODEX_DPIN_API_H
++#define CODEX_DPIN_API_H
++#include <linux/device.h>
++#include <linux/types.h>
++enum codex_dpin_op { CODEX_DPIN_CHECK, CODEX_DPIN_RATE,
++	CODEX_DPIN_ACTIVE, CODEX_DPIN_INACTIVE, CODEX_DPIN_END };
++int codex_dpin_begin(struct device *dev, u64 *token);
++int codex_dpin_call(struct device *dev, u64 token, enum codex_dpin_op op, u8 rate);
++#endif

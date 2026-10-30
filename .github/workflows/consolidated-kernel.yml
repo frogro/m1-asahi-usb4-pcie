@@ -1,0 +1,41 @@
+name: Consolidated M1 kernel (build only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: consolidated-m1-full-build
+  cancel-in-progress: false
+jobs:
+  kernel:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Runner capacity and toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Disposable hosted runner only: remove unused preinstalled SDK caches.
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-15 g++-15 make bc bison flex libssl-dev libelf-dev libncurses-dev pkg-config python3 git kmod zstd xz-utils rustc rust-src bindgen libclang-21-dev llvm-21 lld-21 pahole cpio rsync
+          sudo apt-get clean
+          df -h
+          free -h
+          available=$(df --output=avail -BG "$RUNNER_TEMP" | tail -1 | tr -dc '0-9')
+          if (( available < 45 )); then
+            echo "Insufficient build space: ${available} GiB; need at least 45 GiB with all distro debug/module features."
+            exit 1
+          fi
+      - name: Full Image, modules and DTBs
+        run: build/full-kernel.sh
+      - name: Save build outputs and diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: consolidated-m1-kernel-${{ github.run_number }}
+          path: artifacts/
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14

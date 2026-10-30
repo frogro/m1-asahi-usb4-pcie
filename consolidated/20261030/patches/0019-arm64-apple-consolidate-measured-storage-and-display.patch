@@ -1,0 +1,170 @@
+From a686b0432f35012cd69788f8634975b9eab7c193 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:36:03 +0100
+Subject: [PATCH RFC 19/22] arm64: apple: consolidate measured storage and
+ display boot dependencies
+
+Translate the measured storage overlay into J274 board labels: cold-init admission, nonposted container and NHI port association. Keep untested boards from opting into PCIe-C through a global ACIO reference. Add an explicit built-in PCIe-C configuration with the measured built-in pciehp dependency and optional API stubs. Existing runtime policy parameters are preserved and recorded in the package configuration; ACK semantics and suspend remain deferred. These packaging changes require the planned later boot test.
+---
+ arch/arm64/boot/dts/apple/t8103-j274.dts | 38 ++++++++++++++++++++++++
+ arch/arm64/boot/dts/apple/t8103.dtsi     |  2 --
+ drivers/pci/controller/Kconfig           | 10 +++++++
+ drivers/pci/controller/Makefile          |  2 +-
+ include/linux/pci-apple.h                | 32 ++++++++++++++++++++
+ 5 files changed, 81 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/apple/t8103-j274.dts b/arch/arm64/boot/dts/apple/t8103-j274.dts
+index 3bae6374014f1c3322ad1c7535351bbd5e4364c9..ebc01c3ec536d9644f32e95cc823b2154506159e 100644
+--- a/arch/arm64/boot/dts/apple/t8103-j274.dts
++++ b/arch/arm64/boot/dts/apple/t8103-j274.dts
+@@ -198,3 +198,41 @@
+ &atcphy1_xbar {
+ 	codex,dpin-staged-test;
+ };
++
++/* Static form of the measured storage overlay, using native NHI labels. */
++&usb4_0_acio {
++	apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
++};
++
++&usb4_0_pcie_tunnel {
++	nonposted-mmio;
++};
++
++&apciec0 {
++	apple,pciec-kernel-init;
++	status = "okay";
++};
++
++&apciec0_port {
++	usb4-host-interface = <&usb4_0_nhi>;
++	usb4-port-number = <0>;
++};
++
++&usb4_1_acio {
++	apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
++};
++
++&usb4_1_pcie_tunnel {
++	nonposted-mmio;
++};
++
++&apciec1 {
++	apple,pciec-kernel-init;
++	status = "okay";
++};
++
++&apciec1_port {
++	usb4-host-interface = <&usb4_1_nhi>;
++	usb4-port-number = <0>;
++};
++
+diff --git a/arch/arm64/boot/dts/apple/t8103.dtsi b/arch/arm64/boot/dts/apple/t8103.dtsi
+index 35714d3fdf8d482a1698dda5736e7c54c2da9c1a..ebc40e0a3af33aa6e9b9beee867609353b91fa04 100644
+--- a/arch/arm64/boot/dts/apple/t8103.dtsi
++++ b/arch/arm64/boot/dts/apple/t8103.dtsi
+@@ -1587,7 +1587,6 @@
+ 					<&ps_atc0_pcie>;
+ 
+ 			thunderbolt-switch;
+-			apple,pcie-tunnel = <&usb4_0_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio0_pins>;
+ 			pinctrl-names = "default";
+@@ -1814,7 +1813,6 @@
+ 					<&ps_atc1_pcie>;
+ 
+ 			thunderbolt-switch;
+-			apple,pcie-tunnel = <&usb4_1_pcie_tunnel>;
+ 
+ 			pinctrl-0 = <&acio1_pins>;
+ 			pinctrl-names = "default";
+diff --git a/drivers/pci/controller/Kconfig b/drivers/pci/controller/Kconfig
+index 420db1255346f987b516634769a95211e2f94729..e2472043c785d9cba22a4bf5d48326268e04118e 100644
+--- a/drivers/pci/controller/Kconfig
++++ b/drivers/pci/controller/Kconfig
+@@ -55,6 +55,16 @@ config PCIE_APPLE
+ 
+ 	  If unsure, say Y if you have an Apple Silicon system.
+ 
++config PCIE_APPLE_PCIEC
++	bool "Apple M1 tunneled PCIe-C host (experimental)"
++	depends on PCIE_APPLE=y
++	depends on HOTPLUG_PCI_PCIE=y
++	help
++	  Enable the measured M1 USB4/Thunderbolt native PCIe host path.
++	  This is separate from the internal Apple PCIe controller. The
++	  current downstream integration is validated on the Mac mini M1.
++	  Suspend/resume and eGPU surprise removal are not supported.
++
+ config PCI_VERSATILE
+ 	bool "ARM Versatile PB PCI controller"
+ 	depends on ARCH_VERSATILE || COMPILE_TEST
+diff --git a/drivers/pci/controller/Makefile b/drivers/pci/controller/Makefile
+index d9de46975147d4755903a3b30670e402cc396d7a..977fec2d1b7b83aa79c0cb552f2c251f1d7e3928 100644
+--- a/drivers/pci/controller/Makefile
++++ b/drivers/pci/controller/Makefile
+@@ -39,7 +39,7 @@ obj-$(CONFIG_PCIE_BRCMSTB) += pcie-brcmstb.o
+ obj-$(CONFIG_PCI_LOONGSON) += pci-loongson.o
+ obj-$(CONFIG_PCIE_HISI_ERR) += pcie-hisi-error.o
+ obj-$(CONFIG_PCIE_APPLE) += pcie-apple.o
+-obj-$(CONFIG_PCIE_APPLE) += pcie-apple-pciec.o
++obj-$(CONFIG_PCIE_APPLE_PCIEC) += pcie-apple-pciec.o
+ obj-$(CONFIG_PCIE_MT7621) += pcie-mt7621.o
+ obj-$(CONFIG_PCIE_ASPEED) += pcie-aspeed.o
+ 
+diff --git a/include/linux/pci-apple.h b/include/linux/pci-apple.h
+index 87453a0f68a9804a6f86bfbc334da2eb29bac67b..8a5a84cdd50bbccfd452a61112a6c78929549ea1 100644
+--- a/include/linux/pci-apple.h
++++ b/include/linux/pci-apple.h
+@@ -2,6 +2,10 @@
+ #ifndef _LINUX_PCI_APPLE_H
+ #define _LINUX_PCI_APPLE_H
+ 
++#include <linux/errno.h>
++#include <linux/kconfig.h>
++#include <linux/types.h>
++
+ struct device;
+ struct device_node;
+ struct notifier_block;
+@@ -9,6 +13,8 @@ struct notifier_block;
+ /* Atomic notification; data is the host's parent device, valid in callback. */
+ #define APPLE_PCIE_TUNNEL_LINK_DOWN 1
+ 
++/* The native host is built in when enabled. */
++#if IS_ENABLED(CONFIG_PCIE_APPLE_PCIEC)
+ int apple_pcie_tunnel_register_notifier(struct notifier_block *nb);
+ void apple_pcie_tunnel_unregister_notifier(struct notifier_block *nb);
+ 
+@@ -22,4 +28,30 @@ int apple_pcie_tunnel_restore(struct device *dev);
+ int apple_pcie_tunnel_check_state(struct device *dev);
+ bool apple_pcie_tunnel_link_kept(struct device *dev);
+ 
++#else
++static inline int apple_pcie_tunnel_register_notifier(struct notifier_block *nb)
++{
++	return -EOPNOTSUPP;
++}
++static inline void apple_pcie_tunnel_unregister_notifier(struct notifier_block *nb) {}
++static inline bool apple_pcie_tunnel_needs_cold_init(struct device_node *np) { return false; }
++static inline int apple_pcie_tunnel_prepare(struct device *dev, struct device_node *tunnel)
++{
++	return -EOPNOTSUPP;
++}
++static inline int apple_pcie_tunnel_unprepare(struct device *dev, struct device_node *tunnel)
++{
++	return 0;
++}
++static inline int apple_pcie_tunnel_set_active(struct device *dev, bool active, bool surprise)
++{
++	return -EOPNOTSUPP;
++}
++static inline void apple_pcie_tunnel_notify_hotplug(struct device *dev) {}
++static inline int apple_pcie_tunnel_quiesce(struct device *dev) { return -EOPNOTSUPP; }
++static inline int apple_pcie_tunnel_restore(struct device *dev) { return -EOPNOTSUPP; }
++static inline int apple_pcie_tunnel_check_state(struct device *dev) { return -EOPNOTSUPP; }
++static inline bool apple_pcie_tunnel_link_kept(struct device *dev) { return false; }
++#endif
++
+ #endif /* _LINUX_PCI_APPLE_H */

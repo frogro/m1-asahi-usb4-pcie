@@ -1,0 +1,237 @@
+From 331440ad803086b7a974ec1950094a74cb60919d Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:16:01 +0100
+Subject: [PATCH RFC 10/22] mux: apple: stage the M1 display crossbar before
+ enabling its clock
+
+Port the measured DP104 route/clock sequence, keeping the tunnel source gated until its producer is ready. Retain bounded readback and link shutdown. Settling sequence references omacom/linux-aurora 2f725546d6ac6afe0bd5abfa1a844971519f0076. Shared header moved under include/linux; algorithm is unchanged from the tested source.
+
+Prepared with AI assistance from the recorded local experiments. No maintainer review or DCO sign-off is asserted.
+---
+ drivers/mux/apple-display-crossbar.c   | 135 ++++++++++++++++++++++++-
+ include/linux/apple-display-crossbar.h |   7 ++
+ 2 files changed, 141 insertions(+), 1 deletion(-)
+ create mode 100644 include/linux/apple-display-crossbar.h
+
+diff --git a/drivers/mux/apple-display-crossbar.c b/drivers/mux/apple-display-crossbar.c
+index 9b17371d92c3ba1aa75b3ba310091bc0e433d0cd..f56554a979f7556de89c26a9cf0aa3c17a34ad14 100644
+--- a/drivers/mux/apple-display-crossbar.c
++++ b/drivers/mux/apple-display-crossbar.c
+@@ -17,6 +17,7 @@
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+ #include <linux/platform_device.h>
++#include <linux/apple-display-crossbar.h>
+ 
+ /*
+  * T602x register interface is cleary different so most of the names below are
+@@ -96,6 +97,7 @@ struct apple_dpxbar {
+ 	struct device *dev;
+ 	void __iomem *regs;
+ 	int selected_dispext[MUX_MAX];
++	bool dp104_staged;
+ 	spinlock_t lock;
+ };
+ 
+@@ -314,12 +316,37 @@ static int apple_dpxbar_set(struct mux_control *mux, int state)
+ 		dpxbar->selected_dispext[index] = -1;
+ 	}
+ 
++	/* Diagnostic DT opt-in: select M1 DPIN0 with the clocks still gated.
++	 * The consumer retains mux ownership until final retirement. Activation
++	 * follows its DPIN handshake, rather than happening inside select().
++	 */
++	if (enable && dpxbar->dp104_staged && index == MUX_DPIN0) {
++		dpxbar_clear32(dpxbar, CROSSBAR_DISPEXT_EN, dispext_bit);
++		dpxbar_clear32(dpxbar, FIFO_WR_DPTX_CLK_EN, dispext_bit);
++		dpxbar_clear32(dpxbar, FIFO_RD_PCLK1_EN, dispext_bit);
++		dpxbar_clear32(dpxbar, FIFO_WR_UNK_EN, dispext_bit);
++		dpxbar_clear32(dpxbar, FIFO_RD_UNK_EN, dispext_bit_en);
++		dpxbar_set32(dpxbar, FIFO_WR_N_CLK_EN, dispext_bit);
++		dpxbar_set32(dpxbar, FIFO_RD_N_CLK_EN, dispext_bit);
++		dpxbar_mask32(dpxbar, CROSSBAR_MUX_CTRL, mux_mask, mux_set);
++		dpxbar->selected_dispext[index] = state;
++		spin_unlock_irqrestore(&dpxbar->lock, flags);
++		dev_info(dpxbar->dev, "DP104 selected source=%d, clocks gated\n", state);
++		return 0;
++	}
++
+ 	dpxbar_mask32(dpxbar, CROSSBAR_MUX_CTRL, mux_mask, mux_set);
+ 
+ 	if (enable) {
+ 		dpxbar_clear32(dpxbar, FIFO_WR_N_CLK_EN, dispext_bit);
+ 		dpxbar_clear32(dpxbar, FIFO_RD_N_CLK_EN, dispext_bit);
+ 		dpxbar_clear32(dpxbar, OUT_N_CLK_EN, atc_bit);
++		/* Reference: omacom/linux-aurora 2f725546, M1 path gate settling. */
++		udelay(1);
++		dev_info(dpxbar->dev, "DP103 gates wr=%x rd=%x out=%x source=%x atc=%x\n",
++			readl(dpxbar->regs + FIFO_WR_N_CLK_EN_STAT),
++			readl(dpxbar->regs + FIFO_RD_N_CLK_EN_STAT),
++			readl(dpxbar->regs + OUT_N_CLK_EN_STAT), dispext_bit, atc_bit);
+ 		dpxbar_set32(dpxbar, FIFO_WR_UNK_EN, dispext_bit);
+ 		dpxbar_set32(dpxbar, FIFO_RD_UNK_EN, dispext_bit_en);
+ 		dpxbar_set32(dpxbar, OUT_UNK_EN, atc_bit);
+@@ -327,6 +354,7 @@ static int apple_dpxbar_set(struct mux_control *mux, int state)
+ 		dpxbar_set32(dpxbar, FIFO_RD_PCLK1_EN, dispext_bit);
+ 		dpxbar_set32(dpxbar, OUT_PCLK1_EN, atc_bit);
+ 		dpxbar_set32(dpxbar, CROSSBAR_ATC_EN, atc_bit);
++		dev_info(dpxbar->dev, "DP102 immediate atc bit=%x read=%x\n", atc_bit, readl(dpxbar->regs + CROSSBAR_ATC_EN));
+ 		dpxbar_set32(dpxbar, CROSSBAR_DISPEXT_EN, dispext_bit);
+ 
+ 		/*
+@@ -340,6 +368,7 @@ static int apple_dpxbar_set(struct mux_control *mux, int state)
+ 		udelay(10);
+ 		dpxbar_set32(dpxbar, FIFO_RD_PCLK1_EN, dispext_bit);
+ 
++		dev_info(dpxbar->dev, "DP102 after fifo toggle atc=%x\n", readl(dpxbar->regs + CROSSBAR_ATC_EN));
+ 		dpxbar->selected_dispext[index] = state;
+ 	}
+ 
+@@ -360,10 +389,110 @@ static const struct mux_control_ops apple_dpxbar_ops = {
+ 	.set = apple_dpxbar_set,
+ };
+ 
++/* M1 tunnel clock sequencing based on Chris Kearney's link_up/down helpers:
++ * omacom/linux-aurora cef6a2d917402a80b93c630272347494dc51eacd.
++ * Adapted for this DT-opted-in diagnostic provider only. The consumer must
++ * hold mux ownership and a live PHY/CIO power lease across this call.
++ */
++int codex_m1_dpxbar_link(struct mux_control *mux, bool up)
++{
++	struct apple_dpxbar *xbar;
++	unsigned long flags;
++	u32 source_bit, wr, rd, out;
++	int source, ret = 0;
++	if (!mux || mux->chip->ops != &apple_dpxbar_ops ||
++	    mux_control_get_index(mux) != MUX_DPIN0)
++		return -EOPNOTSUPP;
++	xbar = mux_chip_priv(mux->chip);
++	if (!xbar->dp104_staged)
++		return -EOPNOTSUPP;
++	spin_lock_irqsave(&xbar->lock, flags);
++	source = xbar->selected_dispext[MUX_DPIN0];
++	if (source < 0 || source >= 2) {
++		ret = -ENOLINK;
++		goto unlock;
++	}
++	source_bit = BIT(source);
++	if (!up) {
++		dpxbar_clear32(xbar, CROSSBAR_DISPEXT_EN, source_bit);
++		dpxbar_clear32(xbar, FIFO_WR_DPTX_CLK_EN, source_bit);
++		dpxbar_clear32(xbar, FIFO_RD_PCLK1_EN, source_bit);
++		dpxbar_clear32(xbar, OUT_PCLK1_EN, ATC_DPIN0);
++		udelay(1);
++		dpxbar_set32(xbar, FIFO_WR_N_CLK_EN, source_bit);
++		dpxbar_set32(xbar, FIFO_RD_N_CLK_EN, source_bit);
++		dpxbar_set32(xbar, OUT_N_CLK_EN, ATC_DPIN0);
++		goto unlock;
++	}
++	dpxbar_clear32(xbar, FIFO_WR_N_CLK_EN, source_bit);
++	dpxbar_clear32(xbar, FIFO_RD_N_CLK_EN, source_bit);
++	dpxbar_clear32(xbar, OUT_N_CLK_EN, ATC_DPIN0);
++	udelay(1);
++	wr = readl(xbar->regs + FIFO_WR_N_CLK_EN_STAT);
++	rd = readl(xbar->regs + FIFO_RD_N_CLK_EN_STAT);
++	out = readl(xbar->regs + OUT_N_CLK_EN_STAT);
++	if ((wr & source_bit) || (rd & source_bit) || (out & ATC_DPIN0)) {
++		ret = -EIO;
++		goto unlock;
++	}
++	dpxbar_set32(xbar, FIFO_WR_UNK_EN, source_bit);
++	dpxbar_set32(xbar, FIFO_RD_UNK_EN, BIT(2 * source));
++	dpxbar_set32(xbar, OUT_UNK_EN, ATC_DPIN0);
++	dpxbar_set32(xbar, FIFO_WR_DPTX_CLK_EN, source_bit);
++	dpxbar_set32(xbar, FIFO_RD_PCLK1_EN, source_bit);
++	dpxbar_set32(xbar, OUT_PCLK1_EN, ATC_DPIN0);
++	dpxbar_set32(xbar, CROSSBAR_ATC_EN, ATC_DPIN0);
++	dpxbar_set32(xbar, CROSSBAR_DISPEXT_EN, source_bit);
++	dpxbar_clear32(xbar, FIFO_RD_PCLK1_EN, source_bit);
++	udelay(10);
++	dpxbar_set32(xbar, FIFO_RD_PCLK1_EN, source_bit);
++unlock:
++	spin_unlock_irqrestore(&xbar->lock, flags);
++	dev_info(xbar->dev, "DP104 clocks %s source=%d ret=%d\n", up ? "on" : "off", source, ret);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(codex_m1_dpxbar_link);
++
+ static const struct mux_control_ops apple_dpxbar_t602x_ops = {
+ 	.set = apple_dpxbar_set_t602x,
+ };
+ 
++/* DP101 diagnostic readback only. Read only offsets also observed by our
++ * macOS/m1n1 capture. Never map another driver's registers or access an idle
++ * DPIN: the mux lock serializes this snapshot with select/deselect, and the
++ * caller keeps its tunnel clock lease until after mux deselection.
++ */
++static ssize_t diag_snapshot_show(struct device *dev,
++		struct device_attribute *attr, char *buf)
++{
++	struct mux_chip *chip = dev_get_drvdata(dev);
++	struct apple_dpxbar *xbar = mux_chip_priv(chip);
++	static const u32 offsets[] = { 0x0, 0x4, 0x8, 0x20, 0x28, 0x2c,
++		0x40, 0x48, 0x4c, 0x50, 0x60, 0x70,
++		0x800, 0x804, 0x820, 0x828, 0x840, 0x848 };
++	u32 values[ARRAY_SIZE(offsets)];
++	unsigned long flags;
++	int source, i, n = 0;
++	if (!of_device_is_compatible(dev->of_node, "apple,t8103-display-crossbar"))
++		return -EOPNOTSUPP;
++	spin_lock_irqsave(&xbar->lock, flags);
++	source = xbar->selected_dispext[MUX_DPIN0];
++	if (source < 0) {
++		spin_unlock_irqrestore(&xbar->lock, flags);
++		return -ENOLINK;
++	}
++	for (i = 0; i < ARRAY_SIZE(offsets); i++)
++		values[i] = readl(xbar->regs + offsets[i]);
++	spin_unlock_irqrestore(&xbar->lock, flags);
++	n += sysfs_emit_at(buf, n, "DP101 dpin0 source=%d\n", source);
++	for (i = 0; i < ARRAY_SIZE(offsets); i++)
++		n += sysfs_emit_at(buf, n, "%04x=%08x\n", offsets[i], values[i]);
++	return n;
++}
++static DEVICE_ATTR(diag_snapshot, 0400, diag_snapshot_show, NULL);
++static struct attribute *dp101_attrs[] = { &dev_attr_diag_snapshot.attr, NULL };
++static const struct attribute_group dp101_group = { .attrs = dp101_attrs };
++
+ static int apple_dpxbar_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -382,6 +511,9 @@ static int apple_dpxbar_probe(struct platform_device *pdev)
+ 	spin_lock_init(&dpxbar->lock);
+ 
+ 	dpxbar->dev = dev;
++	dpxbar->dp104_staged =
++		of_device_is_compatible(dev->of_node, "apple,t8103-display-crossbar") &&
++		of_property_read_bool(dev->of_node, "codex,dpin-staged-test");
+ 	dpxbar->regs = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(dpxbar->regs))
+ 		return PTR_ERR(dpxbar->regs);
+@@ -398,11 +530,12 @@ static int apple_dpxbar_probe(struct platform_device *pdev)
+ 		dpxbar->selected_dispext[i] = -1;
+ 	}
+ 
++	platform_set_drvdata(pdev, mux_chip);
+ 	ret = devm_mux_chip_register(dev, mux_chip);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	return 0;
++	return devm_device_add_group(dev, &dp101_group);
+ }
+ 
+ static const struct apple_dpxbar_hw apple_dpxbar_hw_t8103 = {
+diff --git a/include/linux/apple-display-crossbar.h b/include/linux/apple-display-crossbar.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..ddae33a72757ed0d9ae5a7fe78e44c41dd158c4e
+--- /dev/null
++++ b/include/linux/apple-display-crossbar.h
+@@ -0,0 +1,7 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef CODEX_DP104_XBAR_API_H
++#define CODEX_DP104_XBAR_API_H
++#include <linux/types.h>
++struct mux_control;
++int codex_m1_dpxbar_link(struct mux_control *mux, bool up);
++#endif

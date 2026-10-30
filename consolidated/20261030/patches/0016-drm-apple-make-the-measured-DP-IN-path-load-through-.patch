@@ -1,0 +1,170 @@
+From 39ddba122fb5634b04570e399f00c1a585efed44 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:17:38 +0100
+Subject: [PATCH RFC 16/22] drm: apple: make the measured DP-IN path load
+ through normal dependencies
+
+Use normal include/linux APIs and in-tree Kbuild files instead of /run-specific extra-symbol lists. Optional-provider stubs preserve builds without the USB4 provider; tristate dependencies prevent built-in consumers calling modular providers. Default initial routing to the same enabled value explicitly used by Test125. The existing board/property gates still scope hardware access. This packaging/default change is compile-tested separately; no new hardware validation is claimed. AI-assisted preparation; no DCO sign-off asserted.
+---
+ drivers/gpu/drm/apple/Kconfig          |  2 ++
+ drivers/gpu/drm/apple/dpin-binding.inc |  2 +-
+ drivers/thunderbolt/Kconfig            |  2 ++
+ drivers/thunderbolt/dpin-provider.inc  | 15 +++++++++++++++
+ include/linux/apple-display-crossbar.h |  9 +++++++++
+ include/linux/apple-usb4-dp.h          | 18 ++++++++++++++++++
+ include/linux/apple-usb4-dpin.h        | 15 +++++++++++++++
+ 7 files changed, 62 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/apple/Kconfig b/drivers/gpu/drm/apple/Kconfig
+index ecf7afd76cedaf6e69eb39e2fabbdc17cb979604..86de961a437a5c8203fc8ef55169d6c9ab5ef4fb 100644
+--- a/drivers/gpu/drm/apple/Kconfig
++++ b/drivers/gpu/drm/apple/Kconfig
+@@ -5,6 +5,8 @@ config DRM_APPLE
+ 	depends on ARCH_APPLE || COMPILE_TEST
+ 	depends on APPLE_RTKIT
+ 	depends on OF_ADDRESS
++	depends on USB4 || !USB4
++	depends on USB4_APPLE_SOC || !USB4_APPLE_SOC
+ 	select APPLE_PMP_REPORT
+ 	select DRM_CLIENT_SELECTION
+ 	select DRM_KMS_HELPER
+diff --git a/drivers/gpu/drm/apple/dpin-binding.inc b/drivers/gpu/drm/apple/dpin-binding.inc
+index c740c68e88a59296a601b9329c9f3d43963cd3c2..694721e6a81b76b50a74dbf02e1bb7ae8eb3405e 100644
+--- a/drivers/gpu/drm/apple/dpin-binding.inc
++++ b/drivers/gpu/drm/apple/dpin-binding.inc
+@@ -4,7 +4,7 @@
+  * tunnel notifications. A failed/ambiguous transaction is never retried.
+  * Provider calls never hold a lock across an AFK firmware transaction.
+  */
+-static bool dpin_autostart;
++static bool dpin_autostart = true;
+ module_param(dpin_autostart, bool, 0444);
+ MODULE_PARM_DESC(dpin_autostart, "Enable event-driven initial USB4 DP connection");
+ static int dp118_connect_locked(struct apple_dcp *dcp, bool reconnect);
+diff --git a/drivers/thunderbolt/Kconfig b/drivers/thunderbolt/Kconfig
+index d9fbe3a0dc3fdb40077749c597559c75b2d499e2..578c41f9a61569959a9109e18382a26bbcec1a17 100644
+--- a/drivers/thunderbolt/Kconfig
++++ b/drivers/thunderbolt/Kconfig
+@@ -79,6 +79,8 @@ config USB4_APPLE_SOC
+ 	tristate "Apple Silicon USB4/Thunderbolt Support"
+ 	depends on ARCH_APPLE || COMPILE_TEST
+ 	depends on OF && APPLE_RTKIT
++	depends on PHY_APPLE_ATC || !PHY_APPLE_ATC
++	depends on MUX_APPLE_DPXBAR || !MUX_APPLE_DPXBAR
+ 	depends on TYPEC
+ 	select APPLE_TUNABLE
+ 	help
+diff --git a/drivers/thunderbolt/dpin-provider.inc b/drivers/thunderbolt/dpin-provider.inc
+index 969770bc585da101b9b5c5aed0b4e200b38ad9b5..f7ee49489e026c217ded26da3cdc5b4f65ca83a3 100644
+--- a/drivers/thunderbolt/dpin-provider.inc
++++ b/drivers/thunderbolt/dpin-provider.inc
+@@ -10,9 +10,24 @@
+ #include <linux/rwsem.h>
+ static DECLARE_RWSEM(dp91_registry_lock);
+ static struct apple_cio *dp91_registered;
++#if IS_REACHABLE(CONFIG_PHY_APPLE_ATC)
+ extern int codex_m1_dpin_clock_acquire(struct device *, u8, u64 *);
+ extern int codex_m1_dpin_clock_rate(struct device *, u64, u8);
+ extern int codex_m1_dpin_clock_release(struct device *, u64);
++#else
++static inline int codex_m1_dpin_clock_acquire(struct device *dev, u8 rate, u64 *cookie)
++{
++	return -EOPNOTSUPP;
++}
++static inline int codex_m1_dpin_clock_rate(struct device *dev, u64 cookie, u8 rate)
++{
++	return -EOPNOTSUPP;
++}
++static inline int codex_m1_dpin_clock_release(struct device *dev, u64 cookie)
++{
++	return -EOPNOTSUPP;
++}
++#endif
+ static atomic64_t dp91_sequence = ATOMIC64_INIT(0);
+ 
+ /* DP97: bounded reads only while holding the validated live CIO lease.
+diff --git a/include/linux/apple-display-crossbar.h b/include/linux/apple-display-crossbar.h
+index ddae33a72757ed0d9ae5a7fe78e44c41dd158c4e..0beaf40cbc6c94ed7dd590915ca52af3ba03bba3 100644
+--- a/include/linux/apple-display-crossbar.h
++++ b/include/linux/apple-display-crossbar.h
+@@ -2,6 +2,15 @@
+ #ifndef CODEX_DP104_XBAR_API_H
+ #define CODEX_DP104_XBAR_API_H
+ #include <linux/types.h>
++#include <linux/kconfig.h>
++#include <linux/errno.h>
+ struct mux_control;
++#if IS_REACHABLE(CONFIG_MUX_APPLE_DPXBAR)
+ int codex_m1_dpxbar_link(struct mux_control *mux, bool up);
++#else
++static inline int codex_m1_dpxbar_link(struct mux_control *mux, bool up)
++{
++	return -EOPNOTSUPP;
++}
++#endif
+ #endif
+diff --git a/include/linux/apple-usb4-dp.h b/include/linux/apple-usb4-dp.h
+index c49400cc2490324aca74e1622a0a73675b5ce2f6..20e97ab410f64ebd62e3fb6d64947edccddda531 100644
+--- a/include/linux/apple-usb4-dp.h
++++ b/include/linux/apple-usb4-dp.h
+@@ -3,6 +3,8 @@
+ #define CODEX_DP110_API_H
+ #include <linux/device.h>
+ #include <linux/notifier.h>
++#include <linux/kconfig.h>
++#include <linux/errno.h>
+ 
+ #define CODEX_DP_BEFORE_RETIREMENT 0
+ #define CODEX_DP_PATHS_READY 1
+@@ -19,7 +21,23 @@ struct codex_dp110_event {
+ 	u8 output_port;
+ 	u8 input_index;
+ };
++#if IS_REACHABLE(CONFIG_USB4)
+ int codex_dp121_replay_ready(struct device *provider);
+ int codex_dp110_register(struct notifier_block *nb);
+ int codex_dp110_unregister(struct notifier_block *nb);
++#else
++static inline int codex_dp121_replay_ready(struct device *provider)
++{
++	return -EOPNOTSUPP;
++}
++static inline int codex_dp110_register(struct notifier_block *nb)
++{
++	return -EOPNOTSUPP;
++}
++static inline int codex_dp110_unregister(struct notifier_block *nb)
++{
++	return 0;
++}
++#endif
++
+ #endif
+diff --git a/include/linux/apple-usb4-dpin.h b/include/linux/apple-usb4-dpin.h
+index c4c09b06176a11c628ced7b005a190677b53dbd4..4becb23a9a57a12b12a7ebd405faa26ff5e6ce5f 100644
+--- a/include/linux/apple-usb4-dpin.h
++++ b/include/linux/apple-usb4-dpin.h
+@@ -3,8 +3,23 @@
+ #define CODEX_DPIN_API_H
+ #include <linux/device.h>
+ #include <linux/types.h>
++#include <linux/kconfig.h>
++#include <linux/errno.h>
+ enum codex_dpin_op { CODEX_DPIN_CHECK, CODEX_DPIN_RATE,
+ 	CODEX_DPIN_ACTIVE, CODEX_DPIN_INACTIVE, CODEX_DPIN_END };
++#if IS_REACHABLE(CONFIG_USB4_APPLE_SOC)
+ int codex_dpin_begin(struct device *dev, u64 *token);
+ int codex_dpin_call(struct device *dev, u64 token, enum codex_dpin_op op, u8 rate);
++#else
++static inline int codex_dpin_begin(struct device *dev, u64 *token)
++{
++	return -EOPNOTSUPP;
++}
++static inline int codex_dpin_call(struct device *dev, u64 token,
++				enum codex_dpin_op op, u8 rate)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
+ #endif

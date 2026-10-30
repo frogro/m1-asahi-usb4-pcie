@@ -1,0 +1,82 @@
+From 00b6bcbda7eb60f919a8f92e0e8896c74fbc6458 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:32:08 +0100
+Subject: [PATCH RFC 02/22] usb: typec: tipd: retain tested CD321x transition
+ sequencing
+
+Includes the earlier role-quiesce change as well as the final storage snapshot. Preserves source licenses and diagnostic markers; not a suspend/resume implementation.
+
+Consolidation is AI-assisted. No new upstream endorsement or Signed-off-by is asserted.
+---
+ drivers/usb/typec/tipd/core.c     | 31 ++++++++++++++++++++++++++++---
+ drivers/usb/typec/tipd/tps6598x.h |  1 +
+ 2 files changed, 29 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/usb/typec/tipd/core.c b/drivers/usb/typec/tipd/core.c
+index 3d357b178581c06d7988d499a240df1f59a5f517..dcb1f409a268c3e8dd5c4c6e137719cf647ba116 100644
+--- a/drivers/usb/typec/tipd/core.c
++++ b/drivers/usb/typec/tipd/core.c
+@@ -707,9 +707,32 @@ static void cd321x_update_work(struct work_struct *work)
+ 		 (is_pd && memcmp(&st.partner_identity,
+ 				  &cd321x->cur_partner_identity, sizeof(struct usb_pd_identity))));
+ 
+-	/* If we are switching from an active role, transition to USB_ROLE_NONE first */
+-	if (old_role != USB_ROLE_NONE && (new_role != old_role || was_disconnected))
+-		usb_role_switch_set_role(tps->role_sw, USB_ROLE_NONE);
++	/*
++	 * A USB4 <-> native USB transition can keep USB_ROLE_HOST. DWC3 must
++	 * still be quiesced before the Type-C mux reprograms ATCPHY; otherwise
++	 * the PIPE handler is live and the PHY falls back to USB2.
++	 */
++	bool old_usb4 = !cd321x->state.alt &&
++		cd321x->state.mode == TYPEC_MODE_USB4;
++	bool new_usb4 = (st.data_status & TPS_DATA_STATUS_DATA_CONNECTION) &&
++		!(st.data_status & (TPS_DATA_STATUS_DP_CONNECTION |
++				    TPS_DATA_STATUS_TBT_CONNECTION)) &&
++		(st.data_status & CD321X_DATA_STATUS_USB4_CONNECTION);
++	bool usb4_changed = old_usb4 != new_usb4;
++
++	dev_info(tps->dev,
++		 "USB4TEST transition state=%#lx usb4=%d->%d role=%d->%d data=%#x disconnect=%d\n",
++		 cd321x->state.mode, old_usb4, new_usb4, old_role, new_role,
++		 st.data_status, was_disconnected);
++
++	if (old_role != USB_ROLE_NONE &&
++	    (new_role != old_role || was_disconnected || usb4_changed)) {
++		int ret = usb_role_switch_set_role(tps->role_sw, USB_ROLE_NONE);
++
++		dev_info(tps->dev, "USB4TEST DWC3 quiesce ret=%d\n", ret);
++		if (ret)
++			return;
++	}
+ 
+ 	/* Process partner disconnection or change */
+ 	if (!new_connected || partner_changed) {
+@@ -1133,6 +1156,7 @@ tps6598x_register_port(struct tps6598x *tps, struct fwnode_handle *fwnode)
+ 	typec_cap.driver_data = tps;
+ 	typec_cap.ops = &tps6598x_ops;
+ 	typec_cap.fwnode = fwnode;
++	typec_cap.no_mode_control = tps->data->no_mode_control;
+ 
+ 	switch (TPS_SYSCONF_PORTINFO(conf)) {
+ 	case TPS_PORTINFO_SINK_ACCESSORY:
+@@ -1877,6 +1901,7 @@ int tipd_resume(struct tps6598x *tps)
+ EXPORT_SYMBOL_GPL(tipd_resume);
+ 
+ static const struct tipd_data tipd_cd321x_data = {
++	.no_mode_control = true,
+ 	.irq_handler = cd321x_interrupt,
+ 	.irq_mask1 = APPLE_CD_REG_INT_POWER_STATUS_UPDATE |
+ 		     APPLE_CD_REG_INT_DATA_STATUS_UPDATE |
+diff --git a/drivers/usb/typec/tipd/tps6598x.h b/drivers/usb/typec/tipd/tps6598x.h
+index 6cf669418a504c3032e9904ae6455ee55279d57d..7f6d050e4c3829a2517c3cec55747d93ffb0c68e 100644
+--- a/drivers/usb/typec/tipd/tps6598x.h
++++ b/drivers/usb/typec/tipd/tps6598x.h
+@@ -288,6 +288,7 @@ struct tipd_data {
+ 	irq_handler_t irq_handler;
+ 	u64 irq_mask1;
+ 	size_t tps_struct_size;
++	bool no_mode_control;
+ 	void (*remove)(struct tps6598x *tps);
+ 	int (*register_port)(struct tps6598x *tps, struct fwnode_handle *node);
+ 	void (*unregister_port)(struct tps6598x *tps);

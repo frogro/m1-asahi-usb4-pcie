@@ -1,5 +1,9 @@
 # Apple Silicon USB4 / Thunderbolt PCIe bring-up
 
+## Consolidated full-kernel build (30 October 2026)
+
+The current build-only integration is documented in [build/README.md](build/README.md). It combines 22 storage, PCIe/USB4 and dock-display patches on UbuntuAsahi commit `f7734f4c91c0f47d9e762786968057bec99a0788`, using the running Ubuntu kernel configuration. Experimental eGPU changes are excluded. The older prototype below is retained as historical evidence.
+
 Private development snapshot for Mac mini M1 (J274), Ubuntu Asahi, and subsequent Googlebook integration.
 
 On 27 October 2026, the stock Linux NVMe driver enumerated a Crucial CT1000P310SSD8 behind a Yottamaster Thunderbolt 3 enclosure. Eight I/O queues and MSI-X worked. Four direct read passes (1 GiB total) returned identical SHA-256 checksums, with CRC32 matching the earlier independent diagnostic client. Primary and backup GPT signatures were verified. Controlled removal and module unload completed without reboot.

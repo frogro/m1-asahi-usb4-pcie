@@ -1,0 +1,160 @@
+From 1b6322cc1ef4f2aa564228b938594bc399c33a8a Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:32:08 +0100
+Subject: [PATCH RFC 04/22] PCI: pciehp: retain USB4 topology-triggered hotplug
+ handling
+
+Preserve the measured event-driven branch and its opt-in gates. General eGPU surprise removal remains outside validated scope.
+
+Consolidation is AI-assisted. No new upstream endorsement or Signed-off-by is asserted.
+---
+ drivers/pci/hotplug/pciehp_core.c | 87 +++++++++++++++++++++++++++++++
+ include/linux/pci_hotplug.h       |  9 ++++
+ 2 files changed, 96 insertions(+)
+
+diff --git a/drivers/pci/hotplug/pciehp_core.c b/drivers/pci/hotplug/pciehp_core.c
+index 2cafd3b26f344f7de2a61bbb246bf94fc61e7672..cdf25c38c9ea477978fc394464d162c3f592402e 100644
+--- a/drivers/pci/hotplug/pciehp_core.c
++++ b/drivers/pci/hotplug/pciehp_core.c
+@@ -26,13 +26,17 @@
+ #include <linux/slab.h>
+ #include <linux/types.h>
+ #include <linux/pci.h>
++#include <linux/pm_runtime.h>
+ #include "pciehp.h"
+ 
+ #include "../pci.h"
+ 
++static struct pcie_port_service_driver hpdriver_portdrv;
++
+ /* Global variables */
+ bool pciehp_poll_mode;
+ int pciehp_poll_time;
++static bool pciehp_oob_test;
+ 
+ /*
+  * not really modular, but the easiest way to keep compat with existing
+@@ -40,6 +44,7 @@ int pciehp_poll_time;
+  */
+ module_param(pciehp_poll_mode, bool, 0644);
+ module_param(pciehp_poll_time, int, 0644);
++module_param(pciehp_oob_test, bool, 0600);
+ MODULE_PARM_DESC(pciehp_poll_mode, "Using polling mechanism for hot-plug events or not");
+ MODULE_PARM_DESC(pciehp_poll_time, "Polling mechanism frequency, in seconds");
+ 
+@@ -182,6 +187,87 @@ static void pciehp_check_presence(struct controller *ctrl)
+ 	up_read(&ctrl->reset_lock);
+ }
+ 
++static int pciehp_match_service(struct device *dev, const void *unused)
++{
++	return dev->bus == &pcie_port_bus_type &&
++	       to_pcie_device(dev)->service == PCIE_PORT_SERVICE_HP;
++}
++
++/**
++ * pciehp_notify_presence_change - inspect a port after an out-of-band event
++ * @port: referenced PCIe port; caller must keep its host accessible
++ *
++ * Sleepable. Do not hold the PCI rescan/remove lock: service removal may wait
++ * for an IRQ thread taking that lock. The service device reference and device
++ * lock protect controller lifetime against unbind and surprise removal.
++ */
++int pciehp_notify_presence_change(struct pci_dev *port)
++{
++	struct device *dev;
++	struct controller *ctrl;
++	int ret = -ENODEV;
++
++	dev = device_find_child(&port->dev, NULL, pciehp_match_service);
++	if (!dev)
++		return ret;
++
++	device_lock(dev);
++	if (dev->driver != &hpdriver_portdrv.driver ||
++	    !device_is_bound(dev) || pci_dev_is_disconnected(port))
++		goto out;
++	ctrl = get_service_data(to_pcie_device(dev));
++	if (!ctrl)
++		goto out;
++	ret = pm_runtime_resume_and_get(&port->dev);
++	if (ret < 0)
++		goto out;
++	pciehp_check_presence(ctrl);
++	pm_runtime_put(&port->dev);
++	ret = 0;
++out:
++	device_unlock(dev);
++	put_device(dev);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(pciehp_notify_presence_change);
++
++/* Diagnostic entry point, disabled unless explicitly enabled for Test39.
++ * Driver dev_groups keep this callback inactive before probe and drain it
++ * before remove releases the controller. No register writes or rescans are
++ * issued here; the normal pciehp state machine decides what changed.
++ */
++static ssize_t test39_recheck_store(struct device *dev,
++				   struct device_attribute *attr,
++				   const char *buf, size_t count)
++{
++	struct pcie_device *service = to_pcie_device(dev);
++	struct pci_dev *port = service->port;
++	struct controller *ctrl = get_service_data(service);
++	int ret;
++
++	if (!READ_ONCE(pciehp_oob_test))
++		return -EOPNOTSUPP;
++	if (!sysfs_streq(buf, "1"))
++		return -EINVAL;
++	if (!ctrl || pci_dev_is_disconnected(port))
++		return -ENODEV;
++
++	ret = pm_runtime_resume_and_get(&port->dev);
++	if (ret < 0)
++		return ret;
++	pciehp_check_presence(ctrl);
++	pm_runtime_put(&port->dev);
++	ctrl_info(ctrl, "Test39 out-of-band presence check\n");
++	return count;
++}
++static DEVICE_ATTR_WO(test39_recheck);
++
++static struct attribute *test39_attrs[] = {
++	&dev_attr_test39_recheck.attr,
++	NULL,
++};
++ATTRIBUTE_GROUPS(test39);
++
+ static int pciehp_probe(struct pcie_device *dev)
+ {
+ 	int rc;
+@@ -352,6 +438,7 @@ static int pciehp_runtime_resume(struct pcie_device *dev)
+ 
+ static struct pcie_port_service_driver hpdriver_portdrv = {
+ 	.name		= "pciehp",
++	.driver.dev_groups = test39_groups,
+ 	.port_type	= PCIE_ANY_PORT,
+ 	.service	= PCIE_PORT_SERVICE_HP,
+ 
+diff --git a/include/linux/pci_hotplug.h b/include/linux/pci_hotplug.h
+index ddf79641917f0f801b2c388c55714bfe3b71f741..7c54257b0329a01b9ca2684ecd8c961e721a981c 100644
+--- a/include/linux/pci_hotplug.h
++++ b/include/linux/pci_hotplug.h
+@@ -102,6 +102,15 @@ static inline bool pciehp_is_native(struct pci_dev *bridge) { return true; }
+ static inline bool shpchp_is_native(struct pci_dev *bridge) { return true; }
+ #endif
+ 
++#if IS_REACHABLE(CONFIG_HOTPLUG_PCI_PCIE)
++int pciehp_notify_presence_change(struct pci_dev *port);
++#else
++static inline int pciehp_notify_presence_change(struct pci_dev *port)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
+ static inline bool hotplug_is_native(struct pci_dev *bridge)
+ {
+ 	return (bridge->is_pciehp && pciehp_is_native(bridge)) ||

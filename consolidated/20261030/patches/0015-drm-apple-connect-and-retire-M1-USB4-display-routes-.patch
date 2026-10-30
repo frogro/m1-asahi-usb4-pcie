@@ -1,0 +1,813 @@
+From ab2e6fe4b4a8de9f93dd8b0e2d600beae4c4a90f Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:16:02 +0100
+Subject: [PATCH RFC 15/22] drm: apple: connect and retire M1 USB4 display
+ routes from kernel events
+
+Carry the DP121 DRM source used by DP125: explicit route type, provider lifetime, firmware callback handling, HPD withdrawal and automatic initial/reconnect lifecycle. The USB4 role bit is adapted from Oliver Lukschander commit e37bbb4fc8f577967ea3acd8b2c27e0ce91f1138 in omacom/linux-aurora; original metadata is packaged separately. Local macOS/m1n1 captures and DP105-125 tests inform the ordering. Keep diagnostic identifiers so source provenance remains reviewable; no direct Type-C DP-alt, MST, dock-unplug or suspend support is asserted.
+
+Prepared with AI assistance from the recorded local experiments. No maintainer review or DCO sign-off is asserted.
+---
+ drivers/gpu/drm/apple/apple_drv.c      |  15 +
+ drivers/gpu/drm/apple/dcp-internal.h   |   6 +
+ drivers/gpu/drm/apple/dcp.c            |  43 ++-
+ drivers/gpu/drm/apple/dcp.h            |   2 +
+ drivers/gpu/drm/apple/dpin-binding.inc | 368 +++++++++++++++++++++++++
+ drivers/gpu/drm/apple/dptxep.c         |  96 ++++++-
+ drivers/gpu/drm/apple/dptxep.h         |  18 ++
+ 7 files changed, 537 insertions(+), 11 deletions(-)
+ create mode 100644 drivers/gpu/drm/apple/dpin-binding.inc
+
+diff --git a/drivers/gpu/drm/apple/apple_drv.c b/drivers/gpu/drm/apple/apple_drv.c
+index 85d8302d30c64cefc9f4c0bc2001c6d42ff89bac..9427e946c58afcf38e8c17d101a90e2aa9d659ce 100644
+--- a/drivers/gpu/drm/apple/apple_drv.c
++++ b/drivers/gpu/drm/apple/apple_drv.c
+@@ -526,6 +526,14 @@ static int apple_drm_init(struct device *dev)
+ 
+ 	drm_client_setup_with_fourcc(&apple->drm, DRM_FORMAT_XRGB8888);
+ 
++	{
++		struct drm_crtc *crtc;
++		drm_for_each_crtc(crtc, &apple->drm) {
++			ret = dcp_dpin_autostart(to_apple_crtc(crtc)->dcp);
++			if (ret)
++				dev_warn(dev, "DP121 initial listener unavailable: %d\n", ret);
++		}
++	}
+ 	return 0;
+ 
+ err_unbind:
+@@ -536,11 +544,18 @@ err_unbind:
+ static void apple_drm_uninit(struct device *dev)
+ {
+ 	struct apple_drm_private *apple = dev_get_drvdata(dev);
++	struct drm_crtc *crtc;
+ 
++	/* Drain external callbacks before acquiring modeset locks in shutdown. */
++	drm_for_each_crtc(crtc, &apple->drm)
++		dcp_dpin_stop_events(to_apple_crtc(crtc)->dcp);
+ 	drm_dev_unregister(&apple->drm);
++	dev_info(dev, "DP93 atomic shutdown begin\n");
+ 	drm_atomic_helper_shutdown(&apple->drm);
++	dev_info(dev, "DP93 atomic shutdown complete; unbinding components\n");
+ 
+ 	component_unbind_all(dev, NULL);
++	dev_info(dev, "DP93 component unbind complete\n");
+ 
+ 	dev_set_drvdata(dev, NULL);
+ }
+diff --git a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
+index a2e992b8085136d41a939eb3da14432e484d694f..2c0e54ddce3ce89f0dd7f5ea88808146a3c89ca4 100644
+--- a/drivers/gpu/drm/apple/dcp-internal.h
++++ b/drivers/gpu/drm/apple/dcp-internal.h
+@@ -8,6 +8,7 @@
+ #include <linux/device.h>
+ #include <linux/ioport.h>
+ #include <linux/mutex.h>
++#include <linux/notifier.h>
+ #include <linux/mux/consumer.h>
+ #include <linux/phy/phy.h>
+ #include <linux/platform_device.h>
+@@ -259,6 +260,11 @@ struct apple_dcp {
+ 	struct gpio_desc *dp2hdmi_pwren;
+ 
+ 	struct mutex hpd_mutex;
++	struct mutex dp91_mutex;
++	struct notifier_block dp110_notifier;
++	bool dp110_registered;
++	bool dp118_stopping;
++	u64 dp110_last_event;
+ 
+ 	u32 dptx_phy;
+ 	u32 dptx_die;
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index 7629cf080f6d2a6dbc60ac519b2dd80c6e631c8d..bf118ae991c91c383b30fa950181cb6e05946fe8 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -40,6 +40,7 @@
+ #include "iomfb.h"
+ #include "parser.h"
+ #include "trace.h"
++#include <linux/apple-usb4-dpin.h>
+ 
+ #define APPLE_DCP_COPROC_CPU_CONTROL	 0x44
+ #define APPLE_DCP_COPROC_CPU_CONTROL_RUN BIT(4)
+@@ -355,13 +356,21 @@ int dcp_get_connector_type(struct platform_device *pdev)
+ 	return (dcp->connector_type);
+ }
+ 
++static void dp91_binding_stop(struct apple_dcp *dcp);
++static struct device_attribute dev_attr_dpin_connect;
++
+ #define DPTX_CONNECT_TIMEOUT msecs_to_jiffies(2000)
+ 
+ static int dcp_dptx_connect(struct apple_dcp *dcp, u32 port)
+ {
+ 	int ret = 0;
+ 
+-	if (!dcp->phy) {
++	if (port >= ARRAY_SIZE(dcp->dptxport))
++		return -EINVAL;
++	if (dcp->dptxport[port].dpin_provider)
++		return -EOPNOTSUPP; /* only the explicit DP91 path may connect */
++
++	if (!dcp->phy && !dcp->dptxport[port].dpin_provider) {
+ 		dev_warn(dcp->dev, "dcp_dptx_connect: missing phy\n");
+ 		return -ENODEV;
+ 	}
+@@ -519,7 +528,9 @@ int dcp_start(struct platform_device *pdev)
+ 				 ret);
+ 	}
+ 
+-	if (dcp->phy && dcp->fw_compat >= DCP_FIRMWARE_V_13_5) {
++	/* DP91: start service for an explicitly bound DP-IN test provider. */
++	if ((dcp->phy || dcp->dptxport[0].dpin_provider) &&
++	    dcp->fw_compat >= DCP_FIRMWARE_V_13_5) {
+ 		ret = ibootep_init(dcp);
+ 		if (ret)
+ 			dev_warn(dcp->dev, "Failed to start IBOOT endpoint: %d\n",
+@@ -1108,6 +1119,9 @@ static void dcp_comp_unbind(struct device *dev, struct device *main, void *data)
+ 	if (!dcp)
+ 		return;
+ 
++	dcp_dpin_stop_events(to_platform_device(dev));
++	device_remove_file(dev, &dev_attr_dpin_connect);
++	dp91_binding_stop(dcp);
+ 	if (dcp->hdmi_hpd_irq)
+ 		disable_irq(dcp->hdmi_hpd_irq);
+ 
+@@ -1163,6 +1177,8 @@ static const struct component_ops dcp_comp_ops = {
+ 	.unbind	= dcp_comp_unbind,
+ };
+ 
++#include "dpin-binding.inc"
++
+ static int dcp_platform_probe(struct platform_device *pdev)
+ {
+ 	enum dcp_firmware_version fw_compat;
+@@ -1193,6 +1209,11 @@ static int dcp_platform_probe(struct platform_device *pdev)
+ 	dcp->hw = *(struct apple_dcp_hw_data *)of_device_get_match_data(dev);
+ 
+ 	platform_set_drvdata(pdev, dcp);
++	{
++		int ret = dp91_binding_init(dcp);
++		if (ret)
++			return ret;
++	}
+ 
+ 	dcp->phy = devm_phy_optional_get(dev, "dp-phy");
+ 	if (IS_ERR(dcp->phy)) {
+@@ -1303,16 +1324,32 @@ static int dcp_platform_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	return component_add(&pdev->dev, &dcp_comp_ops);
++	{
++		int ret = component_add(&pdev->dev, &dcp_comp_ops);
++		if (!ret && dcp->dptxport[0].dpin_provider && !dpin_autostart) {
++			ret = device_create_file(dev, &dev_attr_dpin_connect);
++			if (ret)
++				component_del(dev, &dcp_comp_ops);
++		}
++		return ret;
++	}
+ }
+ 
+ static void dcp_platform_remove(struct platform_device *pdev)
+ {
++	device_remove_file(&pdev->dev, &dev_attr_dpin_connect);
++	/* component_del first performs DRM atomic shutdown while the DP-IN
++	 * clock and route still exist. dcp_comp_unbind then retires DP-IN.
++	 */
+ 	component_del(&pdev->dev, &dcp_comp_ops);
+ }
+ 
+ static void dcp_platform_shutdown(struct platform_device *pdev)
+ {
++	device_remove_file(&pdev->dev, &dev_attr_dpin_connect);
++	/* component_del first performs DRM atomic shutdown while the DP-IN
++	 * clock and route still exist. dcp_comp_unbind then retires DP-IN.
++	 */
+ 	component_del(&pdev->dev, &dcp_comp_ops);
+ }
+ 
+diff --git a/drivers/gpu/drm/apple/dcp.h b/drivers/gpu/drm/apple/dcp.h
+index 086ac70b0cc3ad0e35d54f2332cb514342b173d7..6ea3383000078bf7cf3e5e8bf748b52c94f5de5a 100644
+--- a/drivers/gpu/drm/apple/dcp.h
++++ b/drivers/gpu/drm/apple/dcp.h
+@@ -29,6 +29,7 @@ struct apple_encoder {
+ 
+ #define to_apple_encoder(x) container_of(x, struct apple_encoder, base)
+ 
++void dcp_dpin_stop_events(struct platform_device *pdev);
+ void dcp_poweroff(struct platform_device *pdev);
+ void dcp_poweron(struct platform_device *pdev);
+ int dcp_set_crc(struct drm_crtc *crtc, bool enabled);
+@@ -38,6 +39,7 @@ bool dcp_fw_compat_is_12_x(struct platform_device *pdev);
+ unsigned long* dcp_get_iomfb_surfaces(struct platform_device *pdev);
+ void dcp_link(struct platform_device *pdev, struct apple_crtc *apple,
+ 	      struct apple_connector *connector);
++int dcp_dpin_autostart(struct platform_device *pdev);
+ int dcp_start(struct platform_device *pdev);
+ int dcp_wait_ready(struct platform_device *pdev, u64 timeout);
+ void dcp_flush(struct drm_crtc *crtc, struct drm_atomic_commit *commit);
+diff --git a/drivers/gpu/drm/apple/dpin-binding.inc b/drivers/gpu/drm/apple/dpin-binding.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..c740c68e88a59296a601b9329c9f3d43963cd3c2
+--- /dev/null
++++ b/drivers/gpu/drm/apple/dpin-binding.inc
+@@ -0,0 +1,368 @@
++#include <linux/apple-usb4-dp.h>
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* Explicit initial connection; subsequent DP reconnects use early kernel
++ * tunnel notifications. A failed/ambiguous transaction is never retried.
++ * Provider calls never hold a lock across an AFK firmware transaction.
++ */
++static bool dpin_autostart;
++module_param(dpin_autostart, bool, 0444);
++MODULE_PARM_DESC(dpin_autostart, "Enable event-driven initial USB4 DP connection");
++static int dp118_connect_locked(struct apple_dcp *dcp, bool reconnect);
++
++static void dp91_put_provider(void *data)
++{
++	put_device(data);
++}
++
++static int dp91_binding_init(struct apple_dcp *dcp)
++{
++	struct device_node *np;
++	struct platform_device *provider;
++	int ret;
++	mutex_init(&dcp->dp91_mutex);
++	np = of_parse_phandle(dcp->dev->of_node, "codex,dpin-provider", 0);
++	if (!np)
++		return 0;
++	if (!of_machine_is_compatible("apple,t8103")) {
++		of_node_put(np);
++		return -EOPNOTSUPP;
++	}
++	provider = of_find_device_by_node(np);
++	of_node_put(np);
++	if (!provider)
++		return -EPROBE_DEFER;
++	ret = devm_add_action_or_reset(dcp->dev, dp91_put_provider, &provider->dev);
++	if (ret)
++		return ret;
++	if (!device_link_add(dcp->dev, &provider->dev, DL_FLAG_AUTOREMOVE_CONSUMER))
++		return -ENODEV;
++	dcp->dptxport[0].route_type = DPTX_ROUTE_USB4;
++	dcp->dptxport[0].dpin_provider = &provider->dev;
++	return 0;
++}
++
++static void dp91_binding_stop(struct apple_dcp *dcp)
++{
++	struct dptx_port *port = &dcp->dptxport[0];
++	u64 token;
++	int ret;
++	if (!port->dpin_provider)
++		return;
++	token = READ_ONCE(port->dpin_token);
++	if (!token)
++		return;
++	/* Called from component unbind AFTER drm_atomic_helper_shutdown.
++	 * Retain the callback token until firmware has withdrawn the display.
++	 */
++	if (port->enabled && port->connected && !port->dpin_withdraw_attempted &&
++	    !codex_dpin_call(port->dpin_provider, token, CODEX_DPIN_CHECK, 0)) {
++		ret = dptxport_set_hpd(port->service, false);
++		dev_info(dcp->dev, "DP93 shutdown HPD withdrawal ret=%d\n", ret);
++		ret = dptxport_release_display(port->service);
++		dev_info(dcp->dev, "DP93 shutdown display release ret=%d\n", ret);
++	}
++	token = xchg(&port->dpin_token, 0);
++	ret = codex_dpin_call(port->dpin_provider, token, CODEX_DPIN_END, 0);
++	if (ret && ret != -ESTALE && ret != -ENODEV)
++		dev_err(dcp->dev, "DP93 provider cleanup failed: %d\n", ret);
++	port->connected = false;
++	dev_info(dcp->dev, "DP93 provider retirement ret=%d\n", ret);
++}
++
++/* DP107: exercise the existing out-of-band disconnect ordering with a
++ * healthy tunnel before adding asynchronous tunnel notifications. This is
++ * followed only by the guarded DP108 experiment, never timeout retries.
++ * The provider token stays valid for firmware callbacks until final unbind.
++ */
++static int dp107_withdraw(struct apple_dcp *dcp)
++{
++	struct dptx_port *port = &dcp->dptxport[0];
++	int ret;
++
++	lockdep_assert_held(&dcp->dp91_mutex);
++	if (!port->enabled || !port->dpin_provider || !port->connected)
++		return -ENOTCONN;
++	if (port->dpin_withdraw_attempted)
++		return -EALREADY;
++	ret = codex_dpin_call(port->dpin_provider,
++			READ_ONCE(port->dpin_token), CODEX_DPIN_CHECK, 0);
++	if (ret)
++		return ret;
++	port->dpin_withdraw_attempted = true;
++
++	/* Match dcp_dptx_disconnect_oob: disable the DRM connection first.
++	 * No CIO/TB lock is held while sending firmware commands.
++	 */
++	disconnected_hpd_event(dcp->connector);
++	if (dcp->avep)
++		av_service_disconnect(dcp);
++	ret = dptxport_set_hpd(port->service, false);
++	dev_info(dcp->dev, "DP107 explicit HPD withdrawal ret=%d\n", ret);
++	if (ret)
++		return ret; /* Do not reuse an ambiguous, timed-out transaction. */
++	ret = dptxport_release_display(port->service);
++	dev_info(dcp->dev, "DP107 explicit display release ret=%d\n", ret);
++	if (ret)
++		return ret;
++	port->connected = false;
++	port->dpin_withdrawn = true;
++	/* One new attempt is allowed only after this acknowledged withdrawal. */
++	port->dpin_reconnect_attempted = false;
++	dev_info(dcp->dev, "DP107 withdrawal completed; provider retained until unbind\n");
++	return 0;
++}
++
++/* Callback runs without the TB domain/CIO locks. AFK callbacks use
++ * independent workqueues and can take the provider's lock normally.
++ */
++static int dp110_before_retirement(struct notifier_block *nb,
++                                  unsigned long action, void *data)
++{
++	struct apple_dcp *dcp = container_of(nb, struct apple_dcp, dp110_notifier);
++	struct codex_dp110_event *event = data;
++	struct dptx_port *port = &dcp->dptxport[0];
++	int ret;
++
++	if (!event->controller || event->controller->parent != port->dpin_provider ||
++     event->input_index != 0)
++		return NOTIFY_DONE;
++	mutex_lock(&dcp->dp91_mutex);
++	if (dcp->dp118_stopping) {
++		ret = -ESHUTDOWN;
++		goto out;
++	}
++	if (event->sequence <= dcp->dp110_last_event) {
++		ret = -ESTALE;
++		goto out;
++	}
++	dcp->dp110_last_event = event->sequence;
++	if (action == CODEX_DP_PATHS_READY) {
++		if (dpin_autostart && !port->dpin_attempted) {
++			dev_info(dcp->dev, "DP121 initial paths-ready seq=%llu begin\n", event->sequence);
++			ret = dp118_connect_locked(dcp, false);
++			dev_info(dcp->dev, "DP121 initial paths-ready seq=%llu ret=%d\n", event->sequence, ret);
++			goto out;
++		}
++		if (!port->dpin_withdrawn || port->connected) {
++			ret = 0;
++			goto out;
++		}
++		dev_info(dcp->dev, "DP118 automatic reconnect seq=%llu sink=%llx:%u begin\n",
++			 event->sequence, event->output_route, event->output_port);
++		ret = dp118_connect_locked(dcp, true);
++		dev_info(dcp->dev, "DP118 automatic reconnect seq=%llu ret=%d\n",
++			 event->sequence, ret);
++		goto out;
++	}
++	if (action != CODEX_DP_BEFORE_RETIREMENT) {
++		ret = -EINVAL;
++		goto out;
++	}
++	if (!port->dpin_attempted && !port->connected) {
++		ret = 0; /* No firmware display was requested yet. */
++		goto out;
++	}
++	dev_info(dcp->dev, "DP110 display withdrawal seq=%llu begin\n", event->sequence);
++	ret = dp107_withdraw(dcp);
++	dev_info(dcp->dev, "DP110 display withdrawal seq=%llu ret=%d\n", event->sequence, ret);
++out:
++	mutex_unlock(&dcp->dp91_mutex);
++	return notifier_from_errno(ret);
++}
++
++void dcp_dpin_stop_events(struct platform_device *pdev)
++{
++	struct apple_dcp *dcp = platform_get_drvdata(pdev);
++
++	bool registered;
++
++	if (!dcp)
++		return;
++	mutex_lock(&dcp->dp91_mutex);
++	dcp->dp118_stopping = true;
++	registered = xchg(&dcp->dp110_registered, false);
++	mutex_unlock(&dcp->dp91_mutex);
++	/* Drain callbacks before modeset locks / firmware teardown. */
++	if (registered)
++		codex_dp110_unregister(&dcp->dp110_notifier);
++}
++
++static int dp118_connect_locked(struct apple_dcp *dcp, bool reconnect)
++{
++	struct device *dev = dcp->dev;
++	struct dptx_port *port = &dcp->dptxport[0];
++	u64 token = 0;
++	bool requested = false, hpd_requested = false;
++	int ret, cleanup;
++	lockdep_assert_held(&dcp->dp91_mutex);
++	if (dcp->dp118_stopping)
++		return -ESHUTDOWN;
++	if (!port->enabled || !port->dpin_provider) {
++		ret = -ENODEV;
++		goto out;
++	}
++	if (reconnect) {
++		struct apple_epic_service *service = port->service;
++		unsigned long flags;
++		bool idle;
++
++		if (!port->dpin_withdrawn || port->connected ||
++		    port->dpin_reconnect_attempted) {
++			ret = -EALREADY;
++			goto out;
++		}
++		port->dpin_reconnect_attempted = true;
++		/* Only acknowledged withdrawal can reach here. Drain already
++		 * queued DPTX callbacks and reject outstanding commands. The
++		 * live CIO lease is retained across this display-only cycle.
++		 * This does not permit recovery of an ambiguous timeout.
++		 */
++		flush_workqueue(service->ep->wq);
++		spin_lock_irqsave(&service->lock, flags);
++		idle = bitmap_empty(service->cmd_map, MAX_PENDING_CMDS);
++		spin_unlock_irqrestore(&service->lock, flags);
++		if (!idle) {
++			ret = -EBUSY;
++			goto out;
++		}
++		token = READ_ONCE(port->dpin_token);
++		ret = codex_dpin_call(port->dpin_provider, token, CODEX_DPIN_CHECK, 0);
++		if (ret)
++			goto out;
++		port->dpin_withdrawn = false;
++		port->dpin_withdraw_attempted = false;
++		dev_info(dev, "DP108 acknowledged withdrawal and empty command queue; reconnect token=%llu\n", token);
++	} else {
++		if (port->dpin_attempted) {
++			ret = -EALREADY;
++			goto out;
++		}
++		port->dpin_attempted = true;
++		ret = codex_dpin_begin(port->dpin_provider, &token);
++		if (ret)
++			goto out;
++		WRITE_ONCE(port->dpin_token, token);
++	}
++	reinit_completion(&port->linkcfg_completion);
++	/* DP-IN0 is remote core 1. Mapping comes from macOS capture, not
++	 * validate_connection (which accepted every tested core number).
++	 */
++	ret = dptxport_connect(port->service, 1, dcp->dptx_phy, dcp->dptx_die);
++	dev_info(dev, "DP92 stage connect ret=%d\n", ret);
++	if (ret)
++		goto fail;
++	requested = true; /* even a timed-out request may have reached firmware */
++	ret = dptxport_request_display(port->service);
++	dev_info(dev, "DP92 stage request_display ret=%d\n", ret);
++	if (ret)
++		goto fail;
++	/* DP92: let firmware observe the attached sink before waiting for
++	 * training. DP91 never asserted HPD and never received link config.
++	 */
++	ret = codex_dpin_call(port->dpin_provider, token, CODEX_DPIN_CHECK, 0);
++	if (ret)
++		goto fail;
++	hpd_requested = true;
++	ret = dptxport_set_hpd(port->service, true);
++	dev_info(dev, "DP92 stage early_hpd ret=%d\n", ret);
++	if (ret)
++		goto fail;
++	if (!wait_for_completion_timeout(&port->linkcfg_completion, DPTX_CONNECT_TIMEOUT)) {
++		ret = -ETIMEDOUT;
++		goto fail;
++	}
++	ret = codex_dpin_call(port->dpin_provider, token, CODEX_DPIN_CHECK, 0);
++	if (ret)
++		goto fail;
++	port->connected = true;
++	if (!dcp->dp110_registered) {
++		dcp->dp110_notifier.notifier_call = dp110_before_retirement;
++		ret = codex_dp110_register(&dcp->dp110_notifier);
++		if (ret)
++			goto fail;
++		dcp->dp110_registered = true;
++		dev_info(dev, "DP110 pre-retirement listener armed\n");
++	}
++	dev_info(dev, "DP92 firmware connection completed; image still needs verification\n");
++	goto out;
++fail:
++	if (reconnect) {
++		port->dpin_withdraw_attempted = true;
++		dev_err(dev, "DP108 reconnect failed: %d; no retry\n", ret);
++		goto out;
++	}
++	if (hpd_requested) {
++		cleanup = dptxport_set_hpd(port->service, false);
++		dev_info(dev, "DP92 stage withdraw_hpd ret=%d\n", cleanup);
++	}
++	if (requested) {
++		cleanup = dptxport_release_display(port->service);
++		if (cleanup)
++			dev_warn(dev, "DP92 firmware release failed: %d\n", cleanup);
++	}
++	dp91_binding_stop(dcp);
++out:
++	dev_info(dev, "DP92 explicit connect result=%d\n", ret);
++	return ret;
++}
++
++static ssize_t dpin_connect_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct apple_dcp *dcp = dev_get_drvdata(dev);
++	int ret;
++
++	if (dpin_autostart)
++		return -EOPNOTSUPP;
++	/* Reconnect is now exclusively event driven, never initiated by userspace. */
++	if (!sysfs_streq(buf, "connect") && !sysfs_streq(buf, "withdraw"))
++		return -EINVAL;
++	mutex_lock(&dcp->dp91_mutex);
++	if (dcp->dp118_stopping)
++		ret = -ESHUTDOWN;
++	else if (sysfs_streq(buf, "withdraw"))
++		ret = dp107_withdraw(dcp);
++	else
++		ret = dp118_connect_locked(dcp, false);
++	mutex_unlock(&dcp->dp91_mutex);
++	return ret ? ret : count;
++}
++static DEVICE_ATTR(dpin_connect, 0200, NULL, dpin_connect_store);
++
++/* Called after DRM registration/client setup, with no modeset/domain locks.
++ * Register before replay so either ordering (tunnel first or DCP first)
++ * converges on the existing ordered, validated paths-ready notification.
++ */
++int dcp_dpin_autostart(struct platform_device *pdev)
++{
++ struct apple_dcp *dcp = platform_get_drvdata(pdev);
++ struct dptx_port *port = &dcp->dptxport[0];
++ int ret;
++ if (!dpin_autostart || !port->dpin_provider)
++  return 0;
++ mutex_lock(&dcp->dp91_mutex);
++ if (dcp->dp118_stopping || !dcp->active || !port->enabled || !port->service) {
++  mutex_unlock(&dcp->dp91_mutex);
++  return -ENODEV;
++ }
++ if (dcp->dp110_registered) {
++  mutex_unlock(&dcp->dp91_mutex);
++  return 0;
++ }
++ /* Publish before registration: a concurrent ready callback must not
++  * attempt to register recursively from inside the blocking chain.
++  * Component bind/remove serializes this initial registration with stop.
++  */
++ dcp->dp110_registered = true;
++ dcp->dp110_notifier.notifier_call = dp110_before_retirement;
++ mutex_unlock(&dcp->dp91_mutex);
++ ret = codex_dp110_register(&dcp->dp110_notifier);
++ if (ret) {
++  mutex_lock(&dcp->dp91_mutex);
++  dcp->dp110_registered = false;
++  mutex_unlock(&dcp->dp91_mutex);
++  return ret;
++ }
++ dev_info(dcp->dev, "DP121 lifecycle listener armed; replay existing paths\n");
++ return codex_dp121_replay_ready(port->dpin_provider);
++}
+diff --git a/drivers/gpu/drm/apple/dptxep.c b/drivers/gpu/drm/apple/dptxep.c
+index 1ea00602d476d82026e3aebbeb28293a8cc95f01..31887311cfa160643f30902d16d8bc516f1750c4 100644
+--- a/drivers/gpu/drm/apple/dptxep.c
++++ b/drivers/gpu/drm/apple/dptxep.c
+@@ -5,12 +5,14 @@
+ #include <linux/completion.h>
+ #include <linux/phy/phy.h>
+ #include <linux/delay.h>
++#include <linux/of.h>
+ 
+ #include "afk.h"
+ #include "dcp.h"
+ #include "dptxep.h"
+ #include "parser.h"
+ #include "trace.h"
++#include <linux/apple-usb4-dpin.h>
+ 
+ struct dcpdptx_connection_cmd {
+ 	__le32 unk;
+@@ -102,7 +104,12 @@ int dptxport_connect(struct apple_epic_service *service, u8 core, u8 atc,
+ {
+ 	struct dptx_port *dptx = service->cookie;
+ 	struct dcpdptx_connection_cmd cmd, resp;
+-	u32 unk_field = 0x0; // seen as 0x100 under some conditions
++	/* USB4 DP-IN role: see Oliver Lukschander's Aurora change
++	 * e37bbb4fc8f577967ea3acd8b2c27e0ce91f1138; validated by DP105.
++	 * The HPD capability bit is intentionally unchanged here.
++	 */
++	u32 unk_field = dptx->route_type == DPTX_ROUTE_USB4 ?
++		DCPDPTX_CONNECTION_USB4 : 0;
+ 	int ret;
+ 	u32 target = FIELD_PREP(DCPDPTX_REMOTE_PORT_CORE, core) |
+ 		     FIELD_PREP(DCPDPTX_REMOTE_PORT_ATC, atc) |
+@@ -113,11 +120,13 @@ int dptxport_connect(struct apple_epic_service *service, u8 core, u8 atc,
+ 
+ 	cmd.target = cpu_to_le32(target);
+ 	cmd.unk = cpu_to_le32(unk_field);
++	dev_info(service->ep->dcp->dev, "DP106 connect target=%#x attrs=%#x\n", target, unk_field);
+ 	ret = afk_service_call(service, 0, 11, &cmd, sizeof(cmd), 24, &resp,
+ 			       sizeof(resp), 24);
+ 	if (ret)
+ 		return ret;
+ 
++	dev_info(service->ep->dcp->dev, "DP106 reply target=%#x attrs=%#x\n", le32_to_cpu(resp.target), le32_to_cpu(resp.unk));
+ 	if (le32_to_cpu(resp.target) != target)
+ 		return -EINVAL;
+ 	if (le32_to_cpu(resp.unk) != unk_field)
+@@ -147,11 +156,17 @@ int dptxport_set_hpd(struct apple_epic_service *service, bool hpd)
+ 	if (hpd)
+ 		cmd.unk = cpu_to_le32(1);
+ 
+-	ret = afk_service_call(service, 8, 8, &cmd, sizeof(cmd), 12, &resp,
++	ret = afk_service_call_checked(service, 8, 8, &cmd, sizeof(cmd), 12, &resp,
+ 			       sizeof(resp), 12);
+-	if (ret)
++	if (ret) {
++		dev_info(service->ep->dcp->dev,
++			 "DP97 HPD requested=%u transport_ret=%d (reply not decoded)\n", hpd, ret);
+ 		return ret;
+-	if (le32_to_cpu(resp.unk) != 1)
++	}
++	dev_info(service->ep->dcp->dev,
++		 "DP97 HPD requested=%u transport_ret=0 reply_unk=%08x\n",
++		 hpd, le32_to_cpu(resp.unk));
++	if (le32_to_cpu(resp.unk) != hpd)
+ 		return -EINVAL;
+ 	return 0;
+ }
+@@ -257,6 +272,12 @@ static int dptxport_call_get_max_lane_count(struct apple_epic_service *service,
+ 	if (reply_size < sizeof(*reply))
+ 		return -EINVAL;
+ 
++	if (dptx->dpin_provider) {
++		dptx->lane_count = 4;
++		reply->retcode = 0;
++		reply->lane_count = cpu_to_le64(4);
++		return 0;
++	}
+ 	ret = phy_validate(dptx->atcphy, PHY_MODE_DP, 0, &phy_ops);
+ 	if (ret < 0) {
+ 		dev_err(dcp->dev, "phy_validate failed: %d\n", ret);
+@@ -330,7 +351,7 @@ static int dptxport_call_set_active_lane_count(struct apple_epic_service *servic
+ 	reply->retcode = cpu_to_le32(retcode);
+ 	reply->lane_count = cpu_to_le64(lane_count);
+ 
+-	if (lane_count > 0)
++	if (lane_count > 0 && !dptx->dpin_provider)
+ 		complete(&dptx->linkcfg_completion);
+ 
+ 	return ret;
+@@ -359,13 +380,36 @@ dptxport_call_will_change_link_config(struct apple_epic_service *service)
+ 	dptx->phy_ops.dp.set_lanes = 0;
+ 	dptx->phy_ops.dp.set_rate = 0;
+ 	dptx->phy_ops.dp.set_voltages = 0;
+-
++	if (dptx->dpin_provider)
++		return codex_dpin_call(dptx->dpin_provider,
++			READ_ONCE(dptx->dpin_token), CODEX_DPIN_INACTIVE, 0);
+ 	return 0;
+ }
+ 
+ static int
+ dptxport_call_did_change_link_config(struct apple_epic_service *service)
+ {
++	struct dptx_port *dptx = service->cookie;
++	if (dptx->dpin_provider) {
++		/* SET_LINK_RATE(0) has already requested and confirmed stop.
++		 * Completing that configuration must not restart the input.
++		 * Revalidate the inactive handshake; propagate any failure.
++		 */
++		if (!dptx->link_rate) {
++			int ret = codex_dpin_call(dptx->dpin_provider,
++				READ_ONCE(dptx->dpin_token), CODEX_DPIN_INACTIVE, 0);
++
++			dev_info(service->ep->dcp->dev,
++				 "DP111 zero-rate configuration stays inactive ret=%d lanes=%u\n",
++				 ret, dptx->phy_ops.dp.lanes);
++			return ret;
++		}
++		int ret = codex_dpin_call(dptx->dpin_provider,
++			READ_ONCE(dptx->dpin_token), CODEX_DPIN_ACTIVE, 0);
++		if (!ret)
++			complete(&dptx->linkcfg_completion);
++		return ret;
++	}
+ 	/* assume the link config did change and wait a little bit */
+ 	mdelay(10);
+ 
+@@ -421,6 +465,19 @@ static int dptxport_call_set_link_rate(struct apple_epic_service *service,
+ 		break;
+ 	}
+ 
++	if (dptx->dpin_provider) {
++		/* Zero is a stop request, never a physical-lane reconfiguration. */
++		if (!phy_set_rate)
++			return -EINVAL;
++		ret = codex_dpin_call(dptx->dpin_provider, READ_ONCE(dptx->dpin_token),
++			link_rate ? CODEX_DPIN_RATE : CODEX_DPIN_INACTIVE, link_rate);
++		if (ret)
++			return ret;
++		dptx->link_rate = dptx->pending_link_rate = link_rate;
++		reply->retcode = 0;
++		reply->link_rate = cpu_to_le32(link_rate);
++		return 0;
++	}
+ 	if (phy_set_rate) {
+ 		dptx->phy_ops.dp.link_rate = phy_link_rate;
+ 		dptx->phy_ops.dp.set_rate = 1;
+@@ -480,7 +537,12 @@ dptxport_call_activate(struct apple_epic_service *service,
+ 
+ 	// TODO: hack, use phy_set_mode to select the correct DCP(EXT) input
+ 	// for standalone phy (i.e. not atc phy).
+-	if (!dcp->typec_mux)
++	if (dptx->dpin_provider) {
++		int ret = codex_dpin_call(dptx->dpin_provider,
++			READ_ONCE(dptx->dpin_token), CODEX_DPIN_ACTIVE, 0);
++		if (ret)
++			return ret;
++	} else if (!dcp->typec_mux)
+ 		phy_set_mode_ext(dptx->atcphy, PHY_MODE_DP, dcp->index);
+ 
+ 	memcpy(reply, data, min(reply_size, data_size));
+@@ -498,7 +560,14 @@ dptxport_call_deactivate(struct apple_epic_service *service,
+ 	struct dptx_port *dptx = service->cookie;
+ 
+ 	/* deactivate phy */
+-	phy_set_mode_ext(dptx->atcphy, PHY_MODE_INVALID, 0);
++	if (dptx->dpin_provider) {
++		int ret = codex_dpin_call(dptx->dpin_provider,
++			READ_ONCE(dptx->dpin_token), CODEX_DPIN_INACTIVE, 0);
++		if (ret)
++			return ret;
++	} else {
++		phy_set_mode_ext(dptx->atcphy, PHY_MODE_INVALID, 0);
++	}
+ 
+ 	memcpy(reply, data, min(reply_size, data_size));
+ 	if (reply_size >= 4)
+@@ -513,6 +582,17 @@ static int dptxport_call(struct apple_epic_service *service, u32 idx,
+ {
+ 	struct dptx_port *dptx = service->cookie;
+ 	trace_dptxport_apcall(dptx, idx, data_size);
++	if (!dptx->atcphy && !dptx->dpin_provider)
++		return -ENODEV;
++
++	if (dptx->dpin_provider) {
++		int ret;
++		dev_info(service->ep->dcp->dev, "DP92 firmware callback idx=%u\n", idx);
++		ret = codex_dpin_call(dptx->dpin_provider,
++			READ_ONCE(dptx->dpin_token), CODEX_DPIN_CHECK, 0);
++		if (ret)
++			return ret;
++	}
+ 
+ 	switch (idx) {
+ 	case DPTX_APCALL_WILL_CHANGE_LINKG_CONFIG:
+diff --git a/drivers/gpu/drm/apple/dptxep.h b/drivers/gpu/drm/apple/dptxep.h
+index 0bf2534054fd7bd9d806f155563d86ed66595222..74893cb29f5a9d05c0b45251ac28634e7f3916e1 100644
+--- a/drivers/gpu/drm/apple/dptxep.h
++++ b/drivers/gpu/drm/apple/dptxep.h
+@@ -46,7 +46,25 @@ enum dptx_link_rate {
+ 
+ struct apple_epic_service;
+ 
++/* Firmware connection attributes are properties of the route, not the
++ * lifetime or implementation of the provider used to drive that route.
++ * Keep PHY zero so existing zero-initialized direct paths retain their ABI.
++ */
++enum dptx_route_type {
++	DPTX_ROUTE_PHY = 0,
++	DPTX_ROUTE_USB4,
++};
++
++#define DCPDPTX_CONNECTION_USB4 BIT(0)
++
+ struct dptx_port {
++	enum dptx_route_type route_type;
++	struct device *dpin_provider;
++	u64 dpin_token;
++	bool dpin_attempted;
++	bool dpin_withdraw_attempted;
++	bool dpin_withdrawn;
++	bool dpin_reconnect_attempted;
+ 	bool enabled, connected;
+ 	struct completion enable_completion;
+ 	struct completion linkcfg_completion;

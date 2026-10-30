@@ -1,0 +1,15 @@
+Retain for the later combined test boot; not installed by this package:
+
+pcie_apple_pciec.pciec_topology_events=1
+pcie_apple_pciec.pciec_link_events=0
+pcie_apple_pciec.pciec_reset_ack_clear=0
+pciehp.pciehp_poll_mode=0
+pci=hpbussize=16
+
+The ACK override preserves the measured Test40/Test49 condition. It is not a
+claim that the ACK meaning is resolved. The source A/B parameter remains.
+No Test49 diagnostic module, live DT overlay or staged insmod helper is needed
+by the intended source integration. The static J274 DT references native NHI
+nodes. Combined boot with this translation still needs the planned later test.
+Suspend guard retained. No suspend workaround. Existing panic/fallback setup is
+not changed or installed by this source-only preparation.

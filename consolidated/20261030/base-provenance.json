@@ -1,0 +1,38 @@
+{
+  "intended_git_base": "f7734f4c91c0f47d9e762786968057bec99a0788",
+  "repository": "UbuntuAsahi/linux",
+  "actual_base": "reconstructed sparse source package 7.2.0-1001.1~26.04.1; not a full checkout of Git commit",
+  "git_fetch": "GitHub rate-limited; stopped fetch; do not claim commit ancestry",
+  "critical_blob_checks": [
+    {
+      "path": "arch/arm64/boot/dts/apple/t8103-pmgr.dtsi",
+      "match": true,
+      "blob": "5d3846d44e35786ef8a1444aa512f6d79196c610",
+      "expected": "5d3846d44e35786ef8a1444aa512f6d79196c610"
+    },
+    {
+      "path": "arch/arm64/boot/dts/apple/t8103.dtsi",
+      "match": true,
+      "blob": "a2aa7fb7f2389b2cf748eded0b6eb1c086ce1efb",
+      "expected": "a2aa7fb7f2389b2cf748eded0b6eb1c086ce1efb"
+    },
+    {
+      "path": "drivers/phy/apple/atc.c",
+      "match": true,
+      "blob": "0fe15742e78171b394da2807f9dcd131154b957d",
+      "expected": "0fe15742e78171b394da2807f9dcd131154b957d"
+    },
+    {
+      "path": "drivers/thunderbolt/apple.c",
+      "match": true,
+      "blob": "530008cc8ec5d8cf003f9944e2204ae9b804cd23",
+      "expected": "530008cc8ec5d8cf003f9944e2204ae9b804cd23"
+    }
+  ],
+  "synthetic_sparse_base_commit": "67cce0f3753d0deee0cb86787df37dde6468c294",
+  "original_archive_sha256": "c2c76a0edd2dfc31704a9cc78cd6924bbfcb60a09498b4e137e6ccf04bd975b9",
+  "ubuntu_diff_sha256": "a1e60a8f193473743192de76d0c1d436024804535082ce6b21ea44f20fb7663e",
+  "scope": "expanded source-package baseline covering PCI, IOMMU, Type-C and display",
+  "final_commit": "552486f3c101b6b1b54dfa018cea664bbc808e23",
+  "final_tree": "c28f365d002230500035d721ad25a0f20c6290c2"
+}

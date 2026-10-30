@@ -1,0 +1,125 @@
+From 498f80ca6d425a1ab6fad39e60aea44e596b4e92 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:23:46 +0100
+Subject: [PATCH RFC 18/22] docs: record the measured dock display scope and
+ integration limits
+
+Document the reference tests, bootloader handoff, module dependencies, provenance, and separation from the incomplete eGPU and suspend work. Full-kernel boot validation remains deferred as requested. AI-assisted preparation; no DCO sign-off asserted.
+---
+ Documentation/gpu/apple-usb4-dpin-draft.rst | 107 ++++++++++++++++++++
+ 1 file changed, 107 insertions(+)
+ create mode 100644 Documentation/gpu/apple-usb4-dpin-draft.rst
+
+diff --git a/Documentation/gpu/apple-usb4-dpin-draft.rst b/Documentation/gpu/apple-usb4-dpin-draft.rst
+new file mode 100644
+index 0000000000000000000000000000000000000000..87d0b2925603a62b6283b9a185ab2765377755d6
+--- /dev/null
++++ b/Documentation/gpu/apple-usb4-dpin-draft.rst
+@@ -0,0 +1,107 @@
++Apple M1 USB4 dock display integration draft (Test125)
++====================================================
++
++Scope
++-----
++
++This downstream series captures the measured Mac mini M1 / Dynabook PS0120EA1PRP
++path: external DCP -> M1 port 1 USB4 DP-IN0 -> dock DisplayPort output.
++The transport and lifecycle code is derived from the Test125 sources. Kernel
++module dependency packaging, optional-provider stubs, default autostart, and
++board-source translation are subsequent integration changes: built and checked,
++but not yet boot-tested as a combined in-tree kernel.
++
++It is not a general multi-controller, MST, multi-monitor or suspend driver.
++The provider registry admits one selected CIO instance. The existing diagnostic
++property and function names remain deliberately visible for provenance/review.
++They are not a stable upstream binding or ABI. Full dock surprise removal and
++suspend/resume remain outside the validated scope.
++
++Source base and provenance
++--------------------------
++
++Intended repository/base: UbuntuAsahi/linux,
++f7734f4c91c0f47d9e762786968057bec99a0788
++(UBUNTU: Ubuntu-asahi-arm-7.2.0-1001.1; Linux 7.2.12).
++
++Patch reconstruction used selected paths from the original Ubuntu source
++package linux-asahi-arm-7.2 7.2.0-1001.1~26.04.1. The local repository has a
++synthetic sparse baseline, not upstream commit ancestry. The outer package
++contains source-package hashes, critical Git blob checks, the preimage manifest,
++and an application helper that requires the actual upstream base and verifies
++every affected original file before applying. A current Asahi branch is not an
++interchangeable base.
++
++Ramzi Abdiche's original EPIC notify-style reply patch is retained as a separate
++commit with its original author and Signed-off-by. The M1 clock and crossbar
++sequences reference omacom/linux-aurora at
++2f725546d6ac6afe0bd5abfa1a844971519f0076; the USB4 connection role is adapted from
++Oliver Lukschander's e37bbb4fc8f577967ea3acd8b2c27e0ce91f1138. Original reference
++metadata and licenses are retained. Our adaptations are AI-assisted and are not
++represented as endorsed or signed off by those upstream authors.
++
++Building and loading
++--------------------
++
++Use the complete pinned kernel source, its matching Ubuntu configuration and
++its compiler toolchain. Enable these existing tristates together::
++
++    CONFIG_DRM_APPLE=m
++    CONFIG_USB4=m
++    CONFIG_USB4_APPLE_SOC=m
++    CONFIG_PHY_APPLE_ATC=m
++    CONFIG_MUX_APPLE_DPXBAR=m
++
++Normal in-tree Kbuild and depmod resolve the dependencies. The source series
++contains no /run-dependent KBUILD_EXTRA_SYMBOLS paths. New shared interfaces
++live in include/linux. Built-in consumers cannot depend on modular providers;
++optional-provider stubs preserve configurations without the USB4 display path.
++Initial display routing defaults on when the explicit board route exists. The
++read-only appledrm.dpin_autostart parameter remains available for diagnosis.
++
++The J274 DT source describes the measured route with labels. Keep the primary
++DCP available for direct HDMI. The dcpext alias makes m1n1 prepare the external
++DCP; its node remains disabled until the bootloader installs firmware and
++reserved-memory properties. Never bake live firmware addresses or memory-region
++phandles into a distributed DTB. No Apple firmware or bootloader binaries are
++included in this series. The tested path used m1n1 v1.5.2 and DCP compatibility
++13.5; other firmware versions are not implied to work by this result.
++
++Compile DTs using the matching Asahi DTC. Generic distro DTC may reject existing
++floating-point GPU properties in the unmodified base sources. Build a separately
++named kernel/module set and stage its DTB via the distribution's bootloader
++packaging for a future one-shot boot. Do not mix these modules into an unrelated
++kernel or replace the current default boot entry merely to apply this series.
++
++Validated reference and pending validation
++-----------------------------------------
++
++Test125 completed standard modprobe loading at 7.924 seconds, initial display
++connection at 10.724 seconds, real DP unplug at 207.977 seconds and automatic
++reconnect at 228.940 seconds. The user confirmed stable images before and after
++hotplug. OWC reads before and after the event matched the recorded 16 MiB hash.
++The external DCP unbound at 260.111 seconds; return to stock Ubuntu was verified.
++The full final journal had no kernel panic, SError or blocked-task report.
++Known firmware PMU read errors and userspace AppArmor/service warnings remain.
++
++Earlier visual tests covered DP Video 1, DP Video 2 and HDMI Video 1. Physical
++DP hotplug in the latest reference was tested on Video 1. Do not extend this to
++HDMI Video 2, HDMI hotplug, display audio, whole-dock unplug, MST, long-duration
++stress or suspend/resume. The OWC in Test125 used the dock USB/SSD port, so that
++checksum is not a new PCIe/NVMe tunnel validation.
++
++The series was applied from scratch and the resulting tree matched the prepared
++branch. Five affected modules were built together against the matching installed
++headers, without loading them. DT route properties were compared semantically
++with the tested firmware-free DT. A full kernel build and boot of this packaged
++series remain pending. Checkpatch findings (including diagnostic formatting and
++missing local DCO sign-off) are recorded, not silently waived.
++
++Separate work
++-------------
++
++No AMDGPU, TTM, Radeon HDA, FFmpeg, NVMe, native PCIe-host, DART, CD321x or suspend
++patches are introduced by this display series. Earlier PCIe/SSD and eGPU work is
++separate. In particular, working Radeon rendering does not establish safe eGPU
++surprise removal: that path still produced SError in prior tests. Do not include
++those incomplete patches in a dock-display PR by implication.

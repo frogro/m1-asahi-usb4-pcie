@@ -1,0 +1,183 @@
+From 333fd4134a9e1965395f5383d896e492f2b42236 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:16:02 +0100
+Subject: [PATCH RFC 14/22] drm: apple: validate bounded service replies for DP
+ HPD withdrawal
+
+Carry the DP100 checked-reply helper into the measured source. Validate transport and inner lengths before decoding the DP HPD result. Keep other AFK callers on their original path. This commit is a local adaptation; the preceding notify-style reply patch retains Ramzi Abdiche original authorship separately.
+
+Prepared with AI assistance from the recorded local experiments. No maintainer review or DCO sign-off is asserted.
+---
+ drivers/gpu/drm/apple/afk.c | 73 ++++++++++++++++++++++++++++++++++---
+ drivers/gpu/drm/apple/afk.h |  4 ++
+ 2 files changed, 71 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/gpu/drm/apple/afk.c b/drivers/gpu/drm/apple/afk.c
+index 8a96a5efc03318a61db37bfafeb3386aaca5cc24..2027af2cd6957df264a9564557e8c2e13575fb79 100644
+--- a/drivers/gpu/drm/apple/afk.c
++++ b/drivers/gpu/drm/apple/afk.c
+@@ -403,8 +403,23 @@ static void afk_recv_handle_reply(struct apple_dcp_afkep *ep, u32 channel,
+ 		return;
+ 	}
+ 
++	/* Correlate only a validated pending HPD command; observe the transport's
++	 * received length without changing completion or buffer-copy semantics.
++	 */
++	if (service->cmds[idx].txbuf &&
++	    service->cmds[idx].txlen >= sizeof(struct epic_service_call)) {
++		const struct epic_service_call *sent = service->cmds[idx].txbuf;
++		if (le32_to_cpu(sent->magic) == EPIC_SERVICE_CALL_MAGIC &&
++		    le16_to_cpu(sent->group) == 8 &&
++		    le32_to_cpu(sent->command) == 8)
++			dev_info(ep->dcp->dev,
++				 "DP99 HPD transport reply_rxlen=%u allocated_rxlen=%zu retcode=%u\n",
++				 le32_to_cpu(cmd->rxlen), service->cmds[idx].rxlen,
++				 le32_to_cpu(cmd->retcode));
++	}
+ 	service->cmds[idx].done = true;
+ 	service->cmds[idx].retcode = le32_to_cpu(cmd->retcode);
++	service->cmds[idx].reply_rxlen = le32_to_cpu(cmd->rxlen);
+ 	if (service->cmds[idx].free_on_ack) {
+ 		/* defer freeing until we're no longer in atomic context */
+ 		rxbuf = service->cmds[idx].rxbuf;
+@@ -889,9 +904,9 @@ out:
+ 	return ret;
+ }
+ 
+-int afk_send_command(struct apple_epic_service *service, u8 type,
++static int afk_send_command_len(struct apple_epic_service *service, u8 type,
+ 		     const void *payload, size_t payload_len, void *output,
+-		     size_t output_len, u32 *retcode)
++		     size_t output_len, u32 *retcode, size_t *received)
+ {
+ 	struct epic_cmd cmd;
+ 	void *rxbuf, *txbuf;
+@@ -942,6 +957,7 @@ int afk_send_command(struct apple_epic_service *service, u8 type,
+ 	service->cmds[idx].txlen = payload_len;
+ 	service->cmds[idx].free_on_ack = false;
+ 	service->cmds[idx].done = false;
++	service->cmds[idx].reply_rxlen = 0;
+ 	service->cmds[idx].completion = &completion;
+ 	init_completion(&completion);
+ 
+@@ -973,6 +989,8 @@ int afk_send_command(struct apple_epic_service *service, u8 type,
+ 	}
+ 
+ 	ret = 0;
++	if (received)
++		*received = service->cmds[idx].reply_rxlen;
+ 	if (retcode)
+ 		*retcode = service->cmds[idx].retcode;
+ 	if (output && output_len)
+@@ -989,9 +1007,17 @@ err_free_rxbuf:
+ 	return ret;
+ }
+ 
+-int afk_service_call(struct apple_epic_service *service, u16 group, u32 command,
++int afk_send_command(struct apple_epic_service *service, u8 type,
++		     const void *payload, size_t payload_len, void *output,
++		     size_t output_len, u32 *retcode)
++{
++	return afk_send_command_len(service, type, payload, payload_len, output,
++				    output_len, retcode, NULL);
++}
++
++static int afk_service_call_common(struct apple_epic_service *service, u16 group, u32 command,
+ 		     const void *data, size_t data_len, size_t data_pad,
+-		     void *output, size_t output_len, size_t output_pad)
++		     void *output, size_t output_len, size_t output_pad, bool checked)
+ {
+ 	struct epic_service_call *call;
+ 	void *bfr;
+@@ -1000,6 +1026,7 @@ int afk_service_call(struct apple_epic_service *service, u16 group, u32 command,
+ 	int ret;
+ 	u32 retcode;
+ 	u32 retlen;
++	size_t received = 0;
+ 
+ 	bfr = kzalloc(bfr_len, GFP_KERNEL);
+ 	if (!bfr)
+@@ -1015,14 +1042,21 @@ int afk_service_call(struct apple_epic_service *service, u16 group, u32 command,
+ 
+ 	memcpy(bfr + sizeof(*call), data, data_len);
+ 
+-	ret = afk_send_command(service, EPIC_SUBTYPE_STD_SERVICE, bfr, bfr_len,
+-			       bfr, bfr_len, &retcode);
++	ret = afk_send_command_len(service, EPIC_SUBTYPE_STD_SERVICE, bfr, bfr_len,
++			       bfr, bfr_len, &retcode, &received);
+ 	if (ret)
+ 		goto out;
+ 	if (retcode) {
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
++	/* Opt-in for HPD: reject incomplete/oversized transport envelopes before
++	 * parsing their inner header. Legacy call sites keep their behavior.
++	 */
++	if (checked && (received < sizeof(*call) || received > bfr_len)) {
++		ret = -EPROTO;
++		goto out;
++	}
+ 	if (le32_to_cpu(call->magic) != EPIC_SERVICE_CALL_MAGIC ||
+ 	    le16_to_cpu(call->group) != group ||
+ 	    le32_to_cpu(call->command) != command) {
+@@ -1031,6 +1065,16 @@ int afk_service_call(struct apple_epic_service *service, u16 group, u32 command,
+ 	}
+ 
+ 	retlen = le32_to_cpu(call->data_len);
++	if (checked && (retlen < output_len || retlen > received - sizeof(*call))) {
++		ret = -EPROTO;
++		goto out;
++	}
++
++	/* Retain DP99 length diagnostics for the strict HPD comparison. */
++	if (group == 8 && command == 8)
++		dev_info(service->ep->dcp->dev,
++			 "DP99 HPD envelope raw_length=%u required_output=%zu capacity=%zu\n",
++			 retlen, output_len, bfr_len - sizeof(*call));
+ 	if (output_len < retlen)
+ 		retlen = output_len;
+ 	if (output && output_len) {
+@@ -1184,3 +1228,20 @@ static void afk_remove_service_debugfs(struct apple_epic_service *srv)
+ }
+ 
+ #endif
++
++/* Strict response bounds are opt-in to avoid changing unrelated EPIC services. */
++int afk_service_call_checked(struct apple_epic_service *service, u16 group, u32 command,
++		     const void *data, size_t data_len, size_t data_pad,
++		     void *output, size_t output_len, size_t output_pad)
++{
++	return afk_service_call_common(service, group, command, data, data_len,
++			data_pad, output, output_len, output_pad, true);
++}
++
++int afk_service_call(struct apple_epic_service *service, u16 group, u32 command,
++		     const void *data, size_t data_len, size_t data_pad,
++		     void *output, size_t output_len, size_t output_pad)
++{
++	return afk_service_call_common(service, group, command, data, data_len,
++			data_pad, output, output_len, output_pad, false);
++}
+diff --git a/drivers/gpu/drm/apple/afk.h b/drivers/gpu/drm/apple/afk.h
+index a339c00a2a0138ea981bfbeeb0e41a2357682541..c5cc797d69b7478a2a57d6c5bb226f2a0c5b450f 100644
+--- a/drivers/gpu/drm/apple/afk.h
++++ b/drivers/gpu/drm/apple/afk.h
+@@ -30,6 +30,7 @@ struct epic_cmd_info {
+ 	size_t txlen;
+ 
+ 	u32 retcode;
++	u32 reply_rxlen;
+ 	bool done;
+ 	bool free_on_ack;
+ 	struct completion *completion;
+@@ -198,6 +199,9 @@ int afk_send_epic(struct apple_dcp_afkep *ep, u32 channel, u16 tag,
+ int afk_send_command(struct apple_epic_service *service, u8 type,
+ 		     const void *payload, size_t payload_len, void *output,
+ 		     size_t output_len, u32 *retcode);
++int afk_service_call_checked(struct apple_epic_service *service, u16 group, u32 command,
++		     const void *data, size_t data_len, size_t data_pad,
++		     void *output, size_t output_len, size_t output_pad);
+ int afk_service_call(struct apple_epic_service *service, u16 group, u32 command,
+ 		     const void *data, size_t data_len, size_t data_pad,
+ 		     void *output, size_t output_len, size_t output_pad);

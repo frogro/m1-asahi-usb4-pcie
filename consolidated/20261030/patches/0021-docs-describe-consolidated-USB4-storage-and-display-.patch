@@ -1,0 +1,107 @@
+From 12f86a78c0b66856df16203167305e472fd04ff2 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:40:27 +0100
+Subject: [PATCH RFC 21/22] docs: describe consolidated USB4 storage and
+ display scope and test policy
+
+---
+ .../gpu/apple-usb4-consolidation.rst          | 90 +++++++++++++++++++
+ 1 file changed, 90 insertions(+)
+ create mode 100644 Documentation/gpu/apple-usb4-consolidation.rst
+
+diff --git a/Documentation/gpu/apple-usb4-consolidation.rst b/Documentation/gpu/apple-usb4-consolidation.rst
+new file mode 100644
+index 0000000000000000000000000000000000000000..98f7cf2763a514af467ec32fd6b90eb72c712f65
+--- /dev/null
++++ b/Documentation/gpu/apple-usb4-consolidation.rst
+@@ -0,0 +1,90 @@
++Apple M1 USB4 storage and dock display consolidation
++===================================================
++
++This downstream draft combines the storage preparation of 2026-10-29
++(Test40 functional source, with Test49 diagnostics preserved separately)
++and the dock-display source validated through Test125. It does not include
++AMDGPU, TTM, Radeon audio, or FFmpeg changes. Native PCIe transport is generic
++at the device-enumeration level; that does not imply safe eGPU surprise removal.
++
++The Linux NVMe host driver and its firmware are unchanged. The storage side
++provides the Apple PCIe-C host, DART stream/lifetime handling, MSI offline
++handling, CD321x mode transitions, native-port association and topology-driven
++PCIe hotplug. Read/write and the recorded storage hotplug cases were validated
++in earlier test configurations. Suspend/resume remains deliberately deferred.
++The reset ACK completion semantics are a separate unresolved diagnostic point.
++
++Configuration and topology
++--------------------------
++
++In addition to the display configuration documented in
++``apple-usb4-dpin-draft.rst``, enable::
++
++    CONFIG_PCIE_APPLE=y
++    CONFIG_PCIE_APPLE_PCIEC=y
++    CONFIG_PCI_MSI=y
++    CONFIG_HOTPLUG_PCI=y
++    CONFIG_HOTPLUG_PCI_PCIE=y
++    CONFIG_APPLE_DART=m
++    CONFIG_TYPEC_TPS6598X=m
++    CONFIG_BLK_DEV_NVME=m
++
++The new native host is a separate opt-in configuration. The J274 board DTS
++references the real NHI nodes rather than overlay-created diagnostic clones.
++It carries the tested cold-init flag, nonposted container property, coherent
++DMA contract and firmware-node port relationships. ACIO PCIe references are
++board-scoped. Do not copy runtime firmware memory addresses into this source.
++
++For the later combined boot comparison retain the measured storage policy::
++
++    pcie_apple_pciec.pciec_topology_events=1
++    pcie_apple_pciec.pciec_link_events=0
++    pcie_apple_pciec.pciec_reset_ack_clear=0
++    pciehp.pciehp_poll_mode=0
++    pci=hpbussize=16
++
++The ACK override preserves the earlier measured condition. It does not settle
++whether ACK_PENDING means request admission or completion. No suspend bypass
++is added. The separate Test49 diagnostic module is not a production dependency.
++
++What was consolidated
++---------------------
++
++The archived storage comparison had two changes already present in its initial
++working tree: the USB4 DART bitmap/enable-register correction and CD321x USB4
++role quiescing. Both are included relative to the reconstructed pristine Ubuntu
++source package. Omitting them would silently lose part of the measured setup.
++
++The storage and display series both change thunderbolt/apple.c, tb.c and tb.h.
++The combined source retains the storage reset/prepare/unprepare and topology
++callbacks together with the display provider and ready/retirement callbacks.
++The only textual merge conflict was at the display-provider include: the native
++PCIe helper functions and that include are both retained. Display's queued
++initial replay (Test125) remains in place.
++
++A full Kconfig pass found a cycle introduced by the display packaging's optional
++dependency expressions. Those expressions were removed; IS_REACHABLE stubs
++handle absent or unreachable providers. The documented modular configuration
++uses all required providers together.
++
++Provenance and validation limits
++-------------------------------
++
++Target source is UbuntuAsahi/linux at
++f7734f4c91c0f47d9e762786968057bec99a0788. Reconstruction used the matching Ubuntu
++source package, not a complete checkout of that commit. Exported patches must
++pass the supplied preimage checks on an actual checkout before application.
++
++Vidya Sagar's MSI fix (2e2f69fc8ae2) and Ramzi Abdiche's EPIC fix retain their
++original commit authors and existing trailers. Adapted PCIe and DT work credits
++DjDeveloperr and Chris Kearney; original reference mails are archived. Display
++references and existing source copyrights remain. The local consolidation and
++adaptations are AI-assisted; no additional upstream endorsement is claimed.
++
++This is a source preparation for later hardware testing. Earlier individual
++hardware successes are evidence for the inputs, not a successful boot of this
++newly combined kernel. The review package records application, configuration,
++compilation and topology results separately. No kernel, bootloader, module or
++firmware is installed by generating or applying this patch series. Remaining
++diagnostic identifiers, binding documentation, style and submission cleanup
++are explicitly not represented as completed upstream review.

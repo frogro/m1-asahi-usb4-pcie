@@ -1,0 +1,458 @@
+From 65d34dd3887fe4ee4025fa03de6ec6f940b76f9f Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:16:01 +0100
+Subject: [PATCH RFC 12/22] thunderbolt: notify display clients before
+ retirement and when paths are ready
+
+Pin tunnel/switch/domain lifetime for display events. Deliver the ready notification on the domain ordered queue before DPRX completion and notify the client before retiring a physical DP tunnel. Validate adapter and HPD state before firmware callbacks. This preserves the tested two-sample event debounce, not recurring polling. The synchronous initial replay in this intermediate commit has the Test124 lock inversion; apply the next commit before loading.
+
+Prepared with AI assistance from the recorded local experiments. No maintainer review or DCO sign-off is asserted.
+---
+ drivers/thunderbolt/domain.c        |   2 +
+ drivers/thunderbolt/dp118-ready.inc | 178 ++++++++++++++++++++++++++++
+ drivers/thunderbolt/tb.c            | 104 ++++++++++++++++
+ drivers/thunderbolt/tb.h            |   2 +
+ drivers/thunderbolt/tunnel.c        |   2 +-
+ drivers/thunderbolt/tunnel.h        |   1 +
+ include/linux/apple-usb4-dp.h       |  25 ++++
+ 7 files changed, 313 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/thunderbolt/dp118-ready.inc
+ create mode 100644 include/linux/apple-usb4-dp.h
+
+diff --git a/drivers/thunderbolt/domain.c b/drivers/thunderbolt/domain.c
+index 65d0eca3c9a80bc7096534b62abe40d2d5785242..39f4110313f08bd9d326808f7e4236cc6e36c4f3 100644
+--- a/drivers/thunderbolt/domain.c
++++ b/drivers/thunderbolt/domain.c
+@@ -503,12 +503,14 @@ EXPORT_SYMBOL_FOR_MODULES(tb_domain_add, "thunderbolt_apple");
+  */
+ void tb_domain_remove(struct tb *tb)
+ {
++	tb_dp118_stop_begin(tb);
+ 	mutex_lock(&tb->lock);
+ 	if (tb->cm_ops->stop)
+ 		tb->cm_ops->stop(tb);
+ 	/* Stop the domain control traffic */
+ 	tb_ctl_stop(tb->ctl);
+ 	mutex_unlock(&tb->lock);
++	tb_dp118_stop_end(tb);
+ 
+ 	flush_workqueue(tb->wq);
+ 
+diff --git a/drivers/thunderbolt/dp118-ready.inc b/drivers/thunderbolt/dp118-ready.inc
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4ca84df86396a67520a737b334fa1255f58600e
+--- /dev/null
++++ b/drivers/thunderbolt/dp118-ready.inc
+@@ -0,0 +1,178 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* Experimental early DP notification. No firmware calls under tb->lock. */
++struct dp118_ready_work {
++	struct work_struct work;
++	struct tb_tunnel *tunnel;
++	struct tb_switch *root;
++	struct tb_switch *sink;
++	struct codex_dp110_event event;
++};
++
++static bool dp118_adapter_ready(struct tb_port *port)
++{
++	u32 val;
++
++	if (!port->cap_adap || tb_port_read(port, &val, TB_CFG_PORT,
++					 port->cap_adap + ADP_DP_CS_0, 1))
++		return false;
++	return (val & (ADP_DP_CS_0_AE | ADP_DP_CS_0_VE)) ==
++		(ADP_DP_CS_0_AE | ADP_DP_CS_0_VE);
++}
++
++static bool dp118_ready_valid(struct dp118_ready_work *ready)
++{
++	struct tb_tunnel *tunnel = ready->tunnel;
++	struct tb *tb = tunnel->tb;
++	struct tb_cm *tcm = tb_priv(tb);
++
++	lockdep_assert_held(&tb->lock);
++	/* The pinned tunnel prevents pointer reuse, pinned switches keep ports
++	 * alive. Check membership before touching configuration space.
++	 */
++	if (!tcm->hotplug_active || tb->root_switch != ready->root ||
++	    ready->root->is_unplugged || ready->sink->is_unplugged ||
++	    tb_find_tunnel(tb, TB_TUNNEL_DP, tunnel->src_port,
++			   tunnel->dst_port) != tunnel || tunnel->dprx_canceled)
++		return false;
++	return dp118_adapter_ready(tunnel->src_port) &&
++		dp118_adapter_ready(tunnel->dst_port) &&
++		tb_dp_port_hpd_is_active(tunnel->src_port) > 0 &&
++		tb_dp_port_hpd_is_active(tunnel->dst_port) > 0;
++}
++
++static void dp118_paths_ready_work(struct work_struct *work)
++{
++	struct dp118_ready_work *ready = container_of(work,
++					struct dp118_ready_work, work);
++	struct tb *tb = ready->tunnel->tb;
++	struct tb_cm *tcm = tb_priv(tb);
++	bool valid;
++	int ret;
++
++	/* Physical DP hotplug and DPRX completion use this same ordered queue.
++	 * Domain removal additionally takes this gate BEFORE the domain mutex.
++	 * No TB/CIO lock is held over the listener's firmware transaction.
++	 */
++	mutex_lock(&tcm->dp118_callback_lock);
++	mutex_lock(&tb->lock);
++	valid = dp118_ready_valid(ready);
++	mutex_unlock(&tb->lock);
++	if (!valid)
++		goto out;
++	/* Preserve the tested admission: two enabled-adapter/HPD samples.
++	 * This is bounded debounce for one event, not recurring status polling.
++	 */
++	msleep(100);
++	mutex_lock(&tb->lock);
++	valid = dp118_ready_valid(ready);
++	mutex_unlock(&tb->lock);
++	if (!valid)
++		goto out;
++	ret = notifier_to_errno(blocking_notifier_call_chain(&dp110_retirement,
++				CODEX_DP_PATHS_READY, &ready->event));
++	tb_info(tb, "DP118 paths-ready seq=%llu sink=%llx:%u callback=%d\n",
++		ready->event.sequence, ready->event.output_route,
++		ready->event.output_port, ret);
++out:
++	if (!valid)
++		tb_info(tb, "DP118 stale/unready seq=%llu skipped\n",
++			ready->event.sequence);
++	mutex_unlock(&tcm->dp118_callback_lock);
++	tb_tunnel_put(ready->tunnel);
++	tb_switch_put(ready->sink);
++	tb_switch_put(ready->root);
++	put_device(ready->event.controller);
++	kfree(ready);
++	tb_domain_put(tb);
++}
++
++static void dp118_queue_paths_ready(struct tb_tunnel *tunnel)
++{
++	struct tb *tb = tunnel->tb;
++	struct dp118_ready_work *ready;
++	struct tb_port *port;
++	unsigned int index = 0;
++
++	lockdep_assert_held(&tb->lock);
++	if (!rcu_access_pointer(dp110_retirement.head) ||
++	    tunnel->src_port->sw != tb->root_switch)
++		return;
++	tb_switch_for_each_port(tb->root_switch, port) {
++		if (!tb_port_is_dpin(port))
++			continue;
++		if (port == tunnel->src_port)
++			break;
++		index++;
++	}
++	if (port != tunnel->src_port || index > U8_MAX)
++		return;
++	ready = kzalloc(sizeof(*ready), GFP_KERNEL);
++	if (!ready) {
++		tb_warn(tb, "DP118 cannot allocate paths-ready event\n");
++		return;
++	}
++	ready->tunnel = tunnel;
++	ready->root = tb_switch_get(tunnel->src_port->sw);
++	ready->sink = tb_switch_get(tunnel->dst_port->sw);
++	ready->event.controller = get_device(tb->nhi->dev);
++	ready->event.input_index = index;
++	ready->event.output_route = tb_route(tunnel->dst_port->sw);
++	ready->event.output_port = tunnel->dst_port->port;
++	ready->event.sequence = atomic64_inc_return(&dp110_sequence);
++	tb_tunnel_get(tunnel);
++	tb_domain_get(tb);
++	INIT_WORK(&ready->work, dp118_paths_ready_work);
++	queue_work(tb->wq, &ready->work);
++}
++
++/* Called only by domain removal, before taking tb->lock and after releasing
++ * it respectively. Firmware-managed connection managers have no private gate.
++ */
++void tb_dp118_stop_begin(struct tb *tb)
++{
++	struct tb_cm *tcm = tb_priv(tb);
++
++	if (tb->cm_ops == &tb_cm_ops)
++		mutex_lock(&tcm->dp118_callback_lock);
++}
++
++void tb_dp118_stop_end(struct tb *tb)
++{
++	struct tb_cm *tcm = tb_priv(tb);
++
++	if (tb->cm_ops == &tb_cm_ops)
++		mutex_unlock(&tcm->dp118_callback_lock);
++}
++
++/* Replay existing routes for a late-registering display consumer. This only
++ * queues the same pinned, revalidated ready event; no firmware call here.
++ * The bus iterator pins the domain device. Taking tb->lock excludes stop,
++ * whose hotplug_active=false prevents queues after domain shutdown.
++ */
++static int dp121_replay_domain(struct device *dev, void *data)
++{
++ struct device *provider = data;
++ struct tb *tb;
++ struct tb_cm *tcm;
++ struct tb_tunnel *tunnel;
++ if (dev->type != &tb_domain_type)
++  return 0;
++ tb = container_of(dev, struct tb, dev);
++ if (tb->cm_ops != &tb_cm_ops || tb->nhi->dev->parent != provider)
++  return 0;
++ tcm = tb_priv(tb);
++ mutex_lock(&tb->lock);
++ if (tcm->hotplug_active && tb->root_switch)
++  list_for_each_entry(tunnel, &tcm->tunnel_list, list)
++   if (tunnel->type == TB_TUNNEL_DP)
++    dp118_queue_paths_ready(tunnel);
++ mutex_unlock(&tb->lock);
++ return 0;
++}
++int codex_dp121_replay_ready(struct device *provider)
++{
++ if (!provider)
++  return -EINVAL;
++ return bus_for_each_dev(&tb_bus_type, NULL, provider, dp121_replay_domain);
++}
++EXPORT_SYMBOL_GPL(codex_dp121_replay_ready);
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 343eddf929e445c259b042bfc0f85fa97ccf5597..a68d094daf402c5eb251c97064617f531c3e4af0 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -6,6 +6,7 @@
+  * Copyright (C) 2019, Intel Corporation
+  */
+ 
++#include <linux/apple-usb4-dp.h>
+ #include <linux/export.h>
+ #include <linux/slab.h>
+ #include <linux/errno.h>
+@@ -65,7 +66,12 @@ MODULE_PARM_DESC(asym_threshold,
+  *		 runtime resume
+  * @groups: Bandwidth groups used in this domain.
+  */
++static BLOCKING_NOTIFIER_HEAD(dp110_retirement);
++static atomic64_t dp110_sequence = ATOMIC64_INIT(0);
++static const struct tb_cm_ops tb_cm_ops;
++
+ struct tb_cm {
++	struct mutex dp118_callback_lock;
+ 	struct list_head tunnel_list;
+ 	struct list_head dp_resources;
+ 	bool hotplug_active;
+@@ -1953,6 +1959,9 @@ static struct tb_port *tb_find_dp_out(struct tb *tb, struct tb_port *in)
+ 	return NULL;
+ }
+ 
++/* Queue callbacks outside the DP-resource iteration and its domain lock. */
++#include "dp118-ready.inc"
++
+ static void tb_dp_tunnel_active(struct tb_tunnel *tunnel)
+ {
+ 	struct tb_port *in = tunnel->src_port;
+@@ -2101,6 +2110,29 @@ static void tb_tunnel_one_dp(struct tb *tb, struct tb_port *in,
+ 		goto err_free;
+ 	}
+ 
++	dp118_queue_paths_ready(tunnel);
++
++	/* DP115 diagnostic: notify after all paths and DP adapters are
++	 * enabled, before asynchronous DPRX completion. A graphics driver
++	 * must participate in that completion; TB_TUNNEL_ACTIVATED is late.
++	 * This emits an observation only: no firmware callback or lock drop.
++	 * Not a proposed userspace ABI or complete driver lifecycle API.
++	 */
++	{
++		char source[64], sink[64];
++		char *env[] = { "DP115_EVENT=paths-ready", source, sink, NULL };
++		int notify_ret;
++
++		snprintf(source, sizeof(source), "DP115_SOURCE=%llx:%u",
++			 tb_route(in->sw), in->port);
++		snprintf(sink, sizeof(sink), "DP115_SINK=%llx:%u",
++			 tb_route(out->sw), out->port);
++		notify_ret = kobject_uevent_env(&tb->dev.kobj, KOBJ_CHANGE, env);
++		tb_info(tb, "DP115 paths ready %llx:%u -> %llx:%u notify=%d\n",
++			tb_route(in->sw), in->port, tb_route(out->sw), out->port,
++			notify_ret);
++	}
++
+ 	return;
+ 
+ err_free:
+@@ -2509,6 +2541,74 @@ static int tb_disconnect_xdomain_paths(struct tb *tb, struct tb_xdomain *xd,
+  *
+  * Executes on tb->wq.
+  */
++/* DP110: one bounded pre-retirement call for physical DP OUT removal.
++ * This is not the whole-dock, suspend or negotiation-error teardown path.
++ */
++
++
++int codex_dp110_register(struct notifier_block *nb)
++{
++	return blocking_notifier_chain_register(&dp110_retirement, nb);
++}
++EXPORT_SYMBOL_GPL(codex_dp110_register);
++int codex_dp110_unregister(struct notifier_block *nb)
++{
++	return blocking_notifier_chain_unregister(&dp110_retirement, nb);
++}
++EXPORT_SYMBOL_GPL(codex_dp110_unregister);
++
++/* False means the captured tunnel disappeared/replaced while unlocked.
++ * Its reference prevents pointer reuse; switch references retain ports.
++ */
++static bool dp110_before_unplug(struct tb *tb, struct tb_port *port)
++{
++	struct tb_tunnel *tunnel, *observed;
++	struct tb_switch *root;
++	struct tb_port *in;
++	struct codex_dp110_event event = { .controller = tb->nhi->dev };
++	unsigned int index = 0;
++	int ret;
++	bool valid;
++
++	lockdep_assert_held(&tb->lock);
++	if (!tb_port_is_dpout(port) || !rcu_access_pointer(dp110_retirement.head))
++		return true;
++	tunnel = tb_find_tunnel(tb, TB_TUNNEL_DP, NULL, port);
++	if (!tunnel || tunnel->src_port->sw != tb->root_switch)
++		return true;
++	root = tb_switch_get(tb->root_switch);
++	tb_switch_for_each_port(root, in) {
++		if (!tb_port_is_dpin(in))
++			continue;
++		if (in == tunnel->src_port)
++			break;
++		index++;
++	}
++	if (in != tunnel->src_port || index > 255) {
++		tb_switch_put(root);
++		return true;
++	}
++	event.input_index = index;
++	event.sequence = atomic64_inc_return(&dp110_sequence);
++	event.output_route = tb_route(port->sw);
++	event.output_port = port->port;
++	tb_tunnel_get(tunnel);
++	tb_info(tb, "DP110 pre-retirement seq=%llu input=%u output=%llx:%u begin\n",
++         event.sequence, event.input_index, event.output_route, event.output_port);
++	mutex_unlock(&tb->lock);
++	ret = notifier_to_errno(blocking_notifier_call_chain(&dp110_retirement, 0, &event));
++	mutex_lock(&tb->lock);
++	observed = tb_find_tunnel(tb, TB_TUNNEL_DP, NULL, port);
++	valid = ((struct tb_cm *)tb_priv(tb))->hotplug_active && !port->sw->is_unplugged &&
++         root == tb->root_switch && observed == tunnel;
++	tb_info(tb, "DP110 pre-retirement seq=%llu ret=%d same_tunnel=%d\n",
++         event.sequence, ret, valid);
++	tb_tunnel_put(tunnel);
++	tb_switch_put(root);
++	/* Failure remains visible. Never hide physical removal or retry AFK. */
++	return valid;
++}
++
+ static void tb_handle_hotplug(struct work_struct *work)
+ {
+ 	struct tb_hotplug_event *ev = container_of(work, typeof(*ev), work.work);
+@@ -2547,6 +2647,8 @@ static void tb_handle_hotplug(struct work_struct *work)
+ 	pm_runtime_get_sync(&sw->dev);
+ 
+ 	if (ev->unplug) {
++		if (!dp110_before_unplug(tb, port))
++			goto put_pm;
+ 		tb_retimer_remove_all(port);
+ 
+ 		if (tb_port_has_remote(port)) {
+@@ -2607,6 +2709,7 @@ static void tb_handle_hotplug(struct work_struct *work)
+ 		}
+ 	}
+ 
++put_pm:
+ 	pm_runtime_mark_last_busy(&sw->dev);
+ 	pm_runtime_put_autosuspend(&sw->dev);
+ 
+@@ -3497,6 +3600,7 @@ struct tb *tb_probe(struct tb_nhi *nhi)
+ 	tb->cm_ops = &tb_cm_ops;
+ 
+ 	tcm = tb_priv(tb);
++	mutex_init(&tcm->dp118_callback_lock);
+ 	INIT_LIST_HEAD(&tcm->tunnel_list);
+ 	INIT_LIST_HEAD(&tcm->dp_resources);
+ 	INIT_DELAYED_WORK(&tcm->remove_work, tb_remove_work);
+diff --git a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
+index 74a6b2c11fe4013da47a8bcbb80e6654f94ac773..8d1307fa54e61d26c50fcdea276489c721e2f9ee 100644
+--- a/drivers/thunderbolt/tb.h
++++ b/drivers/thunderbolt/tb.h
+@@ -764,6 +764,8 @@ static inline int tb_port_write(struct tb_port *port, const void *buffer,
+ 
+ struct tb *icm_probe(struct tb_nhi *nhi);
+ struct tb *tb_probe(struct tb_nhi *nhi);
++void tb_dp118_stop_begin(struct tb *tb);
++void tb_dp118_stop_end(struct tb *tb);
+ 
+ extern const struct device_type tb_domain_type;
+ extern const struct device_type tb_retimer_type;
+diff --git a/drivers/thunderbolt/tunnel.c b/drivers/thunderbolt/tunnel.c
+index e4c2001b745123be5de9ff9f2b38fb5c481d158c..6efdb47d8a223910517ce29078e74f54c2348894 100644
+--- a/drivers/thunderbolt/tunnel.c
++++ b/drivers/thunderbolt/tunnel.c
+@@ -194,7 +194,7 @@ static struct tb_tunnel *tb_tunnel_alloc(struct tb *tb, size_t npaths,
+ 	return tunnel;
+ }
+ 
+-static void tb_tunnel_get(struct tb_tunnel *tunnel)
++void tb_tunnel_get(struct tb_tunnel *tunnel)
+ {
+ 	mutex_lock(&tb_tunnel_lock);
+ 	kref_get(&tunnel->kref);
+diff --git a/drivers/thunderbolt/tunnel.h b/drivers/thunderbolt/tunnel.h
+index 28f49f7e9f5633706f2421c81ae439e8307ed7bf..0ba253e326881bca3a8d65bde3baf10f46aba404 100644
+--- a/drivers/thunderbolt/tunnel.h
++++ b/drivers/thunderbolt/tunnel.h
+@@ -133,6 +133,7 @@ struct tb_tunnel *tb_tunnel_alloc_usb3(struct tb *tb, struct tb_port *up,
+ 				       struct tb_port *down, int max_up,
+ 				       int max_down);
+ 
++void tb_tunnel_get(struct tb_tunnel *tunnel);
+ void tb_tunnel_put(struct tb_tunnel *tunnel);
+ int tb_tunnel_activate(struct tb_tunnel *tunnel);
+ void tb_tunnel_deactivate(struct tb_tunnel *tunnel);
+diff --git a/include/linux/apple-usb4-dp.h b/include/linux/apple-usb4-dp.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..c49400cc2490324aca74e1622a0a73675b5ce2f6
+--- /dev/null
++++ b/include/linux/apple-usb4-dp.h
+@@ -0,0 +1,25 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef CODEX_DP110_API_H
++#define CODEX_DP110_API_H
++#include <linux/device.h>
++#include <linux/notifier.h>
++
++#define CODEX_DP_BEFORE_RETIREMENT 0
++#define CODEX_DP_PATHS_READY 1
++
++/* Experimental display lifecycle notifications, not a complete hotplug API.
++ * The domain mutex is NOT held. Event data is valid only in the call.
++ * PATHS_READY runs on the ordered domain queue after adapter enablement,
++ * before DPRX completion. Listeners must not wait for work on that queue.
++ */
++struct codex_dp110_event {
++	struct device *controller;
++	u64 sequence;
++	u64 output_route;
++	u8 output_port;
++	u8 input_index;
++};
++int codex_dp121_replay_ready(struct device *provider);
++int codex_dp110_register(struct notifier_block *nb);
++int codex_dp110_unregister(struct notifier_block *nb);
++#endif

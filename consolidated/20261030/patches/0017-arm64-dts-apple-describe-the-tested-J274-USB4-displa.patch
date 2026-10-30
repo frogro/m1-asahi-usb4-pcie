@@ -1,0 +1,70 @@
+From 0a73ce36c6bd05ece0c55496d15e01e1e73d2819 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Fri, 30 Oct 2026 02:17:38 +0100
+Subject: [PATCH RFC 17/22] arm64: dts: apple: describe the tested J274 USB4
+ display route
+
+Express the Test123/125 firmware-free topology in board source using labels rather than live phandle numbers. Preserve the primary HDMI path and include both display DARTs. Bootloader firmware/reserved-memory fixups remain mandatory; no captured addresses are serialized. This is a downstream integration draft with diagnostic property names, not a proposed stable DT binding. The board-source translation is checked against the tested DT semantically. AI-assisted preparation; no DCO sign-off asserted.
+---
+ arch/arm64/boot/dts/apple/t8103-j274.dts | 51 ++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/apple/t8103-j274.dts b/arch/arm64/boot/dts/apple/t8103-j274.dts
+index 2d491408f32cba7f491eb15c03662c39b4a154d4..3bae6374014f1c3322ad1c7535351bbd5e4364c9 100644
+--- a/arch/arm64/boot/dts/apple/t8103-j274.dts
++++ b/arch/arm64/boot/dts/apple/t8103-j274.dts
+@@ -147,3 +147,54 @@
+ };
+ 
+ #include "hwmon-mini.dtsi"
++
++/* Measured J274 external DCP -> port 1 USB4 DP-IN0 route.
++ * m1n1 supplies firmware and reserved-memory data on each boot.
++ * Keep the diagnostic property names until binding/API review is complete.
++ */
++/ {
++	aliases {
++		dcpext = &dcpext;
++	};
++};
++
++&dcpext {
++	/* Enabled by m1n1 only after firmware and memory fixups. */
++	apple,connector-type = "DP";
++	apple,dcp-index = <0>;
++	apple,dptx-die = <0>;
++	apple,dptx-phy = <1>;
++	codex,dpin-provider = <&usb4_1_acio>;
++};
++
++&dcpext_dart {
++	status = "okay";
++};
++
++&dispext0_dart {
++	status = "okay";
++};
++
++&dcpext_mbox {
++	status = "okay";
++};
++
++&{/soc/display-subsystem} {
++	iommus = <&disp0_dart 0 0 0 0 0xfc000000>,
++		 <&dispext0_dart 0 0 0 0 0xfc000000>;
++};
++
++&usb4_1_acio {
++	codex,atcphy = <&atcphy1>;
++	codex,dpin-callback-test;
++	mux-controls = <&atcphy1_xbar 1>;
++	mux-control-names = "dp-xbar";
++};
++
++&atcphy1 {
++	codex,dpin-clock-test;
++};
++
++&atcphy1_xbar {
++	codex,dpin-staged-test;
++};
