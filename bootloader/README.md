@@ -236,3 +236,8 @@ Probe33 TB3 comparison stopped before PHY setup on a strict CD321x length
 check; it does not establish a TB3 link result. The measured Linux register
 response and tested Probe34 correction are recorded in
 [the TB3 comparison](research/tbt-comparison-20261031.md).
+
+[Probe35 retained xHCI host-start comparison](research/retained-xhci-host-20261031.md)
+is prepared with checked USB DART bypass, fresh buffers and normal core/RUN/port
+power setup. M1 build, 63 sandbox tests and 99 extracted-function cases pass.
+Hardware validation remains pending; no bootloader installation is performed.

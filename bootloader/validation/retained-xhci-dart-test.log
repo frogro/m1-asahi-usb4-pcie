@@ -1,0 +1,25 @@
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x80 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0x80000000
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART1 sid=1 tcr=0x80 error=0
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0x80000000
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0
+26 extracted dual-DART preflight cases passed

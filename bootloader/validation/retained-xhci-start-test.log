@@ -1,0 +1,17 @@
+M1-XHCI port1 power-control=0 status=0
+M1-XHCI port2 power-control=0 status=0
+M1-XHCI start ret=0 maps=4 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI start ret=-110 maps=0 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI start ret=-14 maps=4 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI start ret=-12 maps=4 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI port1 power-control=1 status=0x220
+M1-XHCI port2 power-control=1 status=0x200
+33 extracted start/stop/capability/DMA/port cases passed

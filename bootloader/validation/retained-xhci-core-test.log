@@ -1,0 +1,4 @@
+M1-DWC3 core-init ret=0
+M1-DWC3 core-init ret=-5
+M1-DWC3 core-init ret=0
+30 host setup cases, zero failures; 19 read-fault positions

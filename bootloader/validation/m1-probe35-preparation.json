@@ -1,0 +1,16 @@
+{
+  "probe": 35,
+  "base_probe": 34,
+  "m1_build": true,
+  "sandbox_tests": 63,
+  "sandbox_failures": 0,
+  "extracted_sanitizer_cases": 99,
+  "source_contracts": 4,
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "usb_dart_mode": "require existing bypass in both selected USB DARTs; never rewrite tables or modes",
+  "xhci_context": "fresh retained, no USB enumeration; root ports powered via normal neutral mask",
+  "ram_only": true,
+  "external_ssd_io": false,
+  "hardware_pending": true
+}

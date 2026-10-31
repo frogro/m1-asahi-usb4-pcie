@@ -1,0 +1,329 @@
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -18,6 +18,9 @@
+ #include <mapmem.h>
+ #include <power-domain.h>
+ #include <time.h>
++#include <usb.h>
++#include <usb/xhci.h>
++#include <linux/usb/dwc3.h>
+ 
+ struct atc_m1_hw {
+ 	void *base[ATC_REGIONS];
+@@ -27,6 +30,9 @@
+ 	u32 last_offset, last_value;
+ 	void *xhci;
+ 	u32 cap;
++	bool hostrun;
++	struct udevice *usb;
++	struct xhci_ctrl *retained_xhci;
+ };
+ 
+ static void show_stage(struct atc_m1_hw *hw)
+@@ -137,6 +143,36 @@
+  observed = readl(hw->xhci + off);
+  if (observed == 0xffffffff || observed != next)
+   return -EIO;
++ return 0;
++}
++
++static int check_usb_darts(struct atc_m1_hw *hw)
++{
++ static const u64 bases[] = { 0x502f00000ULL, 0x502f80000ULL };
++ struct ofnode_phandle_args args;
++ struct udevice *dart;
++ void *regs;
++ u32 control, error;
++ int i, ret;
++ if (dev_count_phandle_with_args(hw->usb, "iommus", "#iommu-cells", 0) != 2)
++  return -EINVAL;
++ for (i = 0; i < 2; i++) {
++  ret = dev_read_phandle_with_args(hw->usb, "iommus", "#iommu-cells", 0, i, &args);
++  if (ret) return ret;
++  if (args.args_count != 1 || args.args[0] != (unsigned int)i ||
++      ofnode_get_addr(args.node) != bases[i]) return -EINVAL;
++  ret = uclass_find_device_by_ofnode(UCLASS_IOMMU, args.node, &dart);
++  if (ret || !device_active(dart)) return -ENODEV;
++  ret = dev_power_domain_on(dart);
++  if (ret) return ret;
++  regs = map_sysmem(bases[i], 0x4000);
++  control = readl(regs + 0x100 + 4 * i);
++  error = readl(regs + 0x40);
++  printf("M1-XHCI DART%u sid=%u tcr=%#x error=%#x\n", i, i, control, error);
++  if (!(readl(regs + 4) & BIT(0)) || control != (BIT(8) | BIT(12)) ||
++      (error & BIT(31))) return -EPERM;
++  if (i == 1 && hw->usb->iommu != dart) return -EINVAL;
++ }
+  return 0;
+ }
+ 
+@@ -161,6 +197,21 @@
+  ret = dwc3_update_checked(hw, off, mask, val); \
+  if (ret) return ret; \
+ } while (0)
++ if (hw->hostrun) {
++#if CONFIG_IS_ENABLED(USB_XHCI_DWC3)
++  ret = check_usb_darts(hw);
++  if (ret) return ret;
++  apple_boot_trace("dwc3-core-init-begin");
++  ret = dwc3_core_init((struct dwc3 *)(hw->xhci + DWC3_REG_OFFSET));
++  apple_boot_trace("dwc3-core-init-return");
++  printf("M1-DWC3 core-init ret=%d\n", ret);
++  if (ret) return ret;
++  ret = hw_verify_halted(hw);
++  if (ret) return ret;
++#else
++  return -ENOSYS;
++#endif
++ }
+  /* Apple CIO controls from dwc3_apple_setup_cio(), preserve upper timer bits. */
+  DWC3_UPDATE(0xcd38, 0xffffffff, 0x0f800f80);
+  DWC3_UPDATE(0xcd3c, 0xffffffff, 0x0fc00fc0);
+@@ -192,6 +243,19 @@
+  ret = atc_m1_start_pipe(&hw->cfg, &hw_io, hw, &hw->stage);
+  apple_boot_trace("late-pipe-return");
+  printf("ATC-M1 late PIPE ret=%d stage=%u\n", ret, hw->stage);
++ if (!ret && hw->hostrun) {
++#if CONFIG_IS_ENABLED(USB_XHCI_HCD)
++  ret = check_usb_darts(hw);
++  if (ret) return ret;
++  apple_boot_trace("xhci-start-begin");
++  ret = xhci_m1_diag_start(hw->usb, hw->xhci, hw->xhci + hw->cap,
++                           &hw->retained_xhci);
++  apple_boot_trace("xhci-start-return");
++  if (!ret) ret = check_usb_darts(hw);
++#else
++  ret = -ENOSYS;
++#endif
++ }
+  return ret;
+ }
+ 
+@@ -310,10 +374,11 @@
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "fresh")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh")))
+ 		return CMD_RET_USAGE;
+ 	fresh = !strcmp(argv[2], "fresh");
+-	stage = (!strcmp(argv[2], "host") || fresh) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
++	hw.hostrun = !strcmp(argv[2], "hostrun");
++	stage = (!strcmp(argv[2], "host") || hw.hostrun || fresh) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+ 	acio = !strcmp(argv[2], "acio") || stage;
+ 	if (stage >= 4) {
+ 		ret = apple_nhi_m1_control_check();
+@@ -366,6 +431,7 @@
+ 	}
+ 	hw.xhci = xhci;
+ 	hw.cap = cap;
++	hw.usb = usb;
+ 	snapshot_dwc3(&hw, "before-remove");
+ 	ret = device_remove(usb, DM_REMOVE_NORMAL | DM_REMOVE_NO_PD);
+ 	if (ret)
+@@ -427,6 +493,16 @@
+ 			apple_nhi_m1_set_post_cable(start_late_pipe, &hw);
+ 		ret = apple_acio_m1_start(stage);
+ 		apple_nhi_m1_set_post_cable(NULL, NULL);
++#if CONFIG_IS_ENABLED(USB_XHCI_HCD)
++        if (hw.retained_xhci) {
++         int stop;
++         apple_boot_trace("xhci-stop-begin");
++         stop = xhci_m1_diag_stop(hw.retained_xhci);
++         apple_boot_trace("xhci-stop-return");
++         printf("M1-XHCI stop ret=%d; buffers retained\n", stop);
++         if (stop) ret = stop;
++        }
++#endif
+ 		snapshot_phy(&hw, "after-acio");
+ 		snapshot_dwc3(&hw, "after-acio");
+ 		if (ret) goto fail;
+@@ -444,4 +520,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host|fresh - staged M3/NHI/DART diagnostic; no DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh - bounded diagnostic; hostrun also enables xHCI DMA");
+--- a/include/usb/xhci.h
++++ b/include/usb/xhci.h
+@@ -1222,6 +1222,9 @@
+ 	int rootdev;
+ 	u16 hci_version;
+ 	int page_size;
++	/* RAM-only M1 diagnostic; ordinary registrations leave these zero. */
++	bool m1_diag, m1_dma_failed;
++	unsigned int m1_dma_maps;
+ 	u32 quirks;
+ #define XHCI_MTK_HOST		BIT(0)
+ };
+@@ -1290,15 +1293,36 @@
+ 
+ struct xhci_ctrl *xhci_get_ctrl(struct usb_device *udev);
+ 
++/* Require the inherited USB DART bypass mapping to preserve each allocation. */
++static inline bool xhci_m1_dma_valid(dma_addr_t mapped, uintptr_t addr, size_t size)
++{
++ return addr && size && size <= ~(dma_addr_t)0 - addr && mapped == addr;
++}
++
+ static inline dma_addr_t xhci_dma_map(struct xhci_ctrl *ctrl, void *addr,
+-				      size_t size)
++                                    size_t size)
+ {
++ dma_addr_t mapped;
+ #if CONFIG_IS_ENABLED(IOMMU)
+-	return dev_iommu_dma_map(xhci_to_dev(ctrl), addr, size);
++ mapped = dev_iommu_dma_map(xhci_to_dev(ctrl), addr, size);
+ #else
+-	return dev_phys_to_bus(xhci_to_dev(ctrl), virt_to_phys(addr));
++ mapped = dev_phys_to_bus(xhci_to_dev(ctrl), virt_to_phys(addr));
+ #endif
++ if (ctrl->m1_diag) {
++  ctrl->m1_dma_maps++;
++  if (!xhci_m1_dma_valid(mapped, (uintptr_t)addr, size))
++   ctrl->m1_dma_failed = true;
++ }
++ return mapped;
+ }
++
++/* Retained diagnostic context, never registered with USB enumeration.
++ * Caller must validate the selected M1 controller and both USB DARTs first.
++ * All allocations remain owned until mandatory full reset, even on error.
++ */
++int xhci_m1_diag_start(struct udevice *dev, struct xhci_hccr *hccr,
++                     struct xhci_hcor *hcor, struct xhci_ctrl **retained);
++int xhci_m1_diag_stop(struct xhci_ctrl *ctrl);
+ 
+ static inline void xhci_dma_unmap(struct xhci_ctrl *ctrl, dma_addr_t addr,
+ 				  size_t size)
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -1262,6 +1262,10 @@
+ 		put_unaligned(get_unaligned(&ctrl->hub_desc.wHubCharacteristics)
+ 				| 0x01, &ctrl->hub_desc.wHubCharacteristics);
+ 
++	/* No RUN write after a failed diagnostic DMA mapping. */
++	if (ctrl->m1_diag && (ctrl->m1_dma_failed || ctrl->m1_dma_maps < 4))
++		return -EFAULT;
++
+ 	if (xhci_start(hcor)) {
+ 		xhci_reset(hcor);
+ 		return -ENODEV;
+@@ -1277,6 +1281,95 @@
+ 
+ 	return 0;
+ }
++
++#if CONFIG_IS_ENABLED(CMD_APPLE_ATC_M1)
++/* Diagnostic only. Use the normal allocator/reset/start path with a fresh,
++ * separately owned context. Do not restore the freed device private context,
++ * enumerate USB children, ring transfer doorbells or free uncertain DMA.
++ */
++static bool m1_diag_attempted;
++
++static bool xhci_m1_caps_valid(u32 cap, u32 slots_ports, u32 scratch,
++                              u32 dboff, u32 rtsoff, u32 pages)
++{
++ unsigned int nsp = HCS_MAX_SCRATCHPAD(scratch);
++ unsigned int nports = HCS_MAX_PORTS(slots_ports);
++ return cap >= 0x20 && cap <= 0x100 && !(cap & 3) &&
++        (slots_ports & HCS_SLOTS_MASK) && nports && nports <= 16 &&
++        nsp <= 64 && (pages & 0xffff) &&
++        dboff >= 0x1000 && dboff <= 0xa000 && !(dboff & 3) &&
++        rtsoff >= 0x1000 && rtsoff <= 0xa000 && !(rtsoff & 31);
++}
++
++static int xhci_m1_diag_port_power(struct xhci_ctrl *ctrl)
++{
++ unsigned int i, ports = HCS_MAX_PORTS(xhci_readl(&ctrl->hccr->cr_hcsparams1));
++ bool ppc = HCC_PPC(xhci_readl(&ctrl->hccr->cr_hccparams));
++ u32 state;
++ if (!ports || ports > 16) return -EPROTO;
++ for (i = 0; i < ports; i++) {
++  state = xhci_readl(&ctrl->hcor->portregs[i].or_portsc);
++  if (state == ~0U) return -ENODEV;
++  if (ppc && !(state & PORT_POWER)) {
++   /* Same neutral RWS mask as USB_PORT_FEAT_POWER; no reset/W1C writes. */
++   xhci_writel(&ctrl->hcor->portregs[i].or_portsc,
++               xhci_port_state_to_neutral(state) | PORT_POWER);
++   state = xhci_readl(&ctrl->hcor->portregs[i].or_portsc);
++   if (state == ~0U || !(state & PORT_POWER)) return -EIO;
++  }
++  printf("M1-XHCI port%u power-control=%u status=%#x\n", i + 1, ppc, state);
++ }
++ return 0;
++}
++
++int xhci_m1_diag_start(struct udevice *dev, struct xhci_hccr *hccr,
++                     struct xhci_hcor *hcor, struct xhci_ctrl **retained)
++{
++ struct xhci_ctrl *ctrl;
++ u32 cap;
++ int ret;
++ if (!dev || !hccr || !hcor || !retained || *retained || m1_diag_attempted)
++  return -EPERM;
++ cap = HC_LENGTH(xhci_readl(&hccr->cr_capbase));
++ if (!xhci_m1_caps_valid(cap, xhci_readl(&hccr->cr_hcsparams1),
++                         xhci_readl(&hccr->cr_hcsparams2),
++                         xhci_readl(&hccr->cr_dboff),
++                         xhci_readl(&hccr->cr_rtsoff),
++                         xhci_readl(&hcor->or_pagesize)))
++  return -EPROTO;
++ if (xhci_readl(&hcor->or_usbcmd) & CMD_RUN ||
++     !(xhci_readl(&hcor->or_usbsts) & STS_HALT))
++  return -EBUSY;
++ ctrl = memalign(max(XHCI_ALIGNMENT, ARCH_DMA_MINALIGN), sizeof(*ctrl));
++ if (!ctrl) return -ENOMEM;
++ memset(ctrl, 0, sizeof(*ctrl));
++ m1_diag_attempted = true;
++ *retained = ctrl;
++ ctrl->dev = dev;
++ ctrl->hccr = hccr;
++ ctrl->hcor = hcor;
++ ctrl->m1_diag = true;
++ ret = xhci_reset(hcor);
++ if (!ret) ret = xhci_lowlevel_init(ctrl);
++ if (!ret) ret = xhci_m1_diag_port_power(ctrl);
++ printf("M1-XHCI start ret=%d maps=%u dma_failed=%u command=%#x status=%#x\n",
++        ret, ctrl->m1_dma_maps, ctrl->m1_dma_failed,
++        xhci_readl(&hcor->or_usbcmd), xhci_readl(&hcor->or_usbsts));
++ puts("M1-XHCI buffers retained until full reset; no USB enumeration\n");
++ return ret;
++}
++
++int xhci_m1_diag_stop(struct xhci_ctrl *ctrl)
++{
++ u32 cmd;
++ if (!ctrl || !ctrl->m1_diag || !ctrl->hcor) return -EINVAL;
++ cmd = xhci_readl(&ctrl->hcor->or_usbcmd);
++ if (cmd == ~0U) return -ENODEV;
++ xhci_writel(&ctrl->hcor->or_usbcmd, cmd & ~CMD_RUN);
++ /* Halt only; never free buffers, reset PHY or clear DART ownership here. */
++ return handshake(&ctrl->hcor->or_usbsts, STS_HALT, STS_HALT, 100000);
++}
++#endif
+ 
+ static int xhci_lowlevel_stop(struct xhci_ctrl *ctrl)
+ {
+--- a/drivers/usb/host/xhci-mem.c
++++ b/drivers/usb/host/xhci-mem.c
+@@ -529,7 +529,7 @@
+ 	uint64_t trb_64;
+ 	uint32_t val;
+ 	uint64_t deq;
+-	int i;
++	int i, ret;
+ 	struct xhci_segment *seg;
+ 
+ 	/* DCBAA initialization */
+@@ -611,7 +611,9 @@
+ 	xhci_writeq(&ctrl->ir_set->erst_base, val_64);
+ 
+ 	/* set up the scratchpad buffer array and scratchpad buffers */
+-	xhci_scratchpad_alloc(ctrl);
++	ret = xhci_scratchpad_alloc(ctrl);
++	if (ctrl->m1_diag && ret)
++		return ret;
+ 
+ 	/* initializing the virtual devices to NULL */
+ 	for (i = 0; i < MAX_HC_SLOTS; ++i)

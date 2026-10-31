@@ -1,0 +1,6 @@
+{
+  "cmd/apple_atc_m1.c": "b2858d8daca0fc3046487c4b4884426dd083eb964c2e3a2cd08b6795e1d762fb",
+  "include/usb/xhci.h": "a4f9ffdc20b16bc17f214be17ee8394991802a603ef432103dcccef817ac7c2b",
+  "drivers/usb/host/xhci.c": "b943597727583cd6fc086db49a0542bc94392e365aefce298e46c3fe1b48bee1",
+  "drivers/usb/host/xhci-mem.c": "15e5db57fcdf2c6dbd4cdecf0a4e8676da7a26a8aedba85bc842d03e4c2404c2"
+}
