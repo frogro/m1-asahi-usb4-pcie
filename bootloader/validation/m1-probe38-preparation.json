@@ -1,0 +1,15 @@
+{
+  "probe": 38,
+  "base_probe": 37,
+  "delta": "Explicit USB2 host-role before power-on, log inherited signal and powered USB2 controls",
+  "m1_build": true,
+  "sandbox_build": true,
+  "sandbox_tests": 64,
+  "sandbox_failures": 0,
+  "usb2_role_scenarios": 12,
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "hardware_pending": true
+}

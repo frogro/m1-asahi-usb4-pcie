@@ -1,0 +1,72 @@
+--- a/lib/apple_atc_m1.c
++++ b/lib/apple_atc_m1.c
+@@ -141,6 +141,11 @@
+ 	UP(ATC_PIPE, 0xc, 7, 2); DELAY();
+ 	UP(ATC_PIPE, 0xc, 0x38, 0x20); DELAY();
+ 
++	/* Linux dwc3_apple_init()/atcphy_usb2_set_mode(): select host role
++	 * while USB2 is still off, before releasing resets and enabling RUN.
++	 * This diagnostic supports only host USB4/TBT operation.
++	 */
++	UP(ATC_USB2, 8, 0, 7 << 12);
+ 	UP(ATC_USB2, 8, 0, 0xf); DELAY();
+ 	UP(ATC_USB2, 4, BIT(3), 0); DELAY();
+ 	UP(ATC_USB2, 4, BIT(0), 0); DELAY();
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -64,6 +64,9 @@
+ 	if (r >= ATC_REGIONS || off % 4 || off > hw->cfg.size[r] - 4)
+ 		return -ERANGE;
+ 	show_stage(hw);
++	if (r == ATC_USB2 && off == 8 && hw->last_region == r &&
++	    hw->last_offset == off)
++		printf("USB2-ROLE signal old=%#x new=%#x\n", hw->last_value, value);
+ 	writel(value, hw->base[r] + off);
+ 	return 0;
+ }
+@@ -105,6 +108,9 @@
+   printf("ATC-SNAPSHOT %s core[%#x]=%#x\n", phase, core[i], readl(hw->base[ATC_CORE] + core[i]));
+  for (i = 0; i < ARRAY_SIZE(pipe); i++)
+   printf("ATC-SNAPSHOT %s pipe[%#x]=%#x\n", phase, pipe[i], readl(hw->base[ATC_PIPE] + pipe[i]));
++ printf("USB2-SNAPSHOT %s control=%#x reset=%#x signal=%#x misc=%#x\n",
++        phase, readl(hw->base[ATC_USB2]), readl(hw->base[ATC_USB2] + 4),
++        readl(hw->base[ATC_USB2] + 8), readl(hw->base[ATC_USB2] + 0x1c));
+ }
+ 
+ /* Read-only allowlist: no FIFO, event ring, W1C writes or device registers. */
+--- a/test/dm/apple_atc_m1.c
++++ b/test/dm/apple_atc_m1.c
+@@ -404,3 +404,33 @@
+ 	return 0;
+ }
+ DM_TEST(dm_test_atc_m1_unchanged_calibration, 0);
++
++static int dm_test_atc_m1_usb2_host_role(struct unit_test_state *uts)
++{
++ const u32 patterns[] = { 0, 0xffffffff, 0xa53629b7 };
++ struct atc_m1_config c;
++ int mode, swap, pattern, i, role, run, off;
++
++ for (mode = 0; mode < 2; mode++) {
++  for (swap = 0; swap < 2; swap++) {
++   for (pattern = 0; pattern < ARRAY_SIZE(patterns); pattern++) {
++    c = setup(); c.mode = mode; c.swapped = swap;
++    fake.reg[ATC_USB2][8 / 4] = patterns[pattern];
++    ut_assertok(atc_m1_start(&c, &fake_io, &fake, true, &fake.stage));
++    role = run = off = -1;
++    for (i = 0; i < fake.writes; i++) {
++     struct atc_trace *t = &fake.trace[i];
++     if (t->region != ATC_USB2) continue;
++     if (t->offset == 0 && (t->value & 7) == 4) off = i;
++     if (t->offset == 8 && role < 0) role = i;
++     if (t->offset == 0 && t->value == 2) run = i;
++    }
++    ut_assert(off >= 0 && role > off && run > role);
++    ut_asserteq(patterns[pattern] | 0x7000, fake.trace[role].value);
++    ut_asserteq(patterns[pattern] | 0x700f, fake.reg[ATC_USB2][8 / 4]);
++   }
++  }
++ }
++ return 0;
++}
++DM_TEST(dm_test_atc_m1_usb2_host_role, 0);

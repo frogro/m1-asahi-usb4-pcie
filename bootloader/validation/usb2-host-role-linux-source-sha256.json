@@ -1,0 +1,4 @@
+{
+  "drivers/usb/dwc3/dwc3-apple.c": "6d2ff775e11b62d1f343b07fbcfdf4a73b4159ac38ff2c2e1ee7c6df1b4a4420",
+  "drivers/phy/apple/atc.c": "4c50dfc1aadce391a76afec36e07a0b7d48eb75b3faef49d9e49c2049c01e12b"
+}
