@@ -39,3 +39,27 @@ Register definitions and protocol handling come from the open-source Linux
 retained in the library. No Apple disassembly or new firmware extraction is
 involved. The next hardware result must distinguish reported controller
 state from actual OWC supply voltage. No new power fault or fix is claimed.
+
+## Hardware result
+
+The first start attempt never exposed the m1n1 proxy, so no guest ran. The
+second start completed Probe44. All twelve samples reported STATUS 0x108280ef,
+POWER_STATUS 0x000d, SYSTEM_POWER_STATE 0, plug=1, connection=1 and opmode=3.
+There were no read errors. The ten link observations were approximately
+517 milliseconds apart. No controller-reported power loss was observed.
+This does not rule out an unmeasured short voltage drop or stale reporting.
+The user reported no visible OWC LED during boot.
+
+All 61 powered PHY values still matched the connected custom Linux reference.
+NHI replied to 81/81 control requests, but the lanes stayed in state 7 and
+Phase3/remote-router detection remained absent. The internal NVMe hashes
+matched. The mandatory reset returned to stock Ubuntu; original boot bundle
+and empty GRUB next_entry were verified.
+
+No power-toggle correction follows from these observations. The next candidate
+is native PCIe-C cold preparation between NHI readiness and cable submission.
+The working Linux trace performs this preparation before Phase2; U-Boot does
+not yet. This is a concrete implementation difference, not established causality.
+The diagnostic DT currently lacks the PCIe-C tunables used by the working
+Linux DT, so the resources and tunables must first be validated and transferred
+without auto-probing the controller. No PCIe-C trial has been built or run yet.

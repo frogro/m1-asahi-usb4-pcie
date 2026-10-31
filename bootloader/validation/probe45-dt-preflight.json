@@ -1,0 +1,272 @@
+{
+  "probe45_stage": "offline resource/tunable audit only; no candidate built or armed",
+  "linux_dt_sha256": "59a60086b283644c9efafba0a650c1fce45f0b7b292f2a97af84ecf4bffd44e5",
+  "uboot_dt_sha256": "9db76ef0161745e89b6d9e181d0d2c70cba6f12636020644d16ed84e9d637f95",
+  "groups": [
+    {
+      "region": "debug",
+      "property": "apple,tunable-debug",
+      "address": "0x520200000",
+      "validated_size": "0x4000",
+      "count": 1,
+      "triples": [
+        [
+          "0x1000",
+          "0x1",
+          "0x0"
+        ]
+      ]
+    },
+    {
+      "region": "fabric",
+      "property": "apple,tunable-fabric",
+      "address": "0x520004000",
+      "validated_size": "0x4000",
+      "count": 27,
+      "triples": [
+        [
+          "0x4",
+          "0x1f001f",
+          "0x180018"
+        ],
+        [
+          "0x8",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0xc",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x10",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x18",
+          "0x3ff",
+          "0x280"
+        ],
+        [
+          "0x44",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x94",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x9c",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x20",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x28",
+          "0x3f",
+          "0x20"
+        ],
+        [
+          "0x2c",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x34",
+          "0x3f",
+          "0x20"
+        ],
+        [
+          "0x38",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x40",
+          "0x10001",
+          "0x10001"
+        ],
+        [
+          "0x48",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x4c",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x54",
+          "0x7f007f",
+          "0x4b004b"
+        ],
+        [
+          "0x58",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x60",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x68",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x6c",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x74",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x78",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x84",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x8c",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x90",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0xa4",
+          "0x801f",
+          "0x4"
+        ]
+      ]
+    },
+    {
+      "region": "port0",
+      "property": "apple,tunable",
+      "address": "0x521000000",
+      "validated_size": "0x8000",
+      "count": 1,
+      "triples": [
+        [
+          "0x140",
+          "0x1",
+          "0x1"
+        ]
+      ]
+    },
+    {
+      "region": "oe-fabric",
+      "property": "apple,tunable-oe-fabric",
+      "address": "0x520008000",
+      "validated_size": "0x4000",
+      "count": 10,
+      "triples": [
+        [
+          "0x4",
+          "0x70007",
+          "0x40004"
+        ],
+        [
+          "0x8",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0xc",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x10",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x18",
+          "0x7f007f",
+          "0x450045"
+        ],
+        [
+          "0x1c",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x24",
+          "0x801f",
+          "0x4"
+        ],
+        [
+          "0x2c",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x30",
+          "0x1",
+          "0x1"
+        ],
+        [
+          "0x34",
+          "0x801f",
+          "0x4"
+        ]
+      ]
+    },
+    {
+      "region": "config",
+      "property": "apple,tunable-rc",
+      "address": "0x530000000",
+      "validated_size": "0x10000",
+      "count": 4,
+      "triples": [
+        [
+          "0x718",
+          "0x7c000",
+          "0x0"
+        ],
+        [
+          "0x8bc",
+          "0x1",
+          "0x0"
+        ],
+        [
+          "0x78",
+          "0x7000",
+          "0x0"
+        ],
+        [
+          "0x814",
+          "0xffffffff",
+          "0xf060"
+        ]
+      ]
+    }
+  ],
+  "total_tunables": 43,
+  "mmio_accesses": 0,
+  "dt_changes": false,
+  "external_disk_io": false,
+  "next": "Add strict resource/property validation and bounded cold preparation following existing Linux source; test mocked order and failure unwinding before hardware"
+}

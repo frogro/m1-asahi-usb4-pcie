@@ -1,0 +1,156 @@
+{
+  "probe": 44,
+  "return_errno": -110,
+  "control_sent": 81,
+  "control_received": 81,
+  "dart_status": "0x5020000",
+  "dart_error_active": false,
+  "power_samples": [
+    {
+      "ms": 20483,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 21099,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 21620,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 22137,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 22654,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 23171,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 23688,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 24206,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 24723,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 25240,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 25757,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    },
+    {
+      "ms": 26486,
+      "status": "0x108280ef",
+      "power": "0x000d",
+      "system": "0x00",
+      "plug": 1,
+      "connection": 1,
+      "source_sink": 0,
+      "opmode": 3
+    }
+  ],
+  "power_samples_stable": true,
+  "power_read_errors": 0,
+  "power_configuration_writes": 0,
+  "reported_connection_present_all_samples": true,
+  "reported_opmode_pd_all_samples": true,
+  "matches_stock_native_usb_power_reference": true,
+  "phase2_observed": true,
+  "phase3_observed": false,
+  "remote_router_read_pass": false,
+  "phy_registers_equal": 61,
+  "internal_hashes_match": true,
+  "reset_observed": true,
+  "automatic_return_verified": true,
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "original_boot_hash_unchanged": true,
+  "grub_next_entry_empty": true,
+  "user_observation": "No OWC LED visible during boot; Linux returned without intervention after the completed probe",
+  "limitations": [
+    "Reported CD321x state is not a measurement at the enclosure",
+    "Sequential samples cannot rule out brief voltage drops or stale controller state",
+    "Stable power state does not prove successful USB4 negotiation"
+  ],
+  "ram_only": true,
+  "external_ssd_io": false,
+  "uart_sha256": "f266e8fe75c1e6fb8458c5802aae4466d31b5b40d69d9172668183ef32ecf2e5",
+  "conclusion": "No reported power loss across twelve samples. Phase2 stall remains. Investigate native PCIe-C preparation/ordering, not a speculative power-toggle fix."
+}

@@ -1,0 +1,12 @@
+{
+  "first": "Compare reported CD321x power state before USB host removal, during Phase2 and after shutdown; do not infer voltage from LED alone",
+  "if_power_stable": "Design isolated PCIe-C cold-preparation comparison, after NHI startup and before cable submission, using validated Linux DT resources and tunables",
+  "evidence": "Saved working Linux trace records PCIe-C ready before DART at 365.226496s before Phase2/Phase3 around365.276s; U-Boot lacks full native PCIe-C preparation",
+  "limits": [
+    "This ordering is evidence of a difference, not causality",
+    "61 equal PHY registers do not prove identical initialization history",
+    "Do not read PCIe-C DART before APPCLK/fabric readiness",
+    "Keep native PCIe DMA disabled and external SSD unaccessed until mappings are validated"
+  ],
+  "fallback": "Original installed boot bundle unchanged; tests remain RAM-only with mandatory reset"
+}
