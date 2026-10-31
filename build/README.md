@@ -38,3 +38,17 @@ used only 22 patches. Runtime audio remains opt-in. The output includes tested
 storage and audio option files as documentation, not automatic system changes.
 
 The previous usb4sd2 workflow completed compilation and module checks, but failed while uploading an empty diagnostic file. The upload fix archives empty diagnostics before publishing release assets. The old draft release remains available. No compiler cache or object tree was preserved; usb4sd3 therefore performs a clean full build, not an incremental compilation.
+
+## Automatic release publication
+
+The kernel workflow first saves diagnostic output in a draft. The separate
+`publish-installer.yml` workflow runs after a successful full build, validates
+its source/run identity, configuration result, archive hashes and required
+payload, and publishes `installer-manifest.json`. The newest compatible build
+is marked Latest. Storage-only builds are not part of the current installer
+eGPU contract and are not promoted by this publisher. Hardware validation
+remains separate and is stated in every published title.
+
+A previously completed full build can be verified and published idempotently
+using the publisher workflow's `run_id` input. The script also supports a local
+read-only dry run: `python3 build/publish-installer.py --run RUN_ID`.

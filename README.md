@@ -2,9 +2,9 @@
 
 Experimental kernel patches and build outputs for Mac mini M1. This public repository was previously named `apple-silicon-usb4-pcie`.
 
-A [fresh external Ubuntu Asahi installer](installer/README.md) is prepared for a later installation test. It detects the USB device name (for example MP400), pins the kernel/modules/DTB build, generates the initramfs and matching UUID-based GRUB entry, and preserves a one-time boot fallback. **The new installer has not completed a hardware installation test; Fedora Asahi Remix is not yet enabled.**
+A [fresh external Ubuntu Asahi installer](installer/README.md) is prepared for a later installation test. It detects the USB device name (for example MP400), selects the newest published compatible build with verified kernel/modules/DTB checks, pins that selection for the installation, generates the initramfs and matching UUID-based GRUB entry, and preserves a one-time boot fallback. **The new installer has not completed a hardware installation test; Fedora Asahi Remix is not yet enabled.**
 
-An additional [internal-system kernel update candidate](installer/README.md#vorhandenes-internes-system-zusätzlichen-kernel-vorbereiten) preserves user settings and existing kernels, with an explicit older-version guard. An internal Ubuntu installation and first boot passed on 31 October; initial PCIe probe and subsequent AMD PSP errors remain open, and Fedora hardware validation is pending. Source provenance and the limits of the clean-room assessment are documented in the [31 October review](docs/provenance-review-20261031.md); this is an independent AI-assisted experimental project.
+The same automatic build selection is used by the [internal-system kernel update candidate](installer/README.md#vorhandenes-internes-system-zusätzlichen-kernel-vorbereiten) preserves user settings and existing kernels, with an explicit older-version guard. An internal Ubuntu installation and first boot passed on 31 October; initial PCIe probe and subsequent AMD PSP errors remain open, and Fedora hardware validation is pending. Source provenance and the limits of the clean-room assessment are documented in the [31 October review](docs/provenance-review-20261031.md); this is an independent AI-assisted experimental project.
 
 Current base revision: **29 patches / usb4sd3**. An optional **45-patch / usb4sd4-egpu3** candidate appends the tested eGPU diagnostic sources through Test179 and the Test191 initialization corrections; see [scope and remaining limits](consolidated/egpu179/README.md). Select `include_egpu=true` for that build. The 29 base patches and previous builds remain preserved. Full combined-kernel hardware validation is pending; reset-ACK classification changes remain excluded.
 
@@ -46,3 +46,9 @@ Original kernel files retain their upstream licensing and notices; see `baseline
 A further 15-minute session completed three full registration/removal cycles, 1,762 paired read comparisons across distributed SSD regions, and a stock NVMe controller reset followed by fixed-range checksum verification. About 14.8 GiB was read in total. All eight I/O queue interrupts were exercised. The same Ubuntu boot remained active, and all temporary test modules were removed at the end. No data writes or mounts were performed. See `tests/validation15-results.json` and `tests/soak-read.py`.
 
 APST was disabled; surprise unplug, suspend and generic-device support remain outside this result. Existing ACIO supplier-link warnings still need resolution before persistent integration. See `docs/generic-host-design.md` for the permanent-kernel plan.
+
+Successful compatible full builds are automatically published with an installer
+manifest; the newest is marked [Latest](https://github.com/frogro/m1-asahi-usb4-pcie/releases/latest).
+Failed or incomplete builds remain drafts. Latest indicates a verified build,
+not complete hardware certification. `--kernel-tag` pins a particular published
+build; saved boot/recovery operations never switch versions through a network lookup.
