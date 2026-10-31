@@ -1,0 +1,23 @@
+{
+  "status": "prepared_not_started",
+  "hardware_run": false,
+  "new_reads": "CD321x 0:3f SYSTEM_POWER_STATE (0x20), before and after existing host initialization",
+  "validation": {
+    "payload_checksums": true,
+    "unchanged_uboot_binary": true,
+    "dt_bootcmd_roundtrip": true,
+    "sandbox_skipped_branch_syntax": true,
+    "launcher_refuses_without_explicit_flag": true,
+    "hardware_execution": false,
+    "note": "Syntax check only, not validation of I2C response or physical link."
+  },
+  "artifacts_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "e7871240eb3eb1dfce41d002f2ebaca65f1af61144f569893eba8156bf0128e9",
+    "u-boot-nodtb.bin": "e7aad86b7451c127691d95e9fa5f0c51305b680a66be02f8f07ea6193bcfd31e",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "f2dcb334559468b4f29b4485737785457eb6d4b94aa260b7be9c51ed905c1c21",
+    "m1n1-uboot-probe-hv.bin": "96af1e41a0e0c8c33e44c80f07642762d3b0f102bb784cc5a95705f5782bb87b",
+    "run-hv-once.py": "47986e902c2b487c04aba9192f3732fb2eca73fe66203e5a28df5b983449ba31"
+  }
+}
