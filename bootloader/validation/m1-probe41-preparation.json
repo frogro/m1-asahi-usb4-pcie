@@ -1,0 +1,22 @@
+{
+  "probe": 41,
+  "base_probe": 40,
+  "target": "OWC Express 1M2 via USB4 cable at Mac port1",
+  "delta": "Guard USB4/native-host status and exercise existing preserve-PHY DWC3/xHCI path on OWC; TB-only policy deliberately not used",
+  "m1_build": true,
+  "sandbox_build": true,
+  "sandbox_tests": 67,
+  "sandbox_failures": 0,
+  "mode_role_guard_combinations": 256,
+  "recorded_status_regression_cases": 2,
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "ram_only": true,
+  "usb_dma": true,
+  "usb_enumeration_after_diagnostic_start": false,
+  "nhi_control_dma": true,
+  "external_ssd_io": false,
+  "external_pcie_tunnel": false,
+  "watchdog_config_msec": 60000,
+  "hardware_pending": true
+}

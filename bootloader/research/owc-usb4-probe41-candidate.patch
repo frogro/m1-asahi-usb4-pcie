@@ -1,0 +1,109 @@
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -376,15 +376,16 @@
+ 	u32 cap, halted;
+ 	int ret, i;
+ 	unsigned int stage;
+-	bool acio, fresh, tb_only;
++	bool acio, fresh, tb_only, usb4_host;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host")))
+ 		return CMD_RET_USAGE;
+ 	fresh = !strcmp(argv[2], "fresh");
+ 	tb_only = !strcmp(argv[2], "tbonly");
+-	hw.hostrun = !strcmp(argv[2], "hostrun");
++	usb4_host = !strcmp(argv[2], "usb4host");
++	hw.hostrun = !strcmp(argv[2], "hostrun") || usb4_host;
+ 	stage = (!strcmp(argv[2], "host") || hw.hostrun || fresh || tb_only) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+ 	acio = !strcmp(argv[2], "acio") || stage;
+ 	if (stage >= 4) {
+@@ -410,6 +411,12 @@
+ 		goto fail;
+ 	printf("ATC-M1 port=1 mode=%s swapped=%u validated=5 groups\n",
+ 	       hw.cfg.mode == ATC_USB4 ? "USB4" : "TBT", hw.cfg.swapped);
++	if (usb4_host) {
++		ret = atc_m1_usb4_host_check(hw.cfg.mode, before.data_status);
++		if (ret)
++			goto fail;
++		puts("USB4-HOST policy validated; native USB role present\n");
++	}
+ 	/* TIPD leaves USB_ROLE_NONE when neither native USB connection bit is set. */
+ 	if (tb_only && (hw.cfg.mode != ATC_TBT ||
+ 		       (before.data_status & (BIT(4) | BIT(5))))) {
+@@ -538,4 +545,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly - bounded diagnostic; hostrun also enables xHCI DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
+--- a/include/apple_atc_m1.h
++++ b/include/apple_atc_m1.h
+@@ -31,6 +31,8 @@
+ };
+ 
+ int atc_m1_validate(const struct atc_m1_config *cfg);
++/* USB4 diagnostic requires a connected native USB host role, not TB-only. */
++int atc_m1_usb4_host_check(enum atc_m1_mode mode, u32 data_status);
+ /* Caller must stop and verify the selected DWC3 host and hold its power domains.
+  * Failure stops immediately: hardware state is partial and requires reset.
+  * Does not start ACIO, NHI, DMA or a PCIe tunnel; never an OS handover API.
+--- a/lib/apple_atc_m1.c
++++ b/lib/apple_atc_m1.c
+@@ -21,6 +21,16 @@
+ #define LANE_SWAP BIT(2)
+ #define PIPE_REQ 0x10
+ #define PIPE_ACK 0x14
++
++int atc_m1_usb4_host_check(enum atc_m1_mode mode, u32 data_status)
++{
++	/* CD321x data-status definitions, as used by Linux tipd/core.c. */
++	if (mode != ATC_USB4 || !(data_status & BIT(0)) ||
++	    !(data_status & BIT(23)) || (data_status & BIT(16)) ||
++	    !(data_status & (BIT(4) | BIT(5))) || (data_status & BIT(7)))
++		return -EPROTONOSUPPORT;
++	return 0;
++}
+ 
+ int atc_m1_validate(const struct atc_m1_config *cfg)
+ {
+--- a/test/dm/apple_atc_m1.c
++++ b/test/dm/apple_atc_m1.c
+@@ -7,6 +7,35 @@
+ #include <test/test.h>
+ #include <test/ut.h>
+ #include "apple_atc_m1_data.h"
++
++static int dm_test_atc_m1_usb4_host_policy(struct unit_test_state *uts)
++{
++	static const u8 bits[] = { 0, 4, 5, 7, 16, 23 };
++	unsigned int combination, bit, mode, orientation;
++
++	/* Cover disconnected, no USB role, device role and conflicting protocols. */
++	for (combination = 0; combination < 64; combination++) {
++		u32 data = 0;
++		bool host = (combination & 1) && (combination & 6) &&
++			    !(combination & 8) && !(combination & 16) &&
++			    (combination & 32);
++
++		for (bit = 0; bit < ARRAY_SIZE(bits); bit++)
++			if (combination & BIT(bit))
++				data |= BIT(bits[bit]);
++		for (mode = ATC_USB4; mode <= ATC_TBT; mode++)
++			for (orientation = 0; orientation < 2; orientation++)
++				ut_asserteq(host && mode == ATC_USB4 ? 0 :
++					   -EPROTONOSUPPORT,
++					   atc_m1_usb4_host_check(mode,
++						data | (orientation << 1)));
++	}
++	ut_assertok(atc_m1_usb4_host_check(ATC_USB4, 0x16c00013));
++	ut_asserteq(-EPROTONOSUPPORT,
++		   atc_m1_usb4_host_check(ATC_TBT, 0x06010003));
++	return 0;
++}
++DM_TEST(dm_test_atc_m1_usb4_host_policy, 0);
+ 
+ struct atc_trace { int region; u32 offset, value; };
+ struct atc_fake {
