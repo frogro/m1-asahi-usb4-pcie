@@ -1,0 +1,27 @@
+{
+  "probe": 48,
+  "base_probe": 47,
+  "change": "Separate saved-Linux-reference DT namespace for missing generated groups only; exact 43-tuple validation unchanged",
+  "preflight_tests": 32,
+  "preflight_failures": 0,
+  "asan_ubsan_pass": true,
+  "m1_build": true,
+  "config_unchanged": true,
+  "pciec_dt_nodes_unchanged": true,
+  "other_source_files_unchanged": true,
+  "patch_reconstruction_identical": true,
+  "hardware_pending": true,
+  "ram_only": true,
+  "external_disk_io": false,
+  "external_pcie_tunnel": false,
+  "payload_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe48-pciec-reference",
+  "artifact_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "0bb9342ff35e302082123420272b61fa99d40eb846d71ded944b3c3c91555588",
+    "u-boot-nodtb.bin": "68539c135b7e009327e0ee6854889ea84cf3bcdef4807b0d8881772ceebc8425",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "47194c1f6b708f8be96124098d5dd6907ac18ebccd06eec167e191bff5029464",
+    "m1n1-uboot-probe-hv.bin": "fd486fcdb024f45ecbb71564930001f59a46ddebbe19643b59b4fddaec5af25e",
+    "run-hv-once.py": "47986e902c2b487c04aba9192f3732fb2eca73fe66203e5a28df5b983449ba31"
+  }
+}

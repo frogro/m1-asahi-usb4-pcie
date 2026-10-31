@@ -1,0 +1,10 @@
+{
+  "tests": 32,
+  "failures": 0,
+  "asan_ubsan_pass": true,
+  "actual_production_preflight_body": true,
+  "body_sha256": "2ea058f3cf8675dedc7fbcddbe136578bf72d99757d42bd88e6161c9ea26af43",
+  "dt_parser": "system libfdt with thin U-Boot API stubs",
+  "mmio_performed": false,
+  "limitations": "No actual boot-stage generation emulation; supplies observed/proposed properties in test DT and checks rejection before mapping"
+}

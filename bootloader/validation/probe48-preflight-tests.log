@@ -1,0 +1,430 @@
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 using generated apple,tunable-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 using generated apple,tunable-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 using generated apple,tunable
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 using generated apple,tunable-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 using generated apple,tunable-rc
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight PASS: 5 fixed resources, 43 exact Linux tunables; no MMIO
+
+PREFLIGHT-CASE PASS all generated
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight PASS: 5 fixed resources, 43 exact Linux tunables; no MMIO
+
+PREFLIGHT-CASE PASS all saved reference
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 using generated apple,tunable-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 using generated apple,tunable-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 using generated apple,tunable
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight PASS: 5 fixed resources, 43 exact Linux tunables; no MMIO
+
+PREFLIGHT-CASE PASS observed generated three plus saved two
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=0 len=-1 expected=12
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS both missing
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 using generated apple,tunable-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 mismatch apple,tunable-debug[0] actual=0x1001/0x1/0 expected=0x1000/0x1/0
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 using generated apple,tunable-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=24 expected=12
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 mismatch apple,tunable-debug[0] actual=0x1001/0x1/0 expected=0x1000/0x1/0
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=24 expected=12
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=0 len=-1 expected=12
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS both sources missing for group
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 using generated apple,tunable-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 mismatch apple,tunable-fabric[0] actual=0x5/0x1f001f/0x180018 expected=0x4/0x1f001f/0x180018
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 using generated apple,tunable-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=648 expected=324
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 mismatch apple,tunable-fabric[0] actual=0x5/0x1f001f/0x180018 expected=0x4/0x1f001f/0x180018
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=648 expected=324
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=0 len=-1 expected=324
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS both sources missing for group
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 using generated apple,tunable
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 mismatch apple,tunable[0] actual=0x141/0x1/0x1 expected=0x140/0x1/0x1
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 using generated apple,tunable
+PCIEC-M1 property apple,tunable present=1 len=24 expected=12
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 mismatch apple,tunable[0] actual=0x141/0x1/0x1 expected=0x140/0x1/0x1
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=24 expected=12
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=0 len=-1 expected=12
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS both sources missing for group
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 using generated apple,tunable-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 mismatch apple,tunable-oe-fabric[0] actual=0x5/0x70007/0x40004 expected=0x4/0x70007/0x40004
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 using generated apple,tunable-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=240 expected=120
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 mismatch apple,tunable-oe-fabric[0] actual=0x5/0x70007/0x40004 expected=0x4/0x70007/0x40004
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=240 expected=120
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=0 len=-1 expected=120
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS both sources missing for group
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 using generated apple,tunable-rc
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 mismatch apple,tunable-rc[0] actual=0x719/0x7c000/0 expected=0x718/0x7c000/0
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 using generated apple,tunable-rc
+PCIEC-M1 property apple,tunable-rc present=1 len=96 expected=48
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled generated cannot use good fallback
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 mismatch apple,tunable-rc[0] actual=0x719/0x7c000/0 expected=0x718/0x7c000/0
+PCIEC-M1 preflight rejected: exact-reference validation ret=-22
+PREFLIGHT-CASE PASS bad saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=1 len=96 expected=48
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS doubled saved reference rejected
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 generated apple,tunable-debug absent; checking saved Linux reference u-boot,probe-pciec-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 generated apple,tunable-fabric absent; checking saved Linux reference u-boot,probe-pciec-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 generated apple,tunable absent; checking saved Linux reference u-boot,probe-pciec-port0
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 generated apple,tunable-rc absent; checking saved Linux reference u-boot,probe-pciec-config
+PCIEC-M1 property apple,tunable-rc present=0 len=-1 expected=48
+PCIEC-M1 preflight rejected: missing property or length mismatch
+
+PREFLIGHT-CASE PASS both sources missing for group
+PCIEC-M1 preflight rejected: incompatible or enabled controller/port
+
+PREFLIGHT-CASE PASS enabled controller rejected
+PCIEC-M1 preflight rejected: incompatible or enabled controller/port
+
+PREFLIGHT-CASE PASS enabled port rejected
+PCIEC-M1 preflight rejected: incompatible or enabled controller/port
+
+PREFLIGHT-CASE PASS wrong board rejected
+PREFLIGHT-CASES 32 PASS

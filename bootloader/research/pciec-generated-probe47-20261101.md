@@ -17,3 +17,15 @@ Missing or differing values still abort; nothing is substituted silently.
 This tests both the property-generation hypothesis and, if validation passes,
 the originally intended bounded PCIe-C preparation. There is no external disk
 I/O or PCIe tunnel. The installed boot files are not modified.
+
+## Hardware result
+
+The generated debug, fabric and port0 properties have the expected lengths
+and all 29 triples match the Linux reference. The next property, oe-fabric,
+is absent; validation stops there, so config/rc availability is still unknown.
+This establishes that the boot stage supplies only part of the required
+preparation data. Native PCIe-C initialization has still not run.
+
+Both internal NVMe control hashes matched; the planned reset and automatic
+stock-Ubuntu return were verified. The boot bundle is unchanged and GRUB's
+next_entry is empty. No external disk was accessed.

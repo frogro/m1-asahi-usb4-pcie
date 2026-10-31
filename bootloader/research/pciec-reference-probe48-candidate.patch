@@ -1,0 +1,31 @@
+--- a/cmd/apple_pciec_m1.c
++++ b/cmd/apple_pciec_m1.c
+@@ -18,6 +18,14 @@
+ static unsigned int mmio_reads, mmio_writes;
+ static const char *const names[] = { "debug", "fabric", "port0", "oe-fabric", "config" };
+ static const char *const props[] = { "apple,tunable-debug", "apple,tunable-fabric", "apple,tunable", "apple,tunable-oe-fabric", "apple,tunable-rc" };
++/* Separate diagnostic namespace: the boot stage may append apple,* properties.
++ * Only absent generated properties use these saved, exact-validated values.
++ * A present but malformed/different generated property must still fail. */
++static const char *const reference_props[] = {
++ "u-boot,probe-pciec-debug", "u-boot,probe-pciec-fabric",
++ "u-boot,probe-pciec-port0", "u-boot,probe-pciec-oe-fabric",
++ "u-boot,probe-pciec-config"
++};
+ static const u64 addresses[] = { 0x520200000, 0x520004000, 0x521000000, 0x520008000, 0x530000000 };
+ static const u32 sizes[] = { 0x4000, 0x4000, 0x8000, 0x4000, 0x10000 };
+ 
+@@ -52,6 +60,13 @@
+    return -ERANGE;
+   }
+   data = ofnode_get_property(g == PCIEC_PORT ? port : node, props[g], &len);
++  if (!data) {
++   printf("PCIEC-M1 generated %s absent; checking saved Linux reference %s\n",
++          props[g], reference_props[g]);
++   data = ofnode_get_property(ofnode_path("/config"), reference_props[g], &len);
++  } else {
++   printf("PCIEC-M1 using generated %s\n", props[g]);
++  }
+   ref = pciec_m1_reference(g, &count);
+   printf("PCIEC-M1 property %s present=%u len=%d expected=%u\n",
+          props[g], !!data, len, count * 12);

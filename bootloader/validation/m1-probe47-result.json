@@ -1,0 +1,26 @@
+{
+  "probe": 47,
+  "run_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe47-pciec-generated-tunables/hv-run-20261031T234700Z",
+  "hardware_result": "Generated debug/fabric/port tunables match exact Linux reference; oe-fabric missing",
+  "errno": -22,
+  "generated_matching_groups": [
+    "debug",
+    "fabric",
+    "port0"
+  ],
+  "generated_matching_tuples": 29,
+  "missing_group": "oe-fabric",
+  "config_group_not_reached": true,
+  "pciec_cold_prepare_ran": false,
+  "link_comparison_performed": false,
+  "internal_nvme_hashes_match": true,
+  "reset_observed": true,
+  "automatic_return_verified": true,
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "boot_bundle_unchanged": true,
+  "boot_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+  "grub_next_entry_empty": true,
+  "external_disk_access": false,
+  "uart_sha256": "bd733776f4ef7ad4545c3bb64ee5ffb8d96cb1de475c2c564da0c3550625f6c7",
+  "next_step": "Probe48 supplies separately named saved reference properties only for missing generated groups; existing malformed generated groups remain fatal"
+}
