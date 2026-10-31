@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 import time
+from urllib.parse import quote
 
 
 def gh(*args, payload=None, optional=False):
@@ -56,16 +57,35 @@ def ensure_draft(repo, tag, commit):
 
 
 def upload(repo, tag, release_id, paths):
+    endpoint = 'repos/' + repo + '/releases/' + str(release_id)
+    release = gh('api', endpoint)
+    if not release['draft'] or release['tag_name'] != tag:
+        raise RuntimeError('Upload target changed or was published')
     for path in paths:
         for attempt in range(3):
             try:
-                gh('release', 'upload', tag, str(path), '--repo', repo, '--clobber')
+                # Use the reserved release ID, not a second CLI lookup by tag.
+                # An interrupted upload can leave an incomplete asset behind.
+                release = gh('api', endpoint)
+                if not release['draft'] or release['tag_name'] != tag:
+                    raise RuntimeError('Upload target changed or was published')
+                for asset in release['assets']:
+                    if asset['name'] == path.name:
+                        gh('api', '--method', 'DELETE', 'repos/' + repo +
+                           '/releases/assets/' + str(asset['id']))
+                gh('api', '--method', 'POST',
+                   'https://uploads.github.com/' + endpoint +
+                   '/assets?name=' + quote(path.name, safe=''),
+                   '-H', 'Content-Type: application/octet-stream',
+                   '--input', str(path))
                 break
             except RuntimeError:
                 if attempt == 2:
                     raise
                 time.sleep(2 ** attempt)
-    release = gh('api', 'repos/' + repo + '/releases/' + str(release_id))
+    release = gh('api', endpoint)
+    if not release['draft'] or release['tag_name'] != tag:
+        raise RuntimeError('Upload target changed or was published')
     assets = {a['name']: a for a in release['assets']}
     for path in paths:
         with path.open('rb') as stream:
@@ -104,7 +124,8 @@ def main():
                      'Build incomplete or failed. Diagnostics only.\n') + record.read_text())
     subprocess.run(['python3', 'build/prepare-assets.py'], check=True)
     gh('api', '--method', 'PATCH', 'repos/' + repo + '/releases/' + str(release['id']),
-       payload={'body': notes.read_text()})
+       payload={'tag_name': tag, 'target_commitish': commit, 'draft': True,
+                'name': release['name'], 'body': notes.read_text()})
     upload(repo, tag, release['id'], sorted(f for f in out.iterdir() if f.is_file() and f.stat().st_size))
     print('Draft assets uploaded and SHA-256 verified:', tag)
 

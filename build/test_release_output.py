@@ -54,17 +54,40 @@ class ReleaseOutputTests(unittest.TestCase):
             f = Path(tmp)/'RUN.txt'; f.write_text('exact-build-identity')
             digest = m.hashlib.sha256(f.read_bytes()).hexdigest()
             asset = {'name': f.name, 'size': f.stat().st_size, 'state': 'uploaded', 'digest': 'sha256:'+digest}
-            with patch.object(m, 'gh', side_effect=[RuntimeError('interrupted'), None, {'assets': [asset]}]) as gh, patch.object(m.time, 'sleep'):
+            draft = {'draft': True, 'tag_name': 'kernel-build-12-1', 'assets': []}
+            complete = dict(draft, assets=[asset])
+            with patch.object(m, 'gh', side_effect=[draft, draft, RuntimeError('interrupted'), draft, None, complete]) as gh, patch.object(m.time, 'sleep'):
                 m.upload('owner/repo', 'kernel-build-12-1', 3, [f])
-                self.assertEqual(3, gh.call_count)
-                self.assertEqual(gh.call_args_list[0], gh.call_args_list[1])
+                self.assertEqual(6, gh.call_count)
+                self.assertEqual(gh.call_args_list[2], gh.call_args_list[4])
+                self.assertIn('https://uploads.github.com/repos/owner/repo/releases/3/assets?name=RUN.txt', gh.call_args_list[4].args)
 
     def test_upload_digest_mismatch_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp)/'RUN.txt'; f.write_text('exact-build-identity')
-            with patch.object(m, 'gh', side_effect=[None, {'assets': [{'name': f.name, 'size': f.stat().st_size, 'state':'uploaded', 'digest':'sha256:wrong'}]}]):
+            draft = {'draft': True, 'tag_name': 'kernel-build-12-1', 'assets': []}
+            bad = dict(draft, assets=[{'name': f.name, 'size': f.stat().st_size, 'state':'uploaded', 'digest':'sha256:wrong'}])
+            with patch.object(m, 'gh', side_effect=[draft, draft, None, bad]):
                 with self.assertRaisesRegex(RuntimeError, 'verification failed'):
                     m.upload('owner/repo', 'kernel-build-12-1', 3, [f])
+
+    def test_changed_or_published_target_is_not_uploaded(self):
+        for draft, tag in [(False, 'kernel-build-12-1'), (True, 'untagged-other')]:
+            with self.subTest(draft=draft, tag=tag), patch.object(m, 'gh', return_value={'draft':draft,'tag_name':tag}) as gh:
+                with self.assertRaisesRegex(RuntimeError, 'target changed'):
+                    m.upload('owner/repo', 'kernel-build-12-1', 3, [Path('RUN.txt')])
+                self.assertEqual(1, gh.call_count)
+
+    def test_retry_replaces_incomplete_asset_only_on_reserved_draft(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp)/'a b.txt'; f.write_text('data')
+            asset = {'id': 9, 'name': f.name, 'size': 4, 'state': 'uploaded', 'digest': 'sha256:'+m.hashlib.sha256(b'data').hexdigest()}
+            draft = {'draft': True, 'tag_name': 'kernel-build-12-1', 'assets': [dict(asset, state='starter')]}
+            complete = dict(draft, assets=[asset])
+            with patch.object(m, 'gh', side_effect=[draft, draft, None, None, complete]) as gh:
+                m.upload('owner/repo', 'kernel-build-12-1', 3, [f])
+                self.assertEqual(('api','--method','DELETE','repos/owner/repo/releases/assets/9'), gh.call_args_list[2].args)
+                self.assertIn('https://uploads.github.com/repos/owner/repo/releases/3/assets?name=a%20b.txt',gh.call_args_list[3].args)
 
 
 if __name__ == '__main__':
