@@ -88,3 +88,39 @@ The m1n1 reference is `148399585d37afa366bd0cc8f21f45c60f14e231`.
 
 No new hardware failure is inferred from the software fault-injection tests.
 They exercise failure handling needed before bringing this path to the Mac.
+
+## M1-specific PHY follow-up after the hardware probes
+
+The tested consolidated Linux PHY source is the primary porting reference for
+M1, not the newer multi-generation reference wholesale. Its USB4 and Thunderbolt
+modes share lane calibration but select different PIPE routing states:
+USB4 selects the USB4 PIPE route; Thunderbolt selects the dummy PIPE route.
+Both orientations must use the corresponding crossbar selection; the swapped
+USB4/TBT configuration intentionally leaves the separate lane-swap bit clear.
+A generic “USB4 or TBT means identical setup” implementation would be wrong.
+
+The consolidated source treats a USB4 PIPE lock timeout as fatal. The newer
+reference changed that to a warning. The bootloader prototype has adopted
+neither behavior yet; the first port must preserve explicit failure reporting
+and establish the hardware state before changing timeout policy. This is a
+PHY PIPE handshake, distinct from the excluded PCIe-C reset-ACK classifier.
+
+Probe 4 establishes that m1n1 supplies four required PHY property groups for
+port 1. Before the first configuration write, validate **all** cells and offsets
+against the named MMIO resources, including the common-a group, which was not
+included in probe 4's presence check. Verify power-domain ownership and stop
+any USB3 owner of the same port. Never touch the separate debug port.
+
+The first write-enabled PHY test should select one confirmed CD321x port and:
+
+1. Capture the pre-transition mode, orientation, resource layout and status.
+2. Validate tunables in full, then run bounded small/big power acknowledgements.
+3. Apply common and CIO lane calibration, the M1 post-tunable sequence, clocks,
+   crossbar and lane mode, then release the PHY reset in the tested order.
+4. Configure the correct PIPE route for the negotiated protocol. On timeout,
+   report the stage and register state and stop before ACIO/NHI or PCIe DMA.
+5. Prove the internal NVMe remains readable and return to the installed Ubuntu.
+
+Only after this stage is repeatable should the test enable ACIO firmware and
+NHI control rings. A PHY success still does not establish an external disk.
+No write-enabled PHY test has been performed by the current eight patches.

@@ -1,0 +1,40 @@
+{
+  "consolidated_phy_sha256": "b41376b7147e9f93d05956f2afe06ff378f5ddbe4e59c7f875ae391c914c72d7",
+  "source_role": "local consolidated tested M1 Linux reference",
+  "newer_reference_commit": "523e0405470d74acfc7ff5d1632a2805d0559a2a",
+  "important_differences": [
+    "USB4 PIPE lock fatal in consolidated M1 source; warning in newer reference",
+    "TBT uses dummy PIPE routing; USB4 uses USB4 PIPE routing",
+    "swapped USB4/TBT crossbar does not set independent lane-swap bit"
+  ],
+  "next_stage": "bounded M1 PHY initialization, not implemented",
+  "probe4_unchecked_property": "apple,tunable-common-a",
+  "internal_ubuntu_dt_crosscheck": {
+    "scope": "Read-only current internal Ubuntu DT; not proof of prior U-Boot guest common-a data",
+    "phy_node": "/soc/phy@503000000",
+    "groups": {
+      "axi2af": {
+        "bytes": 120,
+        "triplets": 10
+      },
+      "common-a": {
+        "bytes": 132,
+        "triplets": 11
+      },
+      "common-b": {
+        "bytes": 1092,
+        "triplets": 91
+      },
+      "lane0-cio": {
+        "bytes": 852,
+        "triplets": 71
+      },
+      "lane1-cio": {
+        "bytes": 852,
+        "triplets": 71
+      }
+    },
+    "alignment_and_resource_bounds": "passed for all 254 triplets",
+    "hardware_writes": false
+  }
+}
