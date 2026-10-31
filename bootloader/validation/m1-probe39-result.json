@@ -1,0 +1,228 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "a3ee495db59d881493e1e3e95138eb2743bcd2ac94c27ad7bc15ad140d792feb",
+  "records": [
+    {
+      "ms": 20137,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 20140,
+      "delta": 3,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 20238,
+      "delta": 101,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 20261,
+      "delta": 124,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 20265,
+      "delta": 128,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 20268,
+      "delta": 131,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 20271,
+      "delta": 134,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 20281,
+      "delta": 144,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 20284,
+      "delta": 147,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 20297,
+      "delta": 160,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 20300,
+      "delta": 163,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 20361,
+      "delta": 224,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 20361,
+      "delta": 224,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 20365,
+      "delta": 228,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 20368,
+      "delta": 231,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 20371,
+      "delta": 234,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 20378,
+      "delta": 241,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20381,
+      "delta": 244,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20515,
+      "delta": 378,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 20518,
+      "delta": 381,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 20521,
+      "delta": 384,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20525,
+      "delta": 388,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20525,
+      "delta": 388,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 20528,
+      "delta": 391,
+      "event": "dwc3-host-begin"
+    },
+    {
+      "ms": 20545,
+      "delta": 408,
+      "event": "dwc3-core-init-begin"
+    },
+    {
+      "ms": 20545,
+      "delta": 408,
+      "event": "dwc3-core-init-return"
+    },
+    {
+      "ms": 20554,
+      "delta": 417,
+      "event": "dwc3-host-return"
+    },
+    {
+      "ms": 20604,
+      "delta": 467,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 20616,
+      "delta": 479,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 20630,
+      "delta": 493,
+      "event": "xhci-start-begin"
+    },
+    {
+      "ms": 20652,
+      "delta": 515,
+      "event": "xhci-start-return"
+    },
+    {
+      "ms": 20666,
+      "delta": 529,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 25734,
+      "delta": 5597,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 25748,
+      "delta": 5611,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 25748,
+      "delta": 5611,
+      "event": "rtkit-shutdown-return"
+    },
+    {
+      "ms": 25754,
+      "delta": 5617,
+      "event": "xhci-stop-begin"
+    },
+    {
+      "ms": 25754,
+      "delta": 5617,
+      "event": "xhci-stop-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 3,
+    "phy_return_to_m3_start": 128,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 87,
+    "rings_to_cable_submit": 147,
+    "cable_submit_to_link_return": 5216
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 39,
+  "base_probe": 38,
+  "return_errno": -110,
+  "control_sent": 61,
+  "control_received": 61,
+  "dwc3_preserve_phy_init": 0,
+  "xhci_start": 0,
+  "xhci_stop": 0,
+  "xhci_dma_maps": 6,
+  "lane_states": [
+    7,
+    7
+  ],
+  "usb2_signal_initial": "0x1c1000f",
+  "usb2_signal_host": "0x1c1700f",
+  "usb2_signal_final": "0x41700f",
+  "internal_nvme_before_after": true,
+  "ubuntu_return_verified": false,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "conclusion": "Omitting the redundant late core/PHY soft reset alone did not advance the firmware beyond Phase2",
+  "fallback_status": "No SSH after planned reset; user reports black HDMI; manual power cycle to stock Ubuntu requested",
+  "installed_boot_changes": false
+}
