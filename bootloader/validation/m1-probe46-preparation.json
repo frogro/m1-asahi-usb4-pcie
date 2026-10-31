@@ -1,0 +1,24 @@
+{
+  "probe": 46,
+  "base_probe": 45,
+  "change": "Bounded resource, property length and tuple mismatch logging only; no change to validation or hardware sequence",
+  "m1_build": true,
+  "config_unchanged": true,
+  "pciec_dt_properties_unchanged": true,
+  "all_other_source_files_unchanged": true,
+  "patch_reconstruction_identical": true,
+  "hardware_pending": true,
+  "ram_only": true,
+  "external_disk_io": false,
+  "external_pcie_tunnel": false,
+  "payload_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe46-pciec-preflight",
+  "artifact_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "5832ef21af78385d03fc9932ce2ad9ec6cfab8ccc774c7a2ea65f71d8df8e919",
+    "u-boot-nodtb.bin": "c3df6df82d6a8d8b9876a147cbd1d0a5e54198e8441c0ce419a3ec8f9be10697",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "9c9651ff9177203e3b89f76a58c4a38a9b6dc115a4ae1f666396493528584df7",
+    "m1n1-uboot-probe-hv.bin": "e36910be14f951b8bf91018704b0e44a1820d014190c02d63ff8b41bcff16ae2",
+    "run-hv-once.py": "47986e902c2b487c04aba9192f3732fb2eca73fe66203e5a28df5b983449ba31"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "probe": 45,
+  "run_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe45-pciec-prepare/hv-run-20261031T233848Z",
+  "hardware_result": "Stopped by PCIe-C preflight with EINVAL before new initialization ran",
+  "errno": -22,
+  "pciec_cold_prepare_ran": false,
+  "link_comparison_performed": false,
+  "initialization_hypothesis_tested": false,
+  "preflight_exact_failure_not_yet_identified": true,
+  "internal_nvme_hashes_match": true,
+  "reset_observed": true,
+  "automatic_return_verified": true,
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "boot_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+  "boot_bundle_unchanged": true,
+  "grub_next_entry_empty": true,
+  "external_disk_access": false,
+  "uart_sha256": "766817f6753e4e8e1b44f06ab40a0fc1747074cf626f75a219f6f212d3947d86",
+  "next_step": "Retain all validation; add precise preflight resource/property/mismatch logging, then retry with Probe46."
+}

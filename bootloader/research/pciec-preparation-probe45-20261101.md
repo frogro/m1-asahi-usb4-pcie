@@ -51,3 +51,18 @@ are unchanged. The existing 60-second watchdog is configured, but cannot be
 claimed as a guaranteed recovery from arbitrary hardware failure.
 
 The complete development source is preserved in [the cumulative patch](probe45-cumulative-source.patch), with a [hash manifest](../validation/probe45-cumulative-source-manifest.json). It reconstructs all 50 modified/new source files byte-for-byte over the pinned base.
+
+## Hardware attempt: preflight stopped the run
+
+The 2026-10-31 23:38 UTC run reached U-Boot but returned `-EINVAL` in
+the PCIe-C preflight, before the new cold-preparation callback or any link
+comparison ran. This is neither a failed PCIe-C hardware initialization nor
+evidence for or against the Phase2 hypothesis. The existing diagnostics did
+not distinguish a resource lookup failure, a missing/changed property, or
+a reference mismatch. The next probe adds only bounded preflight logging;
+all existing rejection conditions remain in force.
+
+Internal NVMe control hashes before and after matched, the planned reset
+was observed, and stock Ubuntu returned over SSH. The installed boot bundle
+hash remained unchanged and GRUB next_entry was empty. No external SSD I/O
+or PCIe tunnel was performed.

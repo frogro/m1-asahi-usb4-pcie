@@ -1,0 +1,65 @@
+--- a/cmd/apple_pciec_m1.c
++++ b/cmd/apple_pciec_m1.c
+@@ -28,29 +28,56 @@
+  struct resource resource;
+  unsigned int g, i, count;
+  const u8 *data;
++ const struct pciec_m1_tunable *ref;
+  int len, ret;
+  if (used) return -EALREADY;
+  checked = false;
+  if (!ofnode_device_is_compatible(ofnode_root(), "apple,j274") ||
+      !ofnode_device_is_compatible(node, "apple,t8103-pciec") ||
+-     !ofnode_valid(port) || ofnode_is_enabled(node) || ofnode_is_enabled(port)) return -ENODEV;
++     !ofnode_valid(port) || ofnode_is_enabled(node) || ofnode_is_enabled(port)) {
++  puts("PCIEC-M1 preflight rejected: incompatible or enabled controller/port\n");
++  return -ENODEV;
++ }
+  for (g = 0; g < PCIEC_M1_GROUPS; g++) {
+   ret = ofnode_read_resource_byname(node, names[g], &resource);
+-  if (ret) return ret;
++  if (ret) {
++   printf("PCIEC-M1 resource %s lookup failed ret=%d\n", names[g], ret);
++   return ret;
++  }
++  printf("PCIEC-M1 resource %s start=%#llx size=%#llx\n", names[g],
++         (unsigned long long)resource.start, (unsigned long long)resource_size(&resource));
+   if (resource.start != addresses[g] ||
+-      resource_size(&resource) != (g == PCIEC_CONFIG ? 0x10000000 : sizes[g])) return -ERANGE;
++      resource_size(&resource) != (g == PCIEC_CONFIG ? 0x10000000 : sizes[g])) {
++   puts("PCIEC-M1 preflight rejected: resource mismatch\n");
++   return -ERANGE;
++  }
+   data = ofnode_get_property(g == PCIEC_PORT ? port : node, props[g], &len);
+-  pciec_m1_reference(g, &count);
+-  if (!data || len != count * 12) return -EINVAL;
++  ref = pciec_m1_reference(g, &count);
++  printf("PCIEC-M1 property %s present=%u len=%d expected=%u\n",
++         props[g], !!data, len, count * 12);
++  if (!data || len != count * 12) {
++   puts("PCIEC-M1 preflight rejected: missing property or length mismatch\n");
++   return -EINVAL;
++  }
+   candidate.count[g] = count;
+   for (i = 0; i < count; i++) {
+    candidate.group[g][i].offset = get_unaligned_be32(data + 12*i);
+    candidate.group[g][i].mask = get_unaligned_be32(data + 12*i + 4);
+    candidate.group[g][i].value = get_unaligned_be32(data + 12*i + 8);
++   if (candidate.group[g][i].offset != ref[i].offset ||
++       candidate.group[g][i].mask != ref[i].mask ||
++       candidate.group[g][i].value != ref[i].value)
++    printf("PCIEC-M1 mismatch %s[%u] actual=%#x/%#x/%#x expected=%#x/%#x/%#x\n",
++           props[g], i, candidate.group[g][i].offset,
++           candidate.group[g][i].mask, candidate.group[g][i].value,
++           ref[i].offset, ref[i].mask, ref[i].value);
+   }
+  }
+  ret = pciec_m1_validate(&candidate);
+- if (ret) return ret;
++ if (ret) {
++  printf("PCIEC-M1 preflight rejected: exact-reference validation ret=%d\n", ret);
++  return ret;
++ }
+  config = candidate;
+  for (g = 0; g < PCIEC_M1_GROUPS; g++) base[g] = map_sysmem(addresses[g], sizes[g]);
+  checked = true;
