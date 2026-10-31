@@ -296,3 +296,58 @@ The initramfs restores the original boot bundle; a temporary seven-minute
 return service bounds the live comparison. This release predates the native
 prefetch/authorization-retry patches44/45; successful Test191 runtime evidence
 is retained separately and must not be equated with a fully integrated boot.
+
+
+### Probes23/24: S0 and root TMU separated
+
+Probe23 read CD321x SYSTEM_POWER_STATE (0x20) before and after the unchanged
+Probe22 transport. Both samples were S0 (value0). Both lanes remained state7;
+there is no evidence from this initial state justifying an SSPS command.
+Internal NVMe hashes passed and stock Ubuntu returned automatically.
+
+`nhi-root-tmu-candidate.patch` follows Probe22 (Probe23 changed only the boot
+script). Probe24 discovers the TMU capability, checks UCAP and initially clear
+TD, sets TD, verifies it, programs LOWRES interval1000 with unrelated bits
+preserved, verifies the interval, and clears/verifies TD. Failure after the
+first attempted TD write runs bounded cleanup without masking the first error.
+This adds nine normal transactions within the unchanged63-descriptor limit;
+extra event headroom is consequently smaller and exhaustion fails closed.
+M1 build, sandbox57,95 transport mocks and53 TMU fault-injection cases passed.
+
+Hardware verified `LOWRES interval=1000 TD=0`, but both lanes stayed state7
+through the five-second observation. Internal NVMe hashes passed, reset was
+executed, and stock Ubuntu returned. Thus TMU parity is established, but it
+is **not sufficient to establish the external link**. No external disk access,
+remote-router write or installed bootloader change was performed. See
+[m1-probe24-result.json](../validation/m1-probe24-result.json).
+
+The saved Probe5 **runtime-exported** calibration arrays were also compared
+with the working Linux DTB: all12 arrays (543 triplets) match byte-for-byte.
+This uses the existing Probe5 capture, not a new Probe24 runtime dump; DROM
+hardware identifiers are excluded from the published comparison.
+
+The next isolated diagnostic enables bounded ACIO RTKit SYSLOG handling.
+It is intended to expose firmware progress; no link-fix claim is made.
+
+
+### Probe25 prepared: bounded ACIO SYSLOG
+
+`nhi-acio-syslog-candidate.patch` follows Probe24. It opts only this ACIO
+instance into SYSLOG endpoint2; normal RTKit clients retain their prior
+behavior. The record layout follows Linux `drivers/soc/apple/rtkit.c`.
+Firmware-provided buffer addresses must pass the existing SRAM range check.
+The decoder rejects invalid indices, zero sizes and out-of-buffer records,
+uses bounded byte reads, terminates strings and sanitizes control characters.
+At most64 records are printed. Valid and rejected log notifications are ACKed;
+receive-empty is distinguished from a transmit timeout, preserving real errors.
+
+The diagnostic services at most8 mailbox messages per call,512 during the
+NHI run, with existing RTKit/NHI deadlines and63 descriptors retained. No
+new reset, PHY write, remote-router write or external disk I/O is added.
+Transport/DART buffers remain retained until the mandatory full reset as
+before. This tests firmware visibility, not a presumed firmware deadlock.
+
+M1 build,57 sandbox cases,95 extracted-production transport cases and27
+RTKit cases pass. The latter include6912 index/size/buffer combinations and
+address/undefined-behavior sanitizers. Exact application of the incremental
+patch reproduces all five changed source files. Hardware result is pending.

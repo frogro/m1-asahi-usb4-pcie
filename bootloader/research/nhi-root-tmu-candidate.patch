@@ -1,0 +1,144 @@
+--- a/cmd/apple_nhi_m1_inventory.c
++++ b/cmd/apple_nhi_m1_inventory.c
+@@ -14,7 +14,7 @@
+ 			   struct apple_nhi_host_info *info)
+ {
+ 	u32 data[8], config[4], seen[32], offset, next, cap, vsec, length;
+-	u32 max_port, upstream, apple = 0, null_ports = 0, port1_cap = 0;
++	u32 max_port, upstream, apple = 0, null_ports = 0, port1_cap = 0, tmu = 0;
+ 	unsigned int count = 0, i, port;
+ 	int ret;
+ 
+@@ -75,6 +75,11 @@
+ 		}
+ 		printf("NHI capability offset=%#x id=%#x vsec=%#x length=%u next=%#x raw=%08x %08x\n",
+ 		       offset, cap, vsec, length, next, data[0], data[1]);
++		if (cap == 3) {
++			if (tmu || offset > 0x1ffc)
++				return -EPROTO;
++			tmu = offset;
++		}
+ 		if (cap == 5 && !vsec) {
+ 			if (apple || length < 2)
+ 				return -EPROTO;
+@@ -113,6 +118,7 @@
+ 	info->apple = apple;
+ 	info->null_ports = null_ports;
+ 	info->port1_cap = port1_cap;
++	info->tmu = tmu;
+ 	return 0;
+ }
+ 
+@@ -172,3 +178,52 @@
+ 	*cable = result;
+ 	return 0;
+ }
++
++/* USB4 root-router LOWRES sequence from Linux thunderbolt/tmu.c:
++ * Time Disruption -> packet interval 1000 -> clear Time Disruption.
++ * Only this discovered host capability is writable. No downstream writes.
++ * Retain the first failure and attempt to clear TD even after a failed write;
++ * the caller must stop the probe and reset on any error.
++ */
++int apple_nhi_m1_tmu_lowres(apple_nhi_read_fn read,
++                          apple_nhi_tmu_write_fn write, void *context, u32 cap)
++{
++ const u32 td = 1U << 27, ucap = 1U << 30, rate = 1000U << 16;
++ u32 control, interval, value;
++ int ret, cleanup;
++
++ if (!read || !write || cap < 5 || cap > 0x1ffc) return -EINVAL;
++ ret = read(context, 0, 2, cap, 1, &control);
++ if (ret) return ret;
++ if (((control >> 8) & 255) != 3 || !(control & ucap)) return -EPROTO;
++ if (control & td) return -EBUSY;
++ ret = read(context, 0, 2, cap + 3, 1, &interval);
++ if (ret) return ret;
++ printf("NHI-TMU before cap=%#x control=%08x interval=%08x\n", cap, control, interval);
++ if ((interval & 0xffff0000U) == rate) {
++  puts("NHI-TMU PASS already LOWRES; no writes\n");
++  return 0;
++ }
++ if (interval >> 16) return -EBUSY;
++ ret = write(context, cap, control | td);
++ if (ret) goto clear;
++ ret = read(context, 0, 2, cap, 1, &value);
++ if (ret) goto clear;
++ if (!(value & td)) { ret = -EIO; goto clear; }
++ ret = write(context, cap + 3, (interval & 0xffffU) | rate);
++ if (ret) goto clear;
++ ret = read(context, 0, 2, cap + 3, 1, &value);
++ if (ret) goto clear;
++ if ((value & 0xffff0000U) != rate) ret = -EIO;
++clear:
++ cleanup = read(context, 0, 2, cap, 1, &value);
++ if (!cleanup) cleanup = write(context, cap, value & ~td);
++ if (!cleanup) cleanup = read(context, 0, 2, cap, 1, &value);
++ if (!cleanup && (value & td)) cleanup = -EIO;
++ if (ret || cleanup) {
++  printf("NHI-TMU FAIL operation=%d cleanup=%d; mandatory reset\n", ret, cleanup);
++  return ret ? ret : cleanup;
++ }
++ puts("NHI-TMU PASS LOWRES interval=1000 TD=0\n");
++ return 0;
++}
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -39,6 +39,7 @@
+  void *buffer, *nhi, *dart_regs;
+  struct diagnostic_desc *tx, *rx;
+  unsigned int sent, received, skipped, acked, pending_count;
++ u32 tmu_cap;
+  struct usb4_cfg_event pending[8];
+  ulong started;
+ };
+@@ -216,6 +217,17 @@
+  return diagnostic_xfer(context, 0, 2, 1, 4, data, USB4_CFG_WRITE, 0);
+ }
+ 
++static int diagnostic_tmu_write(void *context, unsigned int offset, u32 value)
++{
++ struct diagnostic_ring *ring = context;
++ if (!ring || ring->tmu_cap < 5 || ring->tmu_cap > 0x1ffc ||
++     (offset != ring->tmu_cap && offset != ring->tmu_cap + 3)) return -EINVAL;
++ if (offset == ring->tmu_cap && (((value >> 8) & 255) != 3 || !(value & BIT(30))))
++  return -EINVAL;
++ if (offset == ring->tmu_cap + 3 && (value >> 16) != 1000) return -EINVAL;
++ return diagnostic_xfer(ring, 0, 2, offset, 1, &value, USB4_CFG_WRITE, 0);
++}
++
+ static int diagnostic_link(struct diagnostic_ring *ring,
+                            const struct apple_nhi_host_info *info)
+ {
+@@ -343,6 +355,10 @@
+  writel(RING_COUNT - 1, nhi + 0x80008);
+  ring.started = get_timer(0);
+  ret = apple_nhi_m1_inventory(diagnostic_read, diagnostic_host_config, &ring, &info);
++ if (!ret) {
++  ring.tmu_cap = info.tmu;
++  ret = apple_nhi_m1_tmu_lowres(diagnostic_read, diagnostic_tmu_write, &ring, info.tmu);
++ }
+  if (!ret) ret = diagnostic_link(&ring, &info);
+  writel(0, nhi + 0x10010);
+  writel(0, nhi + 0x80010);
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -4,7 +4,7 @@
+ #include <linux/types.h>
+ struct udevice;
+ struct apple_cd321x_status;
+-struct apple_nhi_host_info { u32 apple, null_ports, port1_cap; };
++struct apple_nhi_host_info { u32 apple, null_ports, port1_cap, tmu; };
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status);
+ int apple_nhi_m1_link_metadata(const u8 *drom, unsigned int len,
+ 			      u32 status, u32 eudo, u32 *cable);
+@@ -17,6 +17,9 @@
+ int apple_nhi_m1_inventory(apple_nhi_read_fn read,
+ 			   apple_nhi_host_config_fn configure, void *context,
+ 			   struct apple_nhi_host_info *info);
++typedef int (*apple_nhi_tmu_write_fn)(void *context, unsigned int offset, u32 value);
++int apple_nhi_m1_tmu_lowres(apple_nhi_read_fn read,
++			  apple_nhi_tmu_write_fn write, void *context, u32 cap);
+ int apple_nhi_m1_check(void);
+ int apple_nhi_m1_dart_test(unsigned int stage);
+ int apple_nhi_m1_tunables_check(void);

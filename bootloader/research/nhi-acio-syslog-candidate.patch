@@ -1,0 +1,268 @@
+--- a/arch/arm/mach-apple/rtkit.c
++++ b/arch/arm/mach-apple/rtkit.c
+@@ -9,6 +9,7 @@
+ #include <time.h>
+ 
+ #include <asm/arch/rtkit.h>
++#include <asm/io.h>
+ #include <linux/apple-mailbox.h>
+ #include <linux/bug.h>
+ #include <linux/bitfield.h>
+@@ -78,6 +79,9 @@
+ 	struct apple_rtkit_buffer ioreport_buffer;
+ 	struct apple_rtkit_buffer oslog_buffer;
+ 
++	/* Opt-in for the bounded ACIO diagnostic only. */
++	bool syslog_diagnostic;
++	unsigned int syslog_entries, syslog_size, syslog_printed;
+ 	int iop_pwr;
+ 	int ap_pwr;
+ };
+@@ -201,7 +205,54 @@
+ 	return 0;
+ }
+ 
+-int apple_rtkit_poll(struct apple_rtkit *rtk, ulong timeout)
++/* SYSLOG wire layout follows Linux drivers/soc/apple/rtkit.c.
++ * Firmware supplies SRAM through the caller's validated shmem_setup callback.
++ * No arbitrary pointers, dynamic allocation, or unbounded string accesses.
++ */
++void apple_rtkit_enable_syslog_diagnostic(struct apple_rtkit *rtk)
++{
++ rtk->syslog_diagnostic = true;
++}
++
++static void rtkit_syslog_diagnostic(struct apple_rtkit *rtk, u64 msg, int type)
++{
++ unsigned int i, idx = msg & 0xff;
++ size_t stride, offset;
++ char context[25], text[256];
++ const u8 *base;
++ if (!rtk->syslog_diagnostic) return;
++ if (type == 8) {
++  rtk->syslog_entries = msg & 0xff;
++  rtk->syslog_size = (msg >> 24) & 0xff;
++  printf("ACIO-SYSLOG INIT entries=%u size=%u\n", rtk->syslog_entries, rtk->syslog_size);
++  return;
++ }
++ if (type != 5 || rtk->syslog_printed >= 64) return;
++ rtk->syslog_printed++;
++ stride = 0x20 + rtk->syslog_size;
++ offset = idx * stride;
++ if (!rtk->syslog_entries || !rtk->syslog_size ||
++     idx >= rtk->syslog_entries || !rtk->syslog_buffer.buffer ||
++     offset > rtk->syslog_buffer.size ||
++     stride > rtk->syslog_buffer.size - offset) {
++  printf("ACIO-SYSLOG rejected index=%u buffer=%zx\n", idx, rtk->syslog_buffer.size);
++  return;
++ }
++ base = rtk->syslog_buffer.buffer + offset;
++ for (i = 0; i < 24; i++) {
++  u8 ch = readb(base + 8 + i);
++  context[i] = ch && (ch < 32 || ch > 126) ? '.' : ch;
++ }
++ context[24] = 0;
++ for (i = 0; i < rtk->syslog_size; i++) {
++  u8 ch = readb(base + 0x20 + i);
++  text[i] = ch && (ch < 32 || ch > 126) ? '.' : ch;
++ }
++ text[i] = 0;
++ printf("ACIO-SYSLOG %s: %s\n", context, text);
++}
++
++static int rtkit_poll(struct apple_rtkit *rtk, ulong timeout, bool distinguish_empty)
+ {
+ 	struct apple_mbox_msg msg;
+ 	int ret;
+@@ -209,6 +260,7 @@
+ 	int msgtype;
+ 
+ 	ret = mbox_recv(rtk->chan, &msg, timeout);
++	if (distinguish_empty && ret == -ETIMEDOUT) return -EAGAIN;
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -251,6 +303,7 @@
+ 	}
+ 
+ 	if (endpoint == APPLE_RTKIT_EP_SYSLOG) {
++		rtkit_syslog_diagnostic(rtk, msg.msg0, msgtype);
+ 		/* Ignore init */
+ 		if (msgtype == 0x8)
+ 			return 0;
+@@ -282,6 +335,18 @@
+ 			/* Just ignore it */
+ 			return 0;
+ 	}
++}
++
++int apple_rtkit_poll(struct apple_rtkit *rtk, ulong timeout)
++{
++ return rtkit_poll(rtk, timeout, false);
++}
++
++/* Empty receive must be distinguishable from a failed transmit ACK. */
++int apple_rtkit_poll_diagnostic(struct apple_rtkit *rtk)
++{
++ if (!rtk->syslog_diagnostic) return -EPERM;
++ return rtkit_poll(rtk, 0, true);
+ }
+ 
+ /* Bound the whole transition even if unrelated messages keep arriving. */
+@@ -425,8 +490,10 @@
+ 		 * within U-Boot.
+ 		 */
+ 		switch (endpoints[i]) {
++		case APPLE_RTKIT_EP_SYSLOG:
++			if (rtk->syslog_diagnostic) break;
++			continue;
+ 		case APPLE_RTKIT_EP_MGMT:
+-		case APPLE_RTKIT_EP_SYSLOG:
+ 		case APPLE_RTKIT_EP_DEBUG:
+ 		case APPLE_RTKIT_EP_TRACEKIT:
+ 			continue;
+--- a/arch/arm/include/asm/arch-apple/rtkit.h
++++ b/arch/arm/include/asm/arch-apple/rtkit.h
+@@ -32,3 +32,7 @@
+ int apple_rtkit_shutdown(struct apple_rtkit *rtk, int pwrstate);
+ 
+ int apple_rtkit_helper_poll(struct udevice *dev, ulong timeout);
++
++/* Explicit diagnostic opt-in; normal RTKit clients remain unchanged. */
++void apple_rtkit_enable_syslog_diagnostic(struct apple_rtkit *rtk);
++int apple_rtkit_poll_diagnostic(struct apple_rtkit *rtk);
+--- a/cmd/apple_acio_m1.c
++++ b/cmd/apple_acio_m1.c
+@@ -36,6 +36,26 @@
+ #define RESET_NODE "/soc/reset-controller@23b784000"
+ static const u32 domains[] = { 0x458, 0x460, 0x468, 0x450 };
+ static bool used;
++static struct apple_rtkit *diagnostic_rtk;
++static unsigned int diagnostic_messages;
++
++/* Nonblocking RX, at most eight messages per call and 512 for this run.
++ * Existing mailbox send and outer RTKit/NHI phase timeouts stay in force.
++ */
++int apple_acio_m1_service(void)
++{
++ unsigned int i;
++ int ret;
++ if (!diagnostic_rtk) return 0;
++ for (i = 0; i < 8; i++) {
++  if (diagnostic_messages >= 512) return -EOVERFLOW;
++  ret = apple_rtkit_poll_diagnostic(diagnostic_rtk);
++  if (ret == -EAGAIN) return 0;
++  if (ret) return ret;
++  diagnostic_messages++;
++ }
++ return 0;
++}
+ 
+ static ofnode pdnode(u32 off)
+ {
+@@ -211,6 +231,7 @@
+  writel(BIT(1), rc + 0xc);
+  rtk = apple_rtkit_init(&chan, NULL, shmem_setup, shmem_destroy);
+  if (!rtk) { ret = -ENOMEM; goto out; }
++ apple_rtkit_enable_syslog_diagnostic(rtk);
+  ret = apple_rtkit_boot(rtk);
+  printf("ACIO RTKit boot ret=%d\n", ret);
+  if (ret) goto out;
+@@ -234,19 +255,24 @@
+   void *mbox_regs = map_sysmem(0x501100000ULL, 0x4000);
+   /* Status only: do not pop or acknowledge queued firmware messages. */
+   printf("ACIO-MBOX before-nhi tx=%#x rx=%#x\n", readl(mbox_regs + 0x50), readl(mbox_regs + 0x80));
++  diagnostic_rtk = rtk;
+   ret = apple_nhi_m1_dart_test(stage);
++  diagnostic_rtk = NULL;
++  printf("ACIO-SYSLOG service messages=%u ret=%d\n", diagnostic_messages, ret);
+   printf("ACIO-MBOX after-nhi tx=%#x rx=%#x\n", readl(mbox_regs + 0x50), readl(mbox_regs + 0x80));
+  }
+  shutdown = apple_rtkit_shutdown(rtk, APPLE_RTKIT_PWR_STATE_SLEEP);
+  printf("ACIO RTKit shutdown ret=%d\n", shutdown);
+  if (!ret) ret = shutdown;
+ out:
++ diagnostic_rtk = NULL;
+  if (rtk) apple_rtkit_free(rtk);
+  printf("ACIO diagnostic ret=%d; power held until mandatory full reset\n", ret);
+  return ret;
+ }
+ 
+ #else
++int apple_acio_m1_service(void) { return -ENOSYS; }
+ int apple_acio_m1_check(void) { return -ENOSYS; }
+ int apple_acio_m1_start(unsigned int stage) { return -ENOSYS; }
+ #endif
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -10,6 +10,7 @@
+ #include <linux/errno.h>
+ #ifdef CONFIG_ARCH_APPLE
+ #include <apple_dart.h>
++#include <apple_acio_m1.h>
+ #include <apple_cd321x.h>
+ #include <dm/ofnode.h>
+ #include <asm/io.h>
+@@ -79,7 +80,7 @@
+   const struct usb4_cfg_event *event = &r->pending[i];
+   unsigned int slot = r->sent;
+   ulong started;
+-  int len;
++  int len, ret;
+   if (event->route || !event->port || event->port > 7) return -EPROTO;
+   if (r->acked >= 8 || slot >= RING_COUNT - 1) return -ENOSPC;
+   if (get_timer(r->started) >= 10000) return -ETIMEDOUT;
+@@ -95,6 +96,8 @@
+   writel(r->sent << 16, r->nhi + 0x10008);
+   started = get_timer(0);
+   for (;;) {
++   ret = apple_acio_m1_service();
++   if (ret) return ret;
+    invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
+    mb();
+    if (readl(r->dart_regs + 0x40) & BIT(31)) return -EFAULT;
+@@ -126,6 +129,8 @@
+  bool got_reply = false;
+  int len, ret = -ETIMEDOUT;
+ 
++ ret = apple_acio_m1_service();
++ if (ret) return ret;
+  if (slot >= RING_COUNT - 1 || r->received >= RING_COUNT - 1)
+   return -ENOSPC;
+  if (get_timer(r->started) >= 10000)
+@@ -144,6 +149,8 @@
+  writel(r->sent << 16, r->nhi + 0x10008);
+  started = get_timer(0);
+  while (get_timer(started) < 2000 && get_timer(r->started) < 10000) {
++  ret = apple_acio_m1_service();
++  if (ret) return ret;
+   invalidate_dcache_range((ulong)r->rx, (ulong)r->rx + PAGE);
+   invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
+   mb();
+@@ -287,7 +294,15 @@
+          (data[1] >> 26) & 15, data[0], data[1], get_timer(ring->started));
+   if (state >= 2 && state <= 6) break;
+   /* Diagnostic only: bounded five-second observation, same slot budget. */
+-  udelay(500000);
++  {
++   unsigned int tick;
++   for (tick = 0; tick < 50; tick++) {
++    ret = apple_acio_m1_service();
++    if (ret) return ret;
++    if (get_timer(ring->started) >= 10000) return -ETIMEDOUT;
++    udelay(10000);
++   }
++  }
+  }
+  if (i == 10) return -ETIMEDOUT;
+  ret = diagnostic_xfer(ring, 0, 2, 0, 5, data, USB4_CFG_READ, 1);
+--- a/include/apple_acio_m1.h
++++ b/include/apple_acio_m1.h
+@@ -2,6 +2,7 @@
+ #ifndef APPLE_ACIO_M1_H
+ #define APPLE_ACIO_M1_H
+ #include <linux/types.h>
++int apple_acio_m1_service(void);
+ int apple_acio_m1_check(void);
+ int apple_acio_m1_start(unsigned int stage);
+ #endif

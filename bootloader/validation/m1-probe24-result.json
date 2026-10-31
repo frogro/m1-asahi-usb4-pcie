@@ -1,0 +1,15 @@
+{
+  "probe": 24,
+  "tmu_lowres_verified": true,
+  "lane_states": [
+    "7"
+  ],
+  "external_router": false,
+  "internal_nvme_before_after": true,
+  "reset_requested": true,
+  "ubuntu_return_verified": true,
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "external_ssd_access": false,
+  "interpretation": "Root TMU LOWRES readback succeeds; it is not sufficient to establish the external link. No boot success claimed.",
+  "raw_log_sha256": "9bff77e718d30f052defc563aef8dc0538174509e5ecbfab86b942e1661c9433"
+}

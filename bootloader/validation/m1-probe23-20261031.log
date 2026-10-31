@@ -1,0 +1,136 @@
+UBOOT-PROBE23 READONLY-POWER-STATE
+INTERNAL-NVME-BEFORE PASS
+CD321X-POWER-BEFORE-BEGIN
+CD321x bus=0 addr=3f status=108280ef data=16c00011
+0020: 01 00    ..
+CD321X-POWER-READ OK
+CD321X-POWER-BEFORE-END
+PHY-CHECK PASS
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI-READONLY PASS; no configuration, rings or DMA
+NHI DART config=0x10000 params2=0x10033
+NHI DART initial TCR[0]=0x80080
+NHI DART initial TCR[1]=0x80080
+NHI DART initial TCR[2]=0x80080
+NHI DART initial TCR[3]=0x80080
+NHI DART initial TCR[4]=0x80080
+NHI DART initial TCR[5]=0x80080
+NHI DART initial TCR[6]=0x80080
+NHI DART initial TCR[7]=0x80080
+NHI DART initial TCR[8]=0x80080
+NHI DART initial TCR[9]=0x80080
+NHI DART initial TCR[10]=0x80080
+NHI DART initial TCR[11]=0x80080
+NHI DART initial TCR[12]=0x80080
+NHI DART initial TCR[13]=0x80080
+NHI DART initial TCR[14]=0x80080
+NHI DART initial TCR[15]=0x80080
+NHI DART initial tables empty; no inherited mapping
+NHI DART stream1 translation enabled; all other streams disabled
+NHI-TUNABLES PASS; all rings remain disabled
+NHI xfer type=1 port=0 space=2 offset=0x0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x3 vsec=0x20 length=1 next=0x35 raw=43200335 dabb0000
+NHI xfer type=1 port=0 space=2 offset=0x35 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x35 id=0x5 vsec=0x0 length=202 next=0xff raw=ca0005ff 00000000
+NHI xfer type=1 port=0 space=2 offset=0xff words=2 response-port=7 tx=4 rx=4
+NHI capability offset=0xff id=0x5 vsec=0x1 length=49 next=0x130 raw=00010500 00310130
+NHI xfer type=1 port=0 space=2 offset=0x130 words=2 response-port=7 tx=5 rx=5
+NHI capability offset=0x130 id=0x5 vsec=0x2 length=66 next=0x172 raw=00020500 00420172
+NHI xfer type=1 port=0 space=2 offset=0x172 words=2 response-port=7 tx=6 rx=6
+NHI capability offset=0x172 id=0x5 vsec=0x3 length=4 next=0x176 raw=00030500 00040176
+NHI xfer type=1 port=0 space=2 offset=0x176 words=2 response-port=7 tx=7 rx=7
+NHI capability offset=0x176 id=0x5 vsec=0x4 length=74 next=0x1c0 raw=00040500 004a01c0
+NHI xfer type=1 port=0 space=2 offset=0x1c0 words=2 response-port=7 tx=8 rx=8
+NHI capability offset=0x1c0 id=0x5 vsec=0x5 length=49 next=0x0 raw=00050500 00310000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=0 tx=9 rx=9
+NHI unsolicited rx=10 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000005 d7df61d9
+NHI-EVENT-ACK SENT port=5 unplug=0 count=1
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=11 rx=11
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+NHI unsolicited rx=12 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000006 c48f922d
+NHI-EVENT-ACK SENT port=6 unplug=0 count=2
+NHI xfer type=1 port=1 space=1 offset=0x0 words=8 response-port=1 tx=13 rx=13
+NHI adapter port=1 type=000001 header=200005ac 00080709 01000001 80100000 8ae00000 0000b016 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0x0 words=8 response-port=2 tx=14 rx=14
+NHI adapter port=2 type=000001 header=200005ac 00080709 01000001 00200000 8ae00000 0000b016 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0x0 words=8 response-port=3 tx=15 rx=15
+NHI adapter port=3 type=100101 header=200005ac 00080109 01100101 80300000 0ae00000 00004008 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0x0 words=8 response-port=4 tx=16 rx=16
+NHI adapter port=4 type=200101 header=200005ac 00080109 01200101 80400000 0ae00000 00004008 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0x0 words=8 response-port=5 tx=17 rx=17
+NHI adapter port=5 type=0e0101 header=200005ac 00080209 010e0101 80500000 0ae00000 00004809 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0x0 words=8 response-port=6 tx=18 rx=18
+NHI adapter port=6 type=0e0101 header=200005ac 00080209 010e0101 80600000 0ae00000 00004809 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0x0 words=8 response-port=7 tx=19 rx=19
+NHI adapter port=7 type=000002 header=200005ac 00080809 01000002 80700000 0ae00000 0000580b 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=7 apple=0x35 null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x9 words=2 response-port=1 tx=20 rx=20
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=21 rx=21
+NHI xfer type=1 port=2 space=1 offset=0x0 words=8 response-port=2 tx=22 rx=22
+NHI xfer type=1 port=2 space=1 offset=0x9 words=2 response-port=2 tx=23 rx=23
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=24 rx=24
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=1 tx=25 rx=25
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=1 tx=26 rx=26
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=1 tx=27 rx=27
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=2 tx=28 rx=28
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=2 tx=29 rx=29
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=2 tx=30 rx=30
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+NHI xfer type=2 port=0 space=2 offset=0x36 words=1 response-port=0 tx=31 rx=31
+NHI xfer type=1 port=0 space=2 offset=0x36 words=1 response-port=7 tx=32 rx=32
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=33 rx=33
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=241
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=34 rx=34
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=248
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=35 rx=35
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=755
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=36 rx=36
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=762
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=37 rx=37
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1269
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=38 rx=38
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1276
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=39 rx=39
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1783
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=40 rx=40
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1789
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=41 rx=41
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2296
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=42 rx=42
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2303
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=43 rx=43
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2810
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=44 rx=44
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2817
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=45 rx=45
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3324
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=46 rx=46
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3331
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=47 rx=47
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3838
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=48 rx=48
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3844
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=49 rx=49
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4351
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=50 rx=50
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4358
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=51 rx=51
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4865
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=52 rx=52
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4872
+NHI inventory transport ret=-110 sent=52 received=52 DART-error=0x4020000
+NHI control buffers and DART retained until mandatory reset
+ACIO-START FAIL
+INTERNAL-NVME-AFTER PASS
+CD321X-POWER-AFTER-BEGIN
+CD321x bus=0 addr=3f status=108280ef data=16c00011
+0020: 01 00    ..
+CD321X-POWER-READ OK
+CD321X-POWER-AFTER-END
+OWC-DISK-NOT-ACCESSED
+NO-EXTERNAL-PCIE-TUNNEL
+RESET-IN-10-SECONDS
+resetting ...

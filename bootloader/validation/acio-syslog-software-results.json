@@ -1,0 +1,57 @@
+{
+  "scope": "Probe25 ACIO-only firmware diagnostics; not a demonstrated link fix",
+  "M1_build": "passed",
+  "sandbox": {
+    "atc_m1": {
+      "tests": 8,
+      "failures": 0
+    },
+    "apple_dart": {
+      "tests": 7,
+      "failures": 0
+    },
+    "iommu": {
+      "tests": 8,
+      "failures": 0
+    },
+    "pci": {
+      "tests": 14,
+      "failures": 0
+    },
+    "apple_mbox": {
+      "tests": 3,
+      "failures": 0
+    },
+    "usb4_cfg": {
+      "tests": 6,
+      "failures": 0
+    },
+    "apple_i2c": {
+      "tests": 6,
+      "failures": 0
+    },
+    "cd321x": {
+      "tests": 5,
+      "failures": 0
+    }
+  },
+  "RTKit_production_mock": {
+    "cases": 27,
+    "failures": 0,
+    "additional_bounds_combinations": 6912,
+    "asan_ubsan": "passed"
+  },
+  "NHI_production_mock": {
+    "cases": 95,
+    "failures": 0,
+    "asan_ubsan": "passed"
+  },
+  "patch_reproduction": "all five files byte-identical",
+  "limits": {
+    "printed_logs": 64,
+    "messages_per_service": 8,
+    "messages_during_NHI": 512,
+    "NHI_descriptors": 63
+  },
+  "hardware_tested": false
+}

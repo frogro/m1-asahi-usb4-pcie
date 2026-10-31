@@ -208,3 +208,16 @@ that macOS omitted it.
 This comparison changes no boot files, hardware state, kernel or firmware.
 The next experiment should distinguish the above hypotheses individually;
 it should not combine speculative S0, PHY and TMU changes into one result.
+
+
+### Follow-up evidence:31 October Probes23–24
+
+The ranked hypotheses above have now been tested separately. Probe23 observed
+S0 both before and after the run. Probe24 successfully programmed and read back
+root LOWRES TMU interval1000 with TD clear; both physical lanes nevertheless
+remained state7. All12 calibration arrays in the earlier Probe5 runtime export
+also match the working Linux DTB byte-for-byte. These observations narrow the
+next step to firmware diagnostics and remaining initialization/order/state
+differences; they do not prove complete PHY equivalence or physical-link
+success. The next candidate enables bounded ACIO SYSLOG; no extra CD321x
+reset or speculative PHY write is added.

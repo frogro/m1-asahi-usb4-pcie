@@ -1,0 +1,35 @@
+INTERNAL-NVME-BEFORE PASS
+CD321X-POWER-BEFORE-BEGIN
+0020: 01 00    ..
+CD321X-POWER-READ OK
+CD321X-POWER-BEFORE-END
+NHI-TMU before cap=0x1b control=43200335 interval=00000000
+NHI-TMU PASS LOWRES interval=1000 TD=0
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=281
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=288
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=795
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=802
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1309
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1316
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1823
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1830
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2337
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2344
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2851
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2858
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3365
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3371
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3878
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3885
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4392
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4399
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4906
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4913
+ACIO diagnostic ret=-110; power held until mandatory full reset
+INTERNAL-NVME-AFTER PASS
+CD321X-POWER-AFTER-BEGIN
+0020: 01 00    ..
+CD321X-POWER-READ OK
+CD321X-POWER-AFTER-END
+RESET-IN-10-SECONDS
+resetting ...

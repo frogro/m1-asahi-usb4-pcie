@@ -1,0 +1,86 @@
+{
+  "/soc/phy@503000000:apple,tunable-axi2af": {
+    "identical": true,
+    "probe5_words": 30,
+    "linux_words": 30,
+    "probe5_sha256": "f252de1c201e3151001039a22d4614a2fc575c006b8692e46994500208d4bea4",
+    "linux_sha256": "f252de1c201e3151001039a22d4614a2fc575c006b8692e46994500208d4bea4"
+  },
+  "/soc/phy@503000000:apple,tunable-common-a": {
+    "identical": true,
+    "probe5_words": 33,
+    "linux_words": 33,
+    "probe5_sha256": "406e3a1b4a4049d827f7e02fbfb74e661b0a486ce3bc83f919e63983e7c4f31f",
+    "linux_sha256": "406e3a1b4a4049d827f7e02fbfb74e661b0a486ce3bc83f919e63983e7c4f31f"
+  },
+  "/soc/phy@503000000:apple,tunable-common-b": {
+    "identical": true,
+    "probe5_words": 273,
+    "linux_words": 273,
+    "probe5_sha256": "53a084cdbaeb6b4f89739b774a172b67bff8999759fe7806928ec2c5c69dcde1",
+    "linux_sha256": "53a084cdbaeb6b4f89739b774a172b67bff8999759fe7806928ec2c5c69dcde1"
+  },
+  "/soc/phy@503000000:apple,tunable-lane0-cio": {
+    "identical": true,
+    "probe5_words": 213,
+    "linux_words": 213,
+    "probe5_sha256": "4e394a693e3bdae439596cccb5c1fad4a83746d17f641a31014f1a4af07f40c8",
+    "linux_sha256": "4e394a693e3bdae439596cccb5c1fad4a83746d17f641a31014f1a4af07f40c8"
+  },
+  "/soc/phy@503000000:apple,tunable-lane1-cio": {
+    "identical": true,
+    "probe5_words": 213,
+    "linux_words": 213,
+    "probe5_sha256": "39626e0c59706277fed4d4ccf7ceccc9cda269c33b8026e58a92edec3abcdd36",
+    "linux_sha256": "39626e0c59706277fed4d4ccf7ceccc9cda269c33b8026e58a92edec3abcdd36"
+  },
+  "/soc/cio@501ac0000:apple,tunable-rc": {
+    "identical": true,
+    "probe5_words": 87,
+    "linux_words": 87,
+    "probe5_sha256": "e81d62bf3f1ce8c60d7ed34ce687828e5129fefe05bba050cb23d55b24b99bbb",
+    "linux_sha256": "e81d62bf3f1ce8c60d7ed34ce687828e5129fefe05bba050cb23d55b24b99bbb"
+  },
+  "/soc/cio@501ac0000:apple,tunable-pcie-adapter": {
+    "identical": true,
+    "probe5_words": 3,
+    "linux_words": 3,
+    "probe5_sha256": "a33a90dc92eb36f1e62a70b2ae50a7c4cd02e91fb84b386ed35a8192e038fffb",
+    "linux_sha256": "a33a90dc92eb36f1e62a70b2ae50a7c4cd02e91fb84b386ed35a8192e038fffb"
+  },
+  "/soc/cio@501ac0000/nhi@f00000:apple,tunable-nhi": {
+    "identical": true,
+    "probe5_words": 678,
+    "linux_words": 678,
+    "probe5_sha256": "c8480492535d74a6e258b1a6efe7cbdc71d79052c43a79f4dde59d443c535cba",
+    "linux_sha256": "c8480492535d74a6e258b1a6efe7cbdc71d79052c43a79f4dde59d443c535cba"
+  },
+  "/soc/pcie@530000000:apple,tunable-debug": {
+    "identical": true,
+    "probe5_words": 3,
+    "linux_words": 3,
+    "probe5_sha256": "335ce147c789a7dbb6a0412e7f19d9e12256d61a8811001d049ed2e4fb25ac7e",
+    "linux_sha256": "335ce147c789a7dbb6a0412e7f19d9e12256d61a8811001d049ed2e4fb25ac7e"
+  },
+  "/soc/pcie@530000000:apple,tunable-fabric": {
+    "identical": true,
+    "probe5_words": 81,
+    "linux_words": 81,
+    "probe5_sha256": "25deb3ba122d59f6b6d879064d26eb70f4b1ab6eba929c993aa155dbec4b3eb8",
+    "linux_sha256": "25deb3ba122d59f6b6d879064d26eb70f4b1ab6eba929c993aa155dbec4b3eb8"
+  },
+  "/soc/pcie@530000000:apple,tunable-rc": {
+    "identical": true,
+    "probe5_words": 12,
+    "linux_words": 12,
+    "probe5_sha256": "300ae4c0bb2e5b438d8930933ce3d1627667c2801c644ae5c30e66fd55b78e87",
+    "linux_sha256": "300ae4c0bb2e5b438d8930933ce3d1627667c2801c644ae5c30e66fd55b78e87"
+  },
+  "/soc/pcie@530000000/pci@0,0:apple,tunable": {
+    "identical": true,
+    "probe5_words": 3,
+    "linux_words": 3,
+    "probe5_sha256": "46e6db2251baaab12cbddee0cd5b901372dd2875f65b9fbad8681e2c9343a25c",
+    "linux_sha256": "46e6db2251baaab12cbddee0cd5b901372dd2875f65b9fbad8681e2c9343a25c"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "probe": 23,
+  "power_state": {
+    "before": 0,
+    "after": 0
+  },
+  "S0": true,
+  "lane_states": [
+    "7"
+  ],
+  "internal_nvme_before_after": true,
+  "reset_requested": true,
+  "external_router": false,
+  "writes_to_external_ssd": false,
+  "interpretation": "S0 transition is not missing in this observed initial state. No SSPS change justified by this run.",
+  "ubuntu_return_verified": true,
+  "returned_kernel": "7.2.0-1001-asahi-arm"
+}
