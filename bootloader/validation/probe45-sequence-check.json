@@ -1,0 +1,12 @@
+{
+  "linux_source_order_checked": true,
+  "all_mock_mmio_operations_match_linux_sequence": true,
+  "operation_count": 178,
+  "cold_reset_writes": 21,
+  "requester_mappings_cleared": 64,
+  "fault_injection_positions": 178,
+  "tunable_mutation_rejections": 129,
+  "count_mutation_rejections": 10,
+  "ready_poll_timeout_us": 250000,
+  "hardware_executed": false
+}

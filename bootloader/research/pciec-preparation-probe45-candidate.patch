@@ -1,0 +1,601 @@
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -188,3 +188,5 @@
+ obj-$(CONFIG_APPLE_ATC_M1) += apple_atc_m1.o
+ 
+ obj-$(CONFIG_APPLE_ATC_M1) += apple_acio_prereq.o
++
++obj-$(CONFIG_APPLE_ATC_M1) += apple_pciec_m1.o
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -309,3 +309,5 @@
+ 
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1.o apple_nhi_m1_ring.o
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1_inventory.o
++
++obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_pciec_m1.o
+--- a/test/dm/Makefile
++++ b/test/dm/Makefile
+@@ -146,3 +146,5 @@
+ endif # !SPL
+ 
+ obj-$(CONFIG_APPLE_ATC_M1) += apple_atc_m1.o
++
++obj-$(CONFIG_APPLE_ATC_M1) += apple_pciec_m1.o
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -7,6 +7,8 @@
+ struct apple_nhi_host_info { u32 apple, null_ports, port1_cap, tmu, dp_in_ports; };
+ /* Optional read-only observer, at most ten link samples. */
+ void apple_nhi_m1_set_link_sample(void (*callback)(void *), void *context);
++/* One-shot preparation after host inventory, before lane/cable writes. */
++void apple_nhi_m1_set_pre_link(int (*callback)(void *), void *context);
+ void apple_nhi_m1_set_queries(bool enabled);
+ void apple_nhi_m1_set_post_link(void (*callback)(void *), void *context);
+ /* RAM-only single-use hook, after verified cable info and before link polling. */
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -287,6 +287,11 @@
+ void apple_nhi_m1_set_link_sample(void (*callback)(void *), void *context)
+ { link_sample = callback; link_sample_context = context; }
+ 
++static int (*pre_link)(void *);
++static void *pre_link_context;
++void apple_nhi_m1_set_pre_link(int (*callback)(void *), void *context)
++{ pre_link = callback; pre_link_context = context; }
++
+ static int diagnostic_link(struct diagnostic_ring *ring,
+                            const struct apple_nhi_host_info *info)
+ {
+@@ -449,6 +454,12 @@
+   if (!ret) ret = diagnostic_query(&ring, 0x10, 6);
+   if (!ret) puts("NHI-QUERIES complete before lane unlock and cable submit\n");
+  }
++ if (!ret && pre_link) {
++  int (*callback)(void *) = pre_link;
++  void *context = pre_link_context;
++  apple_nhi_m1_set_pre_link(NULL, NULL);
++  ret = callback(context);
++ }
+  if (!ret) {
+   ret = diagnostic_link(&ring, &info);
+   /* Observe after the bounded link attempt, before RTKit shutdown. */
+@@ -473,6 +484,7 @@
+ }
+ 
+ #else
++void apple_nhi_m1_set_pre_link(int (*callback)(void *), void *context) {}
+ void apple_nhi_m1_set_link_sample(void (*callback)(void *), void *context) {}
+ void apple_nhi_m1_set_post_link(void (*callback)(void *), void *context) {}
+ void apple_nhi_m1_set_queries(bool enabled) {}
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -4,6 +4,7 @@
+ #include <apple_acio_m1.h>
+ #include <apple_nhi_m1.h>
+ #include <apple_cd321x.h>
++#include <apple_pciec_m1.h>
+ #include <asm/io.h>
+ #include <command.h>
+ #include <dm.h>
+@@ -417,15 +418,16 @@
+ 	u32 cap, halted;
+ 	int ret, i;
+ 	unsigned int stage;
+-	bool acio, fresh, tb_only, usb4_host, queries, extended, power_trace;
++	bool acio, fresh, tb_only, usb4_host, queries, extended, power_trace, pciec;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host") && strcmp(argv[2], "usb4query") && strcmp(argv[2], "usb4snapshot") && strcmp(argv[2], "usb4power")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host") && strcmp(argv[2], "usb4query") && strcmp(argv[2], "usb4snapshot") && strcmp(argv[2], "usb4power") && strcmp(argv[2], "usb4pciec")))
+ 		return CMD_RET_USAGE;
+ 	fresh = !strcmp(argv[2], "fresh");
+ 	tb_only = !strcmp(argv[2], "tbonly");
+-	power_trace = !strcmp(argv[2], "usb4power");
++	pciec = !strcmp(argv[2], "usb4pciec");
++	power_trace = !strcmp(argv[2], "usb4power") || pciec;
+ 	extended = !strcmp(argv[2], "usb4snapshot") || power_trace;
+ 	queries = !strcmp(argv[2], "usb4query") || extended;
+ 	usb4_host = !strcmp(argv[2], "usb4host") || queries;
+@@ -446,6 +448,10 @@
+ 	}
+ 	if (acio) {
+ 		ret = apple_acio_m1_check();
++		if (ret) goto fail;
++	}
++	if (pciec) {
++		ret = apple_pciec_m1_check();
+ 		if (ret) goto fail;
+ 	}
+ 	node = ofnode_path("/soc/phy@503000000");
+@@ -563,8 +569,10 @@
+ 		if (extended)
+ 			apple_nhi_m1_set_post_link(snapshot_phy_extended, &hw);
+ 		if (power_trace) apple_nhi_m1_set_link_sample(snapshot_cable_power, NULL);
++		if (pciec) apple_nhi_m1_set_pre_link(apple_pciec_m1_prepare, NULL);
+ 		apple_nhi_m1_set_queries(queries);
+ 		ret = apple_acio_m1_start(stage);
++		apple_nhi_m1_set_pre_link(NULL, NULL);
+ 		apple_nhi_m1_set_link_sample(NULL, NULL);
+ 		if (power_trace) snapshot_cable_power(NULL);
+ 		apple_nhi_m1_set_queries(false);
+@@ -598,4 +606,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query|usb4snapshot|usb4power - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query|usb4snapshot|usb4power|usb4pciec - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
+--- /dev/null
++++ b/include/apple_pciec_m1.h
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef APPLE_PCIEC_M1_H
++#define APPLE_PCIEC_M1_H
++#include <linux/types.h>
++#define PCIEC_M1_GROUPS 5
++#define PCIEC_M1_MAX_TUNABLES 27
++/* Group/region order follows the cold preparation sequence, not DT order. */
++enum pciec_m1_region { PCIEC_DEBUG, PCIEC_FABRIC, PCIEC_PORT, PCIEC_OE, PCIEC_CONFIG };
++struct pciec_m1_tunable { u32 offset, mask, value; };
++struct pciec_m1_config {
++ struct pciec_m1_tunable group[PCIEC_M1_GROUPS][PCIEC_M1_MAX_TUNABLES];
++ unsigned int count[PCIEC_M1_GROUPS];
++};
++struct pciec_m1_io {
++ int (*read)(void *, unsigned int, u32, u32 *);
++ int (*write)(void *, unsigned int, u32, u32);
++ void (*delay)(void *, unsigned int);
++};
++const struct pciec_m1_tunable *pciec_m1_reference(unsigned int, unsigned int *);
++int pciec_m1_validate(const struct pciec_m1_config *);
++int pciec_m1_prepare(const struct pciec_m1_config *, const struct pciec_m1_io *, void *, u32 *);
++int apple_pciec_m1_check(void);
++int apple_pciec_m1_prepare(void *);
++#endif
+--- /dev/null
++++ b/lib/apple_pciec_m1.c
+@@ -0,0 +1,196 @@
++// SPDX-License-Identifier: GPL-2.0
++/* RAM-only T8103 PCIe-C cold preparation diagnostic.
++ * Derived from the project's tested Linux apple_pcie_tunnel_prepare() and
++ * the saved J274 Linux device-tree tunables. Original PCIe driver attribution:
++ * Copyright (C) 2021 Alyssa Rosenzweig <alyssa@rosenzweig.io>
++ * Copyright (C) 2021 Google LLC; Corellium LLC; Mark Kettenis
++ * Authors: Alyssa Rosenzweig and Marc Zyngier <maz@kernel.org>.
++ * This experiment does not enumerate PCI devices, enable DMA, or build tunnels.
++ */
++#include <apple_pciec_m1.h>
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/string.h>
++
++static const struct pciec_m1_tunable group0[] = {
++ { 0x1000, 0x1, 0x0 },
++};
++static const struct pciec_m1_tunable group1[] = {
++ { 0x4, 0x1f001f, 0x180018 },
++ { 0x8, 0x1, 0x1 },
++ { 0xc, 0x1, 0x1 },
++ { 0x10, 0x801f, 0x4 },
++ { 0x18, 0x3ff, 0x280 },
++ { 0x44, 0x1, 0x1 },
++ { 0x94, 0x801f, 0x4 },
++ { 0x9c, 0x801f, 0x4 },
++ { 0x20, 0x801f, 0x4 },
++ { 0x28, 0x3f, 0x20 },
++ { 0x2c, 0x801f, 0x4 },
++ { 0x34, 0x3f, 0x20 },
++ { 0x38, 0x801f, 0x4 },
++ { 0x40, 0x10001, 0x10001 },
++ { 0x48, 0x1, 0x1 },
++ { 0x4c, 0x801f, 0x4 },
++ { 0x54, 0x7f007f, 0x4b004b },
++ { 0x58, 0x801f, 0x4 },
++ { 0x60, 0x801f, 0x4 },
++ { 0x68, 0x1, 0x1 },
++ { 0x6c, 0x801f, 0x4 },
++ { 0x74, 0x1, 0x1 },
++ { 0x78, 0x801f, 0x4 },
++ { 0x84, 0x801f, 0x4 },
++ { 0x8c, 0x1, 0x1 },
++ { 0x90, 0x1, 0x1 },
++ { 0xa4, 0x801f, 0x4 },
++};
++static const struct pciec_m1_tunable group2[] = {
++ { 0x140, 0x1, 0x1 },
++};
++static const struct pciec_m1_tunable group3[] = {
++ { 0x4, 0x70007, 0x40004 },
++ { 0x8, 0x1, 0x1 },
++ { 0xc, 0x1, 0x1 },
++ { 0x10, 0x801f, 0x4 },
++ { 0x18, 0x7f007f, 0x450045 },
++ { 0x1c, 0x801f, 0x4 },
++ { 0x24, 0x801f, 0x4 },
++ { 0x2c, 0x1, 0x1 },
++ { 0x30, 0x1, 0x1 },
++ { 0x34, 0x801f, 0x4 },
++};
++static const struct pciec_m1_tunable group4[] = {
++ { 0x718, 0x7c000, 0x0 },
++ { 0x8bc, 0x1, 0x0 },
++ { 0x78, 0x7000, 0x0 },
++ { 0x814, 0xffffffff, 0xf060 },
++};
++const struct pciec_m1_tunable *pciec_m1_reference(unsigned int group, unsigned int *count)
++{
++ if (!count) return NULL;
++ switch (group) {
++ case 0: *count = ARRAY_SIZE(group0); return group0;
++ case 1: *count = ARRAY_SIZE(group1); return group1;
++ case 2: *count = ARRAY_SIZE(group2); return group2;
++ case 3: *count = ARRAY_SIZE(group3); return group3;
++ case 4: *count = ARRAY_SIZE(group4); return group4;
++ default: *count = 0; return NULL;
++ }
++}
++
++int pciec_m1_validate(const struct pciec_m1_config *cfg)
++{
++ unsigned int g, count, i;
++ const struct pciec_m1_tunable *ref;
++ if (!cfg) return -EINVAL;
++ /* Diagnostic is intentionally limited to the saved machine's 43 entries.
++  * Do not accept arbitrary offsets merely because they fit an MMIO aperture. */
++ for (g = 0; g < PCIEC_M1_GROUPS; g++) {
++  ref = pciec_m1_reference(g, &count);
++  if (cfg->count[g] != count) return -EINVAL;
++  for (i = 0; i < count; i++)
++   if (cfg->group[g][i].offset != ref[i].offset ||
++       cfg->group[g][i].mask != ref[i].mask ||
++       cfg->group[g][i].value != ref[i].value) return -EINVAL;
++ }
++ return 0;
++}
++
++static const struct { u16 offset; u32 value; } cold_reset[] = {
++
++	{ 0x08c, 0x00000110 }, { 0x100, 0xffffffff },
++	{ 0x148, 0xffffffff }, { 0x210, 0xffffffff },
++	{ 0x080, 0x00000000 }, { 0x084, 0x00000000 },
++	{ 0x104, 0xffffffff }, { 0x124, 0x00000000 },
++	{ 0x128, 0x00000000 }, { 0x168, 0x00000000 },
++	{ 0x13c, 0x00000010 }, { 0x800, 0x00100100 },
++	{ 0x808, 0x00100045 }, { 0x810, 0x00000100 },
++	{ 0x814, 0x00000000 }, { 0x130, 0x00000000 },
++	{ 0x140, 0x00000010 }, { 0x144, 0x00253770 },
++	{ 0x21c, 0x00000000 }, { 0x81c, 0x00000000 },
++	{ 0x824, 0x00000000 },
++};
++
++static int apply(const struct pciec_m1_config *cfg, const struct pciec_m1_io *io,
++                 void *ctx, unsigned int group)
++{
++ unsigned int i;
++ u32 old, value;
++ int ret;
++ for (i = 0; i < cfg->count[group]; i++) {
++  const struct pciec_m1_tunable *t = &cfg->group[group][i];
++  ret = io->read(ctx, group, t->offset, &old);
++  if (ret) return ret;
++  value = (old & ~t->mask) | (t->value & t->mask);
++  if (value != old) {
++   ret = io->write(ctx, group, t->offset, value);
++   if (ret) return ret;
++  }
++ }
++ return 0;
++}
++
++static int rmw(const struct pciec_m1_io *io, void *ctx, u32 offset, u32 clear, u32 set)
++{
++ u32 value;
++ int ret = io->read(ctx, PCIEC_PORT, offset, &value);
++ if (ret) return ret;
++ return io->write(ctx, PCIEC_PORT, offset, (value & ~clear) | set);
++}
++
++int pciec_m1_prepare(const struct pciec_m1_config *cfg, const struct pciec_m1_io *io,
++                     void *ctx, u32 *last_status)
++{
++ unsigned int i;
++ u32 status;
++ int ret = pciec_m1_validate(cfg);
++ if (ret) return ret;
++ if (!io || !io->read || !io->write || !io->delay || !last_status) return -EINVAL;
++ ret = io->read(ctx, PCIEC_PORT, 0x804, &status);
++ if (ret) return ret;
++ *last_status = status;
++ if (status == ~0U) return -ENODEV;
++ /* Like Linux, never replay reset/tunables against an already-ready port. */
++ if (status & 1) return 0;
++ ret = apply(cfg, io, ctx, PCIEC_DEBUG);
++ if (ret) return ret;
++ ret = apply(cfg, io, ctx, PCIEC_FABRIC);
++ if (ret) return ret;
++ for (i = 0; i < ARRAY_SIZE(cold_reset); i++) {
++  ret = io->write(ctx, PCIEC_PORT, cold_reset[i].offset, cold_reset[i].value);
++  if (ret) return ret;
++ }
++ /* Clear requester-to-stream mappings; no endpoint DMA is authorized. */
++ for (i = 0; i < 64; i++) {
++  ret = io->write(ctx, PCIEC_PORT, 0x828 + 4*i, 0);
++  if (ret) return ret;
++ }
++ ret = apply(cfg, io, ctx, PCIEC_PORT);
++ if (ret) return ret;
++ ret = rmw(io, ctx, 0x814, 0, 1);
++ if (ret) return ret;
++ ret = rmw(io, ctx, 0x800, 0, 1);
++ if (ret) return ret;
++ ret = rmw(io, ctx, 0x800, 0x100, 0);
++ if (ret) return ret;
++ ret = apply(cfg, io, ctx, PCIEC_OE);
++ if (ret) return ret;
++ ret = apply(cfg, io, ctx, PCIEC_CONFIG);
++ if (ret) return ret;
++ ret = io->write(ctx, PCIEC_PORT, 0x4020, 3);
++ if (ret) return ret;
++ ret = io->write(ctx, PCIEC_PORT, 0x100, ~0U);
++ if (ret) return ret;
++ ret = io->write(ctx, PCIEC_PORT, 0x210, ~0U);
++ if (ret) return ret;
++ /* Same 10us/250ms bound as Linux, plus explicit all-ones rejection. */
++ for (i = 0; i < 25000; i++) {
++  ret = io->read(ctx, PCIEC_PORT, 0x804, &status);
++  if (ret) return ret;
++  *last_status = status;
++  if (status == ~0U) return -ENODEV;
++  if (status & 1) return 0;
++  io->delay(ctx, 10);
++ }
++ return -ETIMEDOUT;
++}
+--- /dev/null
++++ b/cmd/apple_pciec_m1.c
+@@ -0,0 +1,106 @@
++// SPDX-License-Identifier: GPL-2.0
++/* Explicit, RAM-only J274 port1 PCIe-C preparation. Never auto-probed. */
++#include <apple_pciec_m1.h>
++#include <linux/errno.h>
++#ifdef CONFIG_ARCH_APPLE
++#include <apple_acio_m1.h>
++#include <asm/io.h>
++#include <dm/ofnode.h>
++#include <linux/ioport.h>
++#include <linux/delay.h>
++#include <mapmem.h>
++#include <asm/unaligned.h>
++
++#define NODE "/soc/pcie@530000000"
++static struct pciec_m1_config config;
++static void *base[PCIEC_M1_GROUPS];
++static bool checked, used;
++static unsigned int mmio_reads, mmio_writes;
++static const char *const names[] = { "debug", "fabric", "port0", "oe-fabric", "config" };
++static const char *const props[] = { "apple,tunable-debug", "apple,tunable-fabric", "apple,tunable", "apple,tunable-oe-fabric", "apple,tunable-rc" };
++static const u64 addresses[] = { 0x520200000, 0x520004000, 0x521000000, 0x520008000, 0x530000000 };
++static const u32 sizes[] = { 0x4000, 0x4000, 0x8000, 0x4000, 0x10000 };
++
++int apple_pciec_m1_check(void)
++{
++ ofnode node = ofnode_path(NODE), port = ofnode_path(NODE "/pci@0,0");
++ struct pciec_m1_config candidate = {};
++ struct resource resource;
++ unsigned int g, i, count;
++ const u8 *data;
++ int len, ret;
++ if (used) return -EALREADY;
++ checked = false;
++ if (!ofnode_device_is_compatible(ofnode_root(), "apple,j274") ||
++     !ofnode_device_is_compatible(node, "apple,t8103-pciec") ||
++     !ofnode_valid(port) || ofnode_is_enabled(node) || ofnode_is_enabled(port)) return -ENODEV;
++ for (g = 0; g < PCIEC_M1_GROUPS; g++) {
++  ret = ofnode_read_resource_byname(node, names[g], &resource);
++  if (ret) return ret;
++  if (resource.start != addresses[g] ||
++      resource_size(&resource) != (g == PCIEC_CONFIG ? 0x10000000 : sizes[g])) return -ERANGE;
++  data = ofnode_get_property(g == PCIEC_PORT ? port : node, props[g], &len);
++  pciec_m1_reference(g, &count);
++  if (!data || len != count * 12) return -EINVAL;
++  candidate.count[g] = count;
++  for (i = 0; i < count; i++) {
++   candidate.group[g][i].offset = get_unaligned_be32(data + 12*i);
++   candidate.group[g][i].mask = get_unaligned_be32(data + 12*i + 4);
++   candidate.group[g][i].value = get_unaligned_be32(data + 12*i + 8);
++  }
++ }
++ ret = pciec_m1_validate(&candidate);
++ if (ret) return ret;
++ config = candidate;
++ for (g = 0; g < PCIEC_M1_GROUPS; g++) base[g] = map_sysmem(addresses[g], sizes[g]);
++ checked = true;
++ puts("PCIEC-M1 preflight PASS: 5 fixed resources, 43 exact Linux tunables; no MMIO\n");
++ return 0;
++}
++
++static int hw_read(void *ctx, unsigned int region, u32 offset, u32 *value)
++{
++ if (region >= PCIEC_M1_GROUPS || offset % 4 || offset > sizes[region] - 4) return -ERANGE;
++ *value = readl(base[region] + offset);
++ mmio_reads++;
++ mb(); asm volatile("isb" ::: "memory");
++ return 0;
++}
++static int hw_write(void *ctx, unsigned int region, u32 offset, u32 value)
++{
++ if (region >= PCIEC_M1_GROUPS || offset % 4 || offset > sizes[region] - 4) return -ERANGE;
++ writel(value, base[region] + offset);
++ mmio_writes++;
++ mb(); asm volatile("isb" ::: "memory");
++ return 0;
++}
++static void hw_delay(void *ctx, unsigned int us) { udelay(us); }
++static const struct pciec_m1_io io = { hw_read, hw_write, hw_delay };
++
++int apple_pciec_m1_prepare(void *unused)
++{
++ static const u32 domains[] = { 0x448, 0x450, 0x458, 0x460, 0x468 };
++ u32 status = 0, pd;
++ unsigned int i;
++ int ret;
++ if (!checked || used) return -EPERM;
++ /* ACIO's existing reset-before-power has already run. Do not access a
++  * native controller register before all shared power domains are live. */
++ for (i = 0; i < ARRAY_SIZE(domains); i++) {
++  pd = readl(map_sysmem(0x23b700000ULL + domains[i], 4));
++  if ((pd & 0xff) != 0xff || (pd & (BIT(31) | BIT(10)))) return -EIO;
++ }
++ used = true;
++ mmio_reads = mmio_writes = 0;
++ apple_boot_trace("pciec-cold-prepare-begin");
++ ret = pciec_m1_prepare(&config, &io, NULL, &status);
++ apple_boot_trace("pciec-cold-prepare-return");
++ printf("PCIEC-M1 cold prepare ret=%d ready=%#x reads=%u writes=%u; no native DART access, PCI scan or DMA\n", ret, status, mmio_reads, mmio_writes);
++ if (!ret) puts("PCIEC-PREPARE PASS\n");
++ /* Never attempt partial rollback: retain powered state until mandatory reset. */
++ return ret;
++}
++#else
++int apple_pciec_m1_check(void) { return -ENOSYS; }
++int apple_pciec_m1_prepare(void *unused) { return -ENOSYS; }
++#endif
+--- /dev/null
++++ b/test/dm/apple_pciec_m1.c
+@@ -0,0 +1,135 @@
++// SPDX-License-Identifier: GPL-2.0
++#include <apple_pciec_m1.h>
++#include <dm.h>
++#include <dm/test.h>
++#include <test/test.h>
++#include <test/ut.h>
++
++static struct {
++ u32 mem[5][0x4000];
++ unsigned int calls, writes, status_reads, delay_us, fail_at, ready_after;
++ bool dump, invalid_status, initial_ready;
++} fake;
++static const u32 limits[] = {0x4000, 0x4000, 0x8000, 0x4000, 0x10000};
++static void setup(struct pciec_m1_config *cfg)
++{
++ unsigned int g, count;
++ memset(&fake, 0, sizeof(fake));
++ memset(cfg, 0, sizeof(*cfg));
++ fake.ready_after = 1;
++ for (g = 0; g < 5; g++) {
++  const struct pciec_m1_tunable *ref = pciec_m1_reference(g, &count);
++  cfg->count[g] = count;
++  memcpy(cfg->group[g], ref, count * sizeof(*ref));
++ }
++}
++static int rd(void *unused, unsigned int g, u32 off, u32 *value)
++{
++ if (g >= 5 || off % 4 || off >= limits[g]) return -ERANGE;
++ fake.calls++;
++ if (fake.calls == fake.fail_at) return -ETIMEDOUT;
++ if (g == PCIEC_PORT && off == 0x804) {
++  fake.status_reads++;
++  if (fake.initial_ready) *value = 3;
++  else if (fake.invalid_status) *value = ~0U;
++  else *value = fake.writes && fake.status_reads > fake.ready_after ? 3 : 0;
++ } else *value = fake.mem[g][off/4];
++ if (fake.dump) printf("PCIEC-TEST R %u %x %x\n", g, off, *value);
++ return 0;
++}
++static int wr(void *unused, unsigned int g, u32 off, u32 value)
++{
++ if (g >= 5 || off % 4 || off >= limits[g]) return -ERANGE;
++ fake.calls++;
++ if (fake.calls == fake.fail_at) return -ETIMEDOUT;
++ fake.writes++;
++ fake.mem[g][off/4] = value;
++ if (fake.dump) printf("PCIEC-TEST W %u %x %x\n", g, off, value);
++ return 0;
++}
++static void delay(void *unused, unsigned int us) { fake.delay_us += us; }
++static const struct pciec_m1_io io = {rd, wr, delay};
++
++static int dm_test_pciec_m1_sequence(struct unit_test_state *uts)
++{
++ struct pciec_m1_config cfg;
++ u32 status;
++ unsigned int i;
++ setup(&cfg); fake.dump = true;
++ ut_assertok(pciec_m1_prepare(&cfg, &io, NULL, &status));
++ ut_asserteq(3, status);
++ ut_asserteq(2, fake.status_reads);
++ ut_asserteq(0, fake.delay_us);
++ for (i = 0; i < 64; i++) ut_asserteq(0, fake.mem[PCIEC_PORT][(0x828+4*i)/4]);
++ ut_asserteq(0x100001, fake.mem[PCIEC_PORT][0x800/4]);
++ ut_asserteq(1, fake.mem[PCIEC_PORT][0x814/4]);
++ ut_asserteq(0, fake.mem[PCIEC_PORT][0x80/4]);
++ ut_asserteq(3, fake.mem[PCIEC_PORT][0x4020/4]);
++ return 0;
++}
++DM_TEST(dm_test_pciec_m1_sequence, 0);
++
++static int dm_test_pciec_m1_validation(struct unit_test_state *uts)
++{
++ struct pciec_m1_config cfg;
++ unsigned int g, i, f;
++ u32 status = 0x12345678;
++ for (g = 0; g < 5; g++) {
++  setup(&cfg); cfg.count[g] = 0;
++  ut_asserteq(-EINVAL, pciec_m1_prepare(&cfg, &io, NULL, &status));
++  ut_asserteq(0, fake.calls);
++  setup(&cfg); cfg.count[g] = PCIEC_M1_MAX_TUNABLES + 1;
++  ut_asserteq(-EINVAL, pciec_m1_prepare(&cfg, &io, NULL, &status));
++  ut_asserteq(0, fake.calls);
++  setup(&cfg);
++  for (i = 0; i < cfg.count[g]; i++) for (f = 0; f < 3; f++) {
++   u32 *field = f == 0 ? &cfg.group[g][i].offset : f == 1 ? &cfg.group[g][i].mask : &cfg.group[g][i].value;
++   *field ^= 1;
++   ut_asserteq(-EINVAL, pciec_m1_prepare(&cfg, &io, NULL, &status));
++   ut_asserteq(0, fake.calls); *field ^= 1;
++  }
++ }
++ ut_asserteq(0x12345678, status);
++ ut_asserteq(-EINVAL, pciec_m1_prepare(NULL, &io, NULL, &status));
++ setup(&cfg);
++ ut_asserteq(-EINVAL, pciec_m1_prepare(&cfg, NULL, NULL, &status));
++ ut_asserteq(-EINVAL, pciec_m1_prepare(&cfg, &io, NULL, NULL));
++ return 0;
++}
++DM_TEST(dm_test_pciec_m1_validation, 0);
++
++static int dm_test_pciec_m1_faults(struct unit_test_state *uts)
++{
++ struct pciec_m1_config cfg;
++ u32 status;
++ unsigned int count, i;
++ setup(&cfg); ut_assertok(pciec_m1_prepare(&cfg, &io, NULL, &status)); count = fake.calls;
++ for (i = 1; i <= count; i++) {
++  setup(&cfg); fake.fail_at = i;
++  ut_asserteq(-ETIMEDOUT, pciec_m1_prepare(&cfg, &io, NULL, &status));
++  ut_asserteq(i, fake.calls);
++ }
++ printf("PCIEC-FAULT-CASES %u\n", count);
++ return 0;
++}
++DM_TEST(dm_test_pciec_m1_faults, 0);
++
++static int dm_test_pciec_m1_ready(struct unit_test_state *uts)
++{
++ struct pciec_m1_config cfg;
++ u32 status;
++ setup(&cfg); fake.initial_ready = true;
++ ut_assertok(pciec_m1_prepare(&cfg, &io, NULL, &status));
++ ut_asserteq(1, fake.calls); ut_asserteq(0, fake.writes);
++ setup(&cfg); fake.invalid_status = true;
++ ut_asserteq(-ENODEV, pciec_m1_prepare(&cfg, &io, NULL, &status));
++ ut_asserteq(1, fake.calls); ut_asserteq(0, fake.writes);
++ setup(&cfg); fake.ready_after = 4;
++ ut_assertok(pciec_m1_prepare(&cfg, &io, NULL, &status));
++ ut_asserteq(30, fake.delay_us);
++ setup(&cfg); fake.ready_after = 30000;
++ ut_asserteq(-ETIMEDOUT, pciec_m1_prepare(&cfg, &io, NULL, &status));
++ ut_asserteq(25001, fake.status_reads); ut_asserteq(250000, fake.delay_us);
++ return 0;
++}
++DM_TEST(dm_test_pciec_m1_ready, 0);
