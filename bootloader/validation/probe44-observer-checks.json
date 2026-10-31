@@ -1,0 +1,8 @@
+{
+  "initial_power_sample_before_usb_host_removal": true,
+  "link_poll_samples_max": 10,
+  "post_shutdown_sample": true,
+  "registration_opt_in": true,
+  "unregistered_after_acio_return": true,
+  "power_configuration_writes": 0
+}

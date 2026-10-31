@@ -1,0 +1,279 @@
+--- a/include/apple_cd321x.h
++++ b/include/apple_cd321x.h
+@@ -14,4 +14,12 @@
+ /* Read-only snapshot. Output is unchanged on any error; no automatic retries. */
+ int apple_cd321x_snapshot(apple_cd321x_read read, void *ctx,
+ 			  struct apple_cd321x_status *status);
++struct apple_cd321x_power {
++ u32 status;
++ u16 power_status;
++ u8 system_power_state;
++};
++/* Diagnostic only: no commands/writes; unchanged output on error. */
++int apple_cd321x_power_snapshot(apple_cd321x_read read, void *ctx,
++                              struct apple_cd321x_power *power);
+ #endif
+--- a/lib/apple_cd321x.c
++++ b/lib/apple_cd321x.c
+@@ -27,7 +27,10 @@
+ 	 * Linux consumes the documented nine-byte prefix; trailing bytes are unused.
+ 	 * Keep all other lengths strict, including unknown Intel layouts.
+ 	 */
+-	if (buf[0] != size && !(reg == 0x59 && size == 9 && buf[0] == 11)) {
++	/* Measured CD321x POWER_STATUS reports ten bytes; Linux uses its
++	 * documented two-byte prefix. Accept only this observed extension. */
++	if (buf[0] != size && !(reg == 0x59 && size == 9 && buf[0] == 11) &&
++	    !(reg == 0x3f && size == 2 && buf[0] == 10)) {
+ 		printf("CD321X-LENGTH reg=%02x expected=%u reported=%u\n",
+ 		       reg, (unsigned int)size, buf[0]);
+ 		return -EPROTO;
+@@ -95,3 +98,37 @@
+ 	*status = result;
+ 	return 0;
+ }
++
++/* Linux tipd core.c: 0x20 SYSTEM_POWER_STATE, 0x3f POWER_STATUS.
++ * Do not confuse the system sleep state with measured VBUS voltage.
++ * Read status twice to reject an observed plug/role change. Sequential reads
++ * cannot guarantee absence of a transient between samples.
++ */
++int apple_cd321x_power_snapshot(apple_cd321x_read read, void *ctx,
++                              struct apple_cd321x_power *power)
++{
++ struct apple_cd321x_power result = {};
++ u8 buf[4];
++ int ret;
++ if (!read || !power) return -EINVAL;
++ ret = read_block(read, ctx, 0x00, buf, 4);
++ if (ret) return ret;
++ if (get_unaligned_le32(buf) != 0x28) return -ENODEV;
++ ret = read_block(read, ctx, 0x03, buf, 4);
++ if (ret) return ret;
++ if (memcmp(buf, "APP ", 4)) return -EAGAIN;
++ ret = read_block(read, ctx, 0x1a, buf, 4);
++ if (ret) return ret;
++ result.status = get_unaligned_le32(buf);
++ ret = read_block(read, ctx, 0x3f, buf, 2);
++ if (ret) return ret;
++ result.power_status = get_unaligned_le16(buf);
++ ret = read_block(read, ctx, 0x20, buf, 1);
++ if (ret) return ret;
++ result.system_power_state = buf[0];
++ ret = read_block(read, ctx, 0x1a, buf, 4);
++ if (ret) return ret;
++ if (result.status != get_unaligned_le32(buf)) return -EAGAIN;
++ *power = result;
++ return 0;
++}
+--- a/test/dm/apple_cd321x.c
++++ b/test/dm/apple_cd321x.c
+@@ -7,7 +7,7 @@
+ #include <test/ut.h>
+ 
+ struct status_fake {
+-	bool real_tbt, usb4, tbt, changed_tbt, wrong_vendor, wrong_mode, changed;
++	bool real_tbt, usb4, tbt, changed_tbt, changed_power, wrong_vendor, wrong_mode, changed;
+ 	int calls, fault_call, transport;
+ 	u8 bad_length;
+ };
+@@ -17,6 +17,8 @@
+ {
+ 	struct status_fake *f = ctx;
+ 	static const u8 vid[] = { 4, 0x28, 0, 0, 0 };
++	static const u8 power[] = { 2, 0x0d, 0 }; /* synthetic PD/source/connected */
++	static const u8 system[] = { 1, 0 };
+ 	static const u8 mode[] = { 4, 'A', 'P', 'P', ' ' };
+ 	static const u8 usb_status[] = { 4, 0xfd, 0x48, 2, 0x10 };
+ 	static const u8 owc_status[] = { 4, 0xef, 0x80, 0x82, 0x10 };
+@@ -48,6 +50,10 @@
+ 		data = f->usb4 ? owc_status : usb_status;
+ 		len = sizeof(usb_status);
+ 		break;
++	case 0x3f:
++		data = power; len = sizeof(power); break;
++	case 0x20:
++		data = system; len = sizeof(system); break;
+ 	case 0x5f:
+ 		data = f->real_tbt ? real_tbt_data : f->tbt ? tbt_data : f->usb4 ? owc_data : usb_data;
+ 		len = sizeof(usb_data);
+@@ -66,6 +72,7 @@
+ 	if (size != len)
+ 		return -EINVAL;
+ 	memcpy(buf, data, size);
++	if (f->changed_power && reg == 0x1a && f->calls == 6) buf[1] ^= 1;
+ 	if (f->wrong_vendor && !reg)
+ 		buf[1] = 0;
+ 	if (f->wrong_mode && reg == 3)
+@@ -251,3 +258,54 @@
+  return 0;
+ }
+ DM_TEST(dm_test_cd321x_tbt_measured_length, 0);
++
++static int dm_test_cd321x_power(struct unit_test_state *uts)
++{
++ struct status_fake f = { .usb4 = true };
++ struct apple_cd321x_power p;
++ ut_assertok(apple_cd321x_power_snapshot(status_read, &f, &p));
++ ut_asserteq(6, f.calls);
++ ut_asserteq(0x108280ef, p.status);
++ ut_asserteq(0xd, p.power_status);
++ ut_asserteq(0, p.system_power_state);
++ f = (struct status_fake){ .usb4 = true, .fault_call = 4, .bad_length = 10 };
++ ut_assertok(apple_cd321x_power_snapshot(status_read, &f, &p));
++ ut_asserteq(0xd, p.power_status);
++ return 0;
++}
++DM_TEST(dm_test_cd321x_power, 0);
++
++static int dm_test_cd321x_power_faults(struct unit_test_state *uts)
++{
++ struct apple_cd321x_power p, expected;
++ struct status_fake f;
++ int call, len;
++ const int sizes[] = {4, 4, 4, 2, 1, 4};
++ memset(&expected, 0xa5, sizeof(expected));
++ for (call = 1; call <= 6; call++) {
++  for (len = 0; len <= 255; len++) {
++   if (len == sizes[call-1] || (call == 4 && len == 10)) continue;
++   f = (struct status_fake){ .usb4 = true, .fault_call = call, .bad_length = len };
++   p = expected;
++   ut_asserteq(-EPROTO, apple_cd321x_power_snapshot(status_read, &f, &p));
++   ut_asserteq(call, f.calls);
++   ut_assertok(memcmp(&p, &expected, sizeof(p)));
++  }
++  f = (struct status_fake){ .usb4 = true, .fault_call = call, .transport = -ETIMEDOUT };
++  p = expected;
++  ut_asserteq(-ETIMEDOUT, apple_cd321x_power_snapshot(status_read, &f, &p));
++  ut_asserteq(call, f.calls);
++  ut_assertok(memcmp(&p, &expected, sizeof(p)));
++ }
++ for (call = 0; call < 3; call++) {
++  f = (struct status_fake){ .usb4 = true, .wrong_vendor = call == 0,
++       .wrong_mode = call == 1, .changed_power = call == 2 };
++  p = expected;
++  ut_asserteq(call ? -EAGAIN : -ENODEV, apple_cd321x_power_snapshot(status_read, &f, &p));
++  ut_assertok(memcmp(&p, &expected, sizeof(p)));
++ }
++ ut_asserteq(-EINVAL, apple_cd321x_power_snapshot(NULL, &f, &p));
++ ut_asserteq(-EINVAL, apple_cd321x_power_snapshot(status_read, &f, NULL));
++ return 0;
++}
++DM_TEST(dm_test_cd321x_power_faults, 0);
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -5,6 +5,8 @@
+ struct udevice;
+ struct apple_cd321x_status;
+ struct apple_nhi_host_info { u32 apple, null_ports, port1_cap, tmu, dp_in_ports; };
++/* Optional read-only observer, at most ten link samples. */
++void apple_nhi_m1_set_link_sample(void (*callback)(void *), void *context);
+ void apple_nhi_m1_set_queries(bool enabled);
+ void apple_nhi_m1_set_post_link(void (*callback)(void *), void *context);
+ /* RAM-only single-use hook, after verified cable info and before link polling. */
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -282,6 +282,11 @@
+  return ret;
+ }
+ 
++static void (*link_sample)(void *);
++static void *link_sample_context;
++void apple_nhi_m1_set_link_sample(void (*callback)(void *), void *context)
++{ link_sample = callback; link_sample_context = context; }
++
+ static int diagnostic_link(struct diagnostic_ring *ring,
+                            const struct apple_nhi_host_info *info)
+ {
+@@ -341,6 +346,7 @@
+   if (ret) return ret;
+  }
+  for (i = 0; i < 10; i++) {
++  if (link_sample) link_sample(link_sample_context);
+   ret = diagnostic_read(ring, 1, 1, phy[0], 2, data);
+   if (ret) return ret;
+   state = (data[1] >> 26) & 15;
+@@ -467,6 +473,7 @@
+ }
+ 
+ #else
++void apple_nhi_m1_set_link_sample(void (*callback)(void *), void *context) {}
+ void apple_nhi_m1_set_post_link(void (*callback)(void *), void *context) {}
+ void apple_nhi_m1_set_queries(bool enabled) {}
+ void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context) {}
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -289,6 +289,28 @@
+ 	return dm_i2c_read(ctx, reg, buf, size);
+ }
+ 
++/* Fixed chip on the selected J274 port; no scan or mode command. */
++static void snapshot_cable_power(void *unused)
++{
++ struct udevice *bus, *chip;
++ struct apple_cd321x_power p;
++ int ret;
++ ret = uclass_get_device_by_seq(UCLASS_I2C, 0, &bus);
++ if (!ret) ret = i2c_get_chip(bus, 0x3f, 1, &chip);
++ if (!ret) ret = i2c_set_chip_offset_len(chip, 1);
++ if (!ret) ret = apple_cd321x_power_snapshot(status_read, chip, &p);
++ if (ret) {
++  printf("CD321X-POWER-SAMPLE ms=%lu error=%d\n", get_timer(0), ret);
++  /* A failed diagnostic read must not invent a power state or retry. */
++  apple_nhi_m1_set_link_sample(NULL, NULL);
++  return;
++ }
++ printf("CD321X-POWER-SAMPLE ms=%lu status=%08x power=%04x system=%02x plug=%u connection=%u source_sink=%u opmode=%u\n",
++        get_timer(0), p.status, p.power_status, p.system_power_state,
++        !!(p.status & BIT(0)), p.power_status & 1,
++        (p.power_status >> 1) & 1, (p.power_status >> 2) & 3);
++}
++
+ static int load_config(ofnode node, struct atc_m1_hw *hw,
+ 		       struct apple_cd321x_status *status)
+ {
+@@ -395,15 +417,16 @@
+ 	u32 cap, halted;
+ 	int ret, i;
+ 	unsigned int stage;
+-	bool acio, fresh, tb_only, usb4_host, queries, extended;
++	bool acio, fresh, tb_only, usb4_host, queries, extended, power_trace;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host") && strcmp(argv[2], "usb4query") && strcmp(argv[2], "usb4snapshot")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host") && strcmp(argv[2], "usb4query") && strcmp(argv[2], "usb4snapshot") && strcmp(argv[2], "usb4power")))
+ 		return CMD_RET_USAGE;
+ 	fresh = !strcmp(argv[2], "fresh");
+ 	tb_only = !strcmp(argv[2], "tbonly");
+-	extended = !strcmp(argv[2], "usb4snapshot");
++	power_trace = !strcmp(argv[2], "usb4power");
++	extended = !strcmp(argv[2], "usb4snapshot") || power_trace;
+ 	queries = !strcmp(argv[2], "usb4query") || extended;
+ 	usb4_host = !strcmp(argv[2], "usb4host") || queries;
+ 	hw.hostrun = !strcmp(argv[2], "hostrun") || usb4_host;
+@@ -473,6 +496,7 @@
+ 	hw.xhci = xhci;
+ 	hw.cap = cap;
+ 	hw.usb = usb;
++	if (power_trace) snapshot_cable_power(NULL);
+ 	snapshot_dwc3(&hw, "before-remove");
+ 	ret = device_remove(usb, DM_REMOVE_NORMAL | DM_REMOVE_NO_PD);
+ 	if (ret)
+@@ -538,8 +562,11 @@
+ 			apple_nhi_m1_set_post_cable(start_late_pipe, &hw);
+ 		if (extended)
+ 			apple_nhi_m1_set_post_link(snapshot_phy_extended, &hw);
++		if (power_trace) apple_nhi_m1_set_link_sample(snapshot_cable_power, NULL);
+ 		apple_nhi_m1_set_queries(queries);
+ 		ret = apple_acio_m1_start(stage);
++		apple_nhi_m1_set_link_sample(NULL, NULL);
++		if (power_trace) snapshot_cable_power(NULL);
+ 		apple_nhi_m1_set_queries(false);
+ 		apple_nhi_m1_set_post_link(NULL, NULL);
+ 		apple_nhi_m1_set_post_cable(NULL, NULL);
+@@ -571,4 +598,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query|usb4snapshot - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query|usb4snapshot|usb4power - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");

@@ -1,0 +1,30 @@
+{
+  "kernel": "7.2.0-1001-asahi-arm",
+  "unix_time": 1793488788.5554783,
+  "samples": [
+    {
+      "status": "0x108280ef",
+      "status_end": "0x108280ef",
+      "power": "0xd",
+      "system": "0x0",
+      "data": "7100000000",
+      "stable_status": true
+    },
+    {
+      "status": "0x108280ef",
+      "status_end": "0x108280ef",
+      "power": "0xd",
+      "system": "0x0",
+      "data": "7100000000",
+      "stable_status": true
+    },
+    {
+      "status": "0x108280ef",
+      "status_end": "0x108280ef",
+      "power": "0xd",
+      "system": "0x0",
+      "data": "7100000000",
+      "stable_status": true
+    }
+  ]
+}
