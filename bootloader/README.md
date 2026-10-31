@@ -201,3 +201,33 @@ AXI2AF, common and both CIO-lane calibration properties (120, 1092, 852 and
 852 bytes respectively). These are presence/length observations, not proof
 that U-Boot has applied or validated the full calibration arrays. The internal
 NVMe hash passed again and the guest executed its reset command.
+
+### Complete tunable export, probe5
+
+The RAM-only diagnostic added **disabled** ACIO/NHI/PCIe-C resource nodes and
+the aliases expected by m1n1 for port1. All 13 properties were then exported,
+including PHY common-a, ACIO RC/adapter, NHI, DROM and PCIe-C tables. All 543
+32-bit offset/mask/value records passed alignment and per-resource bounds
+checks; the DROM UID CRC8 also matched. See
+[probe5 evidence](validation/m1-dt-probe5-20261031.json).
+These nodes deliberately omit full power/reset/IOMMU/interrupt integration;
+they are export targets, **not a working USB4 host device tree**. No ACIO/NHI
+registers were accessed and no external disk was read. The internal NVMe hash
+passed with the separate RTKit OSLOG candidate and internal Ubuntu returned
+after the planned reset. The UART disconnect at reset is expected and is not
+used on its own as evidence of either success or failure.
+
+### M1 PHY hardware bring-up: separate research candidate
+
+Probe5 successfully exported and validated 13 resource properties, including
+543 calibration triplets, with disabled ACIO/NHI/PCIe-C nodes. Probe6 and
+Probe7 then reached the PIPE lock but stopped on a timeout. Probe8 passed that
+sequence after aligning DWC3 reset release with the Linux initialization
+order, verifying the USB controller remained halted before requesting the
+PIPE lock. Internal NVMe hashes matched before and after every run.
+
+The diagnostic patch and scoped evidence are retained under
+[research](research/README.md). They remain separate from the eight-patch
+prototype. The next hardware milestone is repeatable PHY initialization,
+followed by bounded ACIO firmware startup. NHI control rings, router discovery,
+PCIe tunnel setup and external NVMe reads are still absent.

@@ -1,0 +1,31 @@
+{
+  "probe": 7,
+  "ram_only": true,
+  "installed": false,
+  "port": 1,
+  "mode": "USB4",
+  "orientation": 0,
+  "software_tests": 54,
+  "software_failures": 0,
+  "internal_nvme_before": "pass",
+  "internal_nvme_after": "pass",
+  "phy_check": "pass",
+  "phy_start": "failed",
+  "errno": -110,
+  "stage": 9,
+  "stage_name": "PIPE_LOCK",
+  "power_and_tunable_sequence_completed": true,
+  "owc_disk_accessed": false,
+  "acio_nhi_tunnel_started": false,
+  "planned_reset_observed": true,
+  "ubuntu_ssh_return_confirmed": true,
+  "root": "/dev/nvme0n1p6",
+  "kernel": "7.2.0-1001-asahi-arm",
+  "hypothesis": "Dummy-clock bootstrap alone did not resolve PIPE_LOCK. Next comparison deasserts DWC3 reset, verifies xHCI remains halted, then requests the lock.",
+  "dummy_clock_bootstrap": true,
+  "last_read": {
+    "region": "PIPE",
+    "offset": "0x14",
+    "value": "0x0"
+  }
+}

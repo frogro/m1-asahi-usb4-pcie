@@ -1,0 +1,127 @@
+{
+  "scope": "RAM-only diagnostic, disabled ACIO/NHI/PCIe-C resources; no USB4 MMIO initialization or external disk access",
+  "properties": [
+    {
+      "node": "/soc/phy@503000000",
+      "property": "apple,tunable-axi2af",
+      "bytes": 120,
+      "triplets": 10,
+      "aligned_and_in_range": true,
+      "resource_size": 16384,
+      "sha256": "f252de1c201e3151001039a22d4614a2fc575c006b8692e46994500208d4bea4"
+    },
+    {
+      "node": "/soc/phy@503000000",
+      "property": "apple,tunable-common-a",
+      "bytes": 132,
+      "triplets": 11,
+      "aligned_and_in_range": true,
+      "resource_size": 311296,
+      "sha256": "406e3a1b4a4049d827f7e02fbfb74e661b0a486ce3bc83f919e63983e7c4f31f"
+    },
+    {
+      "node": "/soc/phy@503000000",
+      "property": "apple,tunable-common-b",
+      "bytes": 1092,
+      "triplets": 91,
+      "aligned_and_in_range": true,
+      "resource_size": 311296,
+      "sha256": "53a084cdbaeb6b4f89739b774a172b67bff8999759fe7806928ec2c5c69dcde1"
+    },
+    {
+      "node": "/soc/phy@503000000",
+      "property": "apple,tunable-lane0-cio",
+      "bytes": 852,
+      "triplets": 71,
+      "aligned_and_in_range": true,
+      "resource_size": 311296,
+      "sha256": "4e394a693e3bdae439596cccb5c1fad4a83746d17f641a31014f1a4af07f40c8"
+    },
+    {
+      "node": "/soc/phy@503000000",
+      "property": "apple,tunable-lane1-cio",
+      "bytes": 852,
+      "triplets": 71,
+      "aligned_and_in_range": true,
+      "resource_size": 311296,
+      "sha256": "39626e0c59706277fed4d4ccf7ceccc9cda269c33b8026e58a92edec3abcdd36"
+    },
+    {
+      "node": "/soc/cio@501ac0000",
+      "property": "apple,tunable-rc",
+      "bytes": 348,
+      "triplets": 29,
+      "aligned_and_in_range": true,
+      "resource_size": 49152,
+      "sha256": "e81d62bf3f1ce8c60d7ed34ce687828e5129fefe05bba050cb23d55b24b99bbb"
+    },
+    {
+      "node": "/soc/cio@501ac0000",
+      "property": "apple,tunable-pcie-adapter",
+      "bytes": 12,
+      "triplets": 1,
+      "aligned_and_in_range": true,
+      "resource_size": 16384,
+      "sha256": "a33a90dc92eb36f1e62a70b2ae50a7c4cd02e91fb84b386ed35a8192e038fffb"
+    },
+    {
+      "node": "/soc/cio@501ac0000/nhi@f00000",
+      "property": "apple,tunable-nhi",
+      "bytes": 2712,
+      "triplets": 226,
+      "aligned_and_in_range": true,
+      "resource_size": 1048576,
+      "sha256": "c8480492535d74a6e258b1a6efe7cbdc71d79052c43a79f4dde59d443c535cba"
+    },
+    {
+      "node": "/soc/cio@501ac0000/nhi@f00000",
+      "property": "apple,thunderbolt-drom",
+      "bytes": 76,
+      "uid_crc8_valid": true
+    },
+    {
+      "node": "/soc/pcie@530000000",
+      "property": "apple,tunable-debug",
+      "bytes": 12,
+      "triplets": 1,
+      "aligned_and_in_range": true,
+      "resource_size": 8192,
+      "sha256": "335ce147c789a7dbb6a0412e7f19d9e12256d61a8811001d049ed2e4fb25ac7e"
+    },
+    {
+      "node": "/soc/pcie@530000000",
+      "property": "apple,tunable-fabric",
+      "bytes": 324,
+      "triplets": 27,
+      "aligned_and_in_range": true,
+      "resource_size": 16384,
+      "sha256": "25deb3ba122d59f6b6d879064d26eb70f4b1ab6eba929c993aa155dbec4b3eb8"
+    },
+    {
+      "node": "/soc/pcie@530000000",
+      "property": "apple,tunable-rc",
+      "bytes": 48,
+      "triplets": 4,
+      "aligned_and_in_range": true,
+      "resource_size": 16384,
+      "sha256": "300ae4c0bb2e5b438d8930933ce3d1627667c2801c644ae5c30e66fd55b78e87"
+    },
+    {
+      "node": "/soc/pcie@530000000/pci@0,0",
+      "property": "apple,tunable",
+      "bytes": 12,
+      "triplets": 1,
+      "aligned_and_in_range": true,
+      "resource_size": 16384,
+      "sha256": "46e6db2251baaab12cbddee0cd5b901372dd2875f65b9fbad8681e2c9343a25c"
+    }
+  ],
+  "tunable_triplets": 543,
+  "internal_nvme_sha256": "ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9",
+  "internal_nvme_match": true,
+  "rtkit_candidate_included": true,
+  "rtkit_oslog_hardware_path_proven": false,
+  "reset_observed": true,
+  "internal_ubuntu_return_verified": true,
+  "installed": false
+}

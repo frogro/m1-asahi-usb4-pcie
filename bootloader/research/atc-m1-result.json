@@ -1,0 +1,62 @@
+{
+  "candidate": "atc-m1-diagnostic-candidate.patch",
+  "in_prototype": false,
+  "installed": false,
+  "hardware_scope": "J274 port1 USB4 orientation0 PHY sequence only; no ACIO/NHI/tunnel/DMA",
+  "software": {
+    "atc_m1*": {
+      "tests": 7,
+      "failures": 0
+    },
+    "apple_dart*": {
+      "tests": 7,
+      "failures": 0
+    },
+    "iommu*": {
+      "tests": 8,
+      "failures": 0
+    },
+    "pci*": {
+      "tests": 14,
+      "failures": 0
+    },
+    "apple_mbox*": {
+      "tests": 2,
+      "failures": 0
+    },
+    "usb4_cfg*": {
+      "tests": 6,
+      "failures": 0
+    },
+    "apple_i2c*": {
+      "tests": 6,
+      "failures": 0
+    },
+    "cd321x*": {
+      "tests": 5,
+      "failures": 0
+    }
+  },
+  "aarch64_full_build": true,
+  "patch_apply_check": true,
+  "checkpatch": {
+    "errors": 0,
+    "warnings": 5
+  },
+  "patch_sha256": "9ef88584c0814401a653a4dc132ebe29df0d0e0d612616833a9cac21f287e760",
+  "linux_reference_sha256": "b41376b7147e9f93d05956f2afe06ff378f5ddbe4e59c7f875ae391c914c72d7",
+  "hardware_probes": {
+    "6": "PIPE_LOCK timeout",
+    "7": "PIPE_LOCK timeout, ACK=0",
+    "8": "Two identical RAM-only runs passed; Ubuntu returned after both"
+  },
+  "artifact_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "44b5c541c9bf3dbeda0d8d89012b3da5ffb372a97db8c3710eb40a6c8e6fcfc4",
+    "m1n1-uboot-probe-hv.bin": "292a27a03f1b8c9d4015cd261882c77b1a2ad471b4298266750e48df87058c0b",
+    "u-boot-nodtb.bin": "5a60e8631af8d30df8540f47ee368109c71d0f77126241145774a75354ee43b3",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "220601d4a28eac10d2b79d4b70d6e3a25695d91c69ad81a070e1d4b4456e4c56"
+  },
+  "hardware_successful_repetitions": 2
+}

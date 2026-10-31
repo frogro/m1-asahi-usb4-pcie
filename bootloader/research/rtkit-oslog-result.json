@@ -1,5 +1,5 @@
 {
-  "status": "isolated-host-reproducer-only",
+  "status": "host-reproducer-and-internal-nvme-regression",
   "production_function": "rtkit_handle_buf_req extracted verbatim for each variant",
   "original_source_sha256": "631ccca608103ab1dcf2cae4b8f1320e06e497f667dc3ad3b02f28f7bf233cd9",
   "candidate_in_prototype_series": false,
@@ -12,7 +12,7 @@
   "limitations": [
     "Mailbox and allocation callback mocked",
     "Not a complete RTKit or ACIO firmware startup test",
-    "Requires internal NVMe hardware regression before integration"
+    "ACIO firmware SRAM mapping and OSLOG hardware request path remain untested"
   ],
   "m1_cross_build": {
     "passed": true,
@@ -20,5 +20,11 @@
     "image_sha256": "097d4788e1c89abe4ac8f6eb47629295eb7d9716bf9905cea3f49dbf5003b093",
     "config_sha256": "6a160266b4785f0443ed2a840c0dc5f9f241a01ef35da027c23785c4e49b94e9",
     "patch_sha256": "d4d14b2cc3520b8b1af4a4c5a6c698f828eae3f28d5a0a8ecd3772b721697ab3"
+  },
+  "hardware_regression": {
+    "probe": 5,
+    "internal_nvme_sha256_match": true,
+    "oslog_specific_hardware_path_proven": false,
+    "installed": false
   }
 }

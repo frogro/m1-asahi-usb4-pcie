@@ -1,0 +1,179 @@
+--- a/drivers/mailbox/apple-mbox.c
++++ b/drivers/mailbox/apple-mbox.c
+@@ -1,6 +1,8 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ /*
+  * Copyright (C) 2021 Mark Kettenis <kettenis@openbsd.org>
++ * M3 register layout: Copyright The Asahi Linux Contributors, Linux mailbox.c
++ * (GPL-2.0-only OR MIT); incorporated here under its MIT option.
+  */
+ 
+ #include <dm.h>
+@@ -12,19 +14,24 @@
+ /* Bound a stalled IOP so other boot targets remain reachable. */
+ #define APPLE_MBOX_SEND_TIMEOUT_US 1000000
+ 
+-#define REG_A2I_STAT	0x110
+-#define  REG_A2I_STAT_EMPTY	BIT(17)
+-#define  REG_A2I_STAT_FULL	BIT(16)
+-#define REG_I2A_STAT	0x114
+-#define  REG_I2A_STAT_EMPTY	BIT(17)
+-#define  REG_I2A_STAT_FULL	BIT(16)
+-#define REG_A2I_MSG0	0x800
+-#define REG_A2I_MSG1	0x808
+-#define REG_I2A_MSG0	0x830
+-#define REG_I2A_MSG1	0x838
++#define REG_STAT_EMPTY BIT(17)
++#define REG_STAT_FULL BIT(16)
++
++struct apple_mbox_layout {
++	u32 a2i_stat, i2a_stat, send0, send1, recv0, recv1;
++	bool m3;
++};
++
++static const struct apple_mbox_layout asc_layout = {
++	0x110, 0x114, 0x800, 0x808, 0x830, 0x838, false,
++};
++static const struct apple_mbox_layout m3_layout = {
++	0x50, 0x80, 0x60, 0x68, 0xa0, 0xa8, true,
++};
+ 
+ struct apple_mbox_priv {
+ 	void *base;
++	const struct apple_mbox_layout *layout;
+ };
+ 
+ static int apple_mbox_of_xlate(struct mbox_chan *chan,
+@@ -44,16 +51,16 @@
+ 	int ret;
+ 
+ 	/* Never overwrite a message while the hardware queue is full. */
+-	ret = readl_poll_sleep_timeout(priv->base + REG_A2I_STAT, stat,
+-				      !(stat & REG_A2I_STAT_FULL), 1,
++	ret = readl_poll_sleep_timeout(priv->base + priv->layout->a2i_stat, stat,
++				      !(stat & REG_STAT_FULL), 1,
+ 				      APPLE_MBOX_SEND_TIMEOUT_US);
+ 	if (ret)
+ 		return ret;
+ 
+-	writeq(msg->msg0, priv->base + REG_A2I_MSG0);
+-	writeq(msg->msg1, priv->base + REG_A2I_MSG1);
+-	return readl_poll_sleep_timeout(priv->base + REG_A2I_STAT, stat,
+-				       !(stat & REG_A2I_STAT_FULL), 1,
++	writeq(msg->msg0, priv->base + priv->layout->send0);
++	writeq(msg->msg1, priv->base + priv->layout->send1);
++	return readl_poll_sleep_timeout(priv->base + priv->layout->a2i_stat, stat,
++				       !(stat & REG_STAT_FULL), 1,
+ 				       APPLE_MBOX_SEND_TIMEOUT_US);
+ }
+ 
+@@ -62,11 +69,16 @@
+ 	struct apple_mbox_priv *priv = dev_get_priv(chan->dev);
+ 	struct apple_mbox_msg *msg = data;
+ 
+-	if (readl(priv->base + REG_I2A_STAT) & REG_I2A_STAT_EMPTY)
++	if (readl(priv->base + priv->layout->i2a_stat) & REG_STAT_EMPTY)
+ 		return -ENODATA;
+ 
+-	msg->msg0 = readq(priv->base + REG_I2A_MSG0);
+-	msg->msg1 = readq(priv->base + REG_I2A_MSG1);
++	msg->msg0 = readq(priv->base + priv->layout->recv0);
++	msg->msg1 = readq(priv->base + priv->layout->recv1);
++	if (priv->layout->m3) {
++		/* Upper bits describe FIFO pointers/counts, not the endpoint. */
++		msg->msg1 &= 0xffffffffULL;
++		writel(BIT(3), priv->base + 0x4c);
++	}
+ 	return 0;
+ }
+ 
+@@ -80,15 +92,22 @@
+ {
+ 	struct apple_mbox_priv *priv = dev_get_priv(dev);
+ 
++	priv->layout = (const struct apple_mbox_layout *)dev_get_driver_data(dev);
++	if (!priv->layout)
++		return -EINVAL;
+ 	priv->base = dev_read_addr_ptr(dev);
+ 	if (!priv->base)
+ 		return -EINVAL;
++	/* U-Boot uses polling; disable inherited M3 interrupt enables. */
++	if (priv->layout->m3)
++		writel(0, priv->base + 0x48);
+ 
+ 	return 0;
+ }
+ 
+ static const struct udevice_id apple_mbox_of_match[] = {
+-	{ .compatible = "apple,asc-mailbox-v4" },
++	{ .compatible = "apple,asc-mailbox-v4", .data = (ulong)&asc_layout },
++	{ .compatible = "apple,m3-mailbox-v2", .data = (ulong)&m3_layout },
+ 	{ /* sentinel */ }
+ };
+ 
+--- a/arch/sandbox/dts/test.dts
++++ b/arch/sandbox/dts/test.dts
+@@ -1213,6 +1213,12 @@
+ 		always-running;
+ 	};
+ 
++	apple_m3_mbox: mailbox@5009000 {
++		compatible = "apple,m3-mailbox-v2";
++		reg = <0x05009000 0x1000>;
++		#mbox-cells = <0>;
++	};
++
+ 	apple_mbox: mailbox@5008000 {
+ 		compatible = "apple,asc-mailbox-v4";
+ 		reg = <0x05008000 0x1000>;
+--- a/test/dm/apple_mbox.c
++++ b/test/dm/apple_mbox.c
+@@ -56,3 +56,48 @@
+ 	return 0;
+ }
+ DM_TEST(dm_test_apple_mbox_full, UTF_SCAN_FDT);
++
++static int dm_test_apple_mbox_m3(struct unit_test_state *uts)
++{
++	struct mbox_chan chan = {};
++	/* sandbox_write() takes unsigned int and truncates 64-bit TX values.
++	 * Exercise TX layout with 32 bits; preload full RX data via memory.
++	 */
++	struct apple_mbox_msg msg = { .msg0 = 0x89abcdef, .msg1 = 7 };
++	u64 receive0 = 0x123456789abcdef0ULL;
++	u64 receive1 = 0x1234500000000007ULL;
++	struct apple_mbox_msg reply;
++	void *regs = map_sysmem(0x05009000, 0x1000);
++	ulong start;
++
++	sandbox_set_enable_memio(true);
++	memset(regs, 0, 0x1000);
++	writel(0xf, regs + 0x48);
++	ut_assertok(uclass_get_device_by_name(UCLASS_MAILBOX,
++					    "mailbox@5009000", &chan.dev));
++	ut_asserteq(0, readl(regs + 0x48));
++	ut_assertok(mbox_send(&chan, &msg));
++	ut_assert(msg.msg0 == readq(regs + 0x60));
++	ut_assert(msg.msg1 == readq(regs + 0x68));
++	ut_assert(!readq(regs + 0x800) && !readq(regs + 0x808));
++	writel(BIT(17), regs + 0x80);
++	ut_asserteq(-ETIMEDOUT, mbox_recv(&chan, &reply, 0));
++	memcpy(regs + 0xa0, &receive0, sizeof(receive0));
++	memcpy(regs + 0xa8, &receive1, sizeof(receive1));
++	writel(0, regs + 0x80);
++	ut_assertok(mbox_recv(&chan, &reply, 0));
++	ut_assert(reply.msg0 == receive0 && reply.msg1 == 7);
++	ut_asserteq(BIT(3), readl(regs + 0x4c));
++	writel(BIT(16), regs + 0x50);
++	msg.msg0 = 42;
++	start = get_timer(0);
++	ut_asserteq(-ETIMEDOUT, mbox_send(&chan, &msg));
++	ut_assert(get_timer(start) < 2000);
++	ut_assert(readq(regs + 0x60) == 0x89abcdef);
++	writel(0, regs + 0x50);
++	ut_assertok(mbox_send(&chan, &msg));
++	ut_asserteq(42, readq(regs + 0x60));
++	unmap_sysmem(regs);
++	return 0;
++}
++DM_TEST(dm_test_apple_mbox_m3, UTF_SCAN_FDT);
