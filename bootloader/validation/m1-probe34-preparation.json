@@ -1,0 +1,14 @@
+{
+  "probe": 34,
+  "base_probe": 33,
+  "m1_build": true,
+  "sandbox_tests": 63,
+  "sandbox_failures": 0,
+  "intel_length_values_tested": 256,
+  "intel_reads_faulted": 2,
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "hardware_pending": true
+}

@@ -27,9 +27,29 @@ M1 and sandbox builds pass. 62 sandbox tests pass, including TB3 block-length,
 transport-fault and changed-VDO checks. The extracted production transport
 fixture passes 207 ASan/UBSan cases across USB4 and TBT, including 48 cable-flag
 combinations and rejected metadata. Exact patch reconstruction passes.
-Hardware outcome pending.
+Hardware Probe33 stops with -EPROTO in the CD321x snapshot before PHY setup.
+The register/length is not yet instrumented, so this is not a TB3 link result.
+Internal NVMe control hashes match and reset was observed. Ubuntu SSH return and the unchanged installed boot bundle are confirmed. No external SSD access occurred.
+
+A source comparison identifies a candidate cause: the prototype requires an
+exact register length prefix, while Linux tps6598x_block_read() accepts a
+prefix at least as large as the requested fields. Capture the actual response
+before changing validation; do not weaken checks based on this hypothesis alone.
 
 A Linux DWC3 register capture on the connected TB3 device stopped at its core
 ID guard (GSNPSID read 0). It is not a valid DWC3 reference and no subsequent
 controls were read or written by that script. Power-domain active alone did
 not establish accessible DWC3 core state. Do not infer a usable host from it.
+
+Follow-up read-only Linux capture: Intel VID status (0x59) reports length 11,
+with nine-byte payload prefix `030000000003000000`. Earlier identity/status
+register lengths match. This confirms an input rejected by the prototype;
+the exact failing U-Boot read was not logged. Probe34 accepts the measured
+11-byte layout only for this register, retains nine-byte decoding and all
+other bounds/stability checks, and logs any remaining length mismatch.
+
+Probe34 preparation: M1 build and all 63 sandbox tests pass, including the
+measured TB3 vector and every possible length byte at each Intel status read.
+Changed data and invalid-length output preservation remain checked. The
+isolated two-file delta reconstructs exactly; the U-Boot configuration is
+unchanged. Hardware validation is pending.

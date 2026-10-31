@@ -1,0 +1,38 @@
+{
+  "kernel": "7.2.0-1001-asahi-arm",
+  "bus": 1,
+  "address": "0x3f",
+  "registers": [
+    {
+      "reg": "00",
+      "requested_fields": 4,
+      "reported_length": 4,
+      "payload": "28000000"
+    },
+    {
+      "reg": "03",
+      "requested_fields": 4,
+      "reported_length": 4,
+      "payload": "41505020"
+    },
+    {
+      "reg": "1a",
+      "requested_fields": 4,
+      "reported_length": 4,
+      "payload": "ff820210"
+    },
+    {
+      "reg": "5f",
+      "requested_fields": 5,
+      "reported_length": 5,
+      "payload": "0300010600"
+    },
+    {
+      "reg": "59",
+      "requested_fields": 9,
+      "reported_length": 11,
+      "payload": "030000000003000000"
+    }
+  ],
+  "access": "I2C_RDWR register select plus read only; no controller mode commands"
+}

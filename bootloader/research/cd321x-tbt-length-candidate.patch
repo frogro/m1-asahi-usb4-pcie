@@ -1,0 +1,96 @@
+--- a/lib/apple_cd321x.c
++++ b/lib/apple_cd321x.c
+@@ -5,6 +5,7 @@
+  * and core.c (TI and The Asahi Linux Contributors). No mode commands.
+  */
+ #include <apple_cd321x.h>
++#include <stdio.h>
+ #include <linux/bitops.h>
+ #include <linux/errno.h>
+ #include <linux/string.h>
+@@ -22,8 +23,15 @@
+ 	if (ret)
+ 		return ret;
+ 	/* Unknown layouts must not become lane or cable configuration. */
+-	if (buf[0] != size)
++	/* CD321x Intel VID status reports 11 bytes on measured TB3 hardware.
++	 * Linux consumes the documented nine-byte prefix; trailing bytes are unused.
++	 * Keep all other lengths strict, including unknown Intel layouts.
++	 */
++	if (buf[0] != size && !(reg == 0x59 && size == 9 && buf[0] == 11)) {
++		printf("CD321X-LENGTH reg=%02x expected=%u reported=%u\n",
++		       reg, (unsigned int)size, buf[0]);
+ 		return -EPROTO;
++	}
+ 	memcpy(data, buf + 1, size);
+ 	return 0;
+ }
+--- a/test/dm/apple_cd321x.c
++++ b/test/dm/apple_cd321x.c
+@@ -7,7 +7,7 @@
+ #include <test/ut.h>
+ 
+ struct status_fake {
+-	bool usb4, tbt, changed_tbt, wrong_vendor, wrong_mode, changed;
++	bool real_tbt, usb4, tbt, changed_tbt, wrong_vendor, wrong_mode, changed;
+ 	int calls, fault_call, transport;
+ 	u8 bad_length;
+ };
+@@ -26,6 +26,9 @@
+ 	/* Synthetic TB3 status/Intel VDO vector, not a hardware capture. */
+ 	static const u8 tbt_data[] = { 5, 1, 0, 1, 6, 0 };
+ 	static const u8 tbt_vid[] = { 9, 1, 0, 0, 0, 0, 0x12, 0x34, 1, 0 };
++	/* Linux capture on this M1/Yottamaster: prefix 11, nine fields read. */
++	static const u8 real_tbt_data[] = { 5, 3, 0, 1, 6, 0 };
++	static const u8 real_tbt_vid[] = { 11, 3, 0, 0, 0, 0, 3, 0, 0, 0 };
+ 	const u8 *data;
+ 	size_t len;
+ 
+@@ -46,11 +49,11 @@
+ 		len = sizeof(usb_status);
+ 		break;
+ 	case 0x5f:
+-		data = f->tbt ? tbt_data : f->usb4 ? owc_data : usb_data;
++		data = f->real_tbt ? real_tbt_data : f->tbt ? tbt_data : f->usb4 ? owc_data : usb_data;
+ 		len = sizeof(usb_data);
+ 		break;
+ 	case 0x59:
+-		data = tbt_vid;
++		data = f->real_tbt ? real_tbt_vid : tbt_vid;
+ 		len = sizeof(tbt_vid);
+ 		break;
+ 	case 0x24:
+@@ -218,3 +221,33 @@
+  return 0;
+ }
+ DM_TEST(dm_test_cd321x_tbt_faults, 0);
++
++static int dm_test_cd321x_tbt_measured_length(struct unit_test_state *uts)
++{
++ struct status_fake f = { .tbt = true, .real_tbt = true };
++ struct apple_cd321x_status s, expected;
++ int call, len;
++ ut_assertok(apple_cd321x_snapshot(status_read, &f, &s));
++ ut_asserteq(7, f.calls);
++ ut_asserteq(0x06010003, s.data_status);
++ ut_asserteq(1, s.tbt_device_mode);
++ ut_asserteq(0x00030000, s.tbt_enter_vdo);
++ memset(&expected, 0xa5, sizeof(expected));
++ for (call = 5; call <= 6; call++) {
++  for (len = 0; len <= 255; len++) {
++   f = (struct status_fake){ .tbt = true, .real_tbt = true,
++                            .fault_call = call, .bad_length = len };
++   s = expected;
++   ut_asserteq((len == 9 || len == 11) ? 0 : -EPROTO,
++              apple_cd321x_snapshot(status_read, &f, &s));
++   if (len != 9 && len != 11)
++    ut_assertok(memcmp(&s, &expected, sizeof(s)));
++  }
++ }
++ f = (struct status_fake){ .tbt = true, .real_tbt = true, .changed_tbt = true };
++ s = expected;
++ ut_asserteq(-EAGAIN, apple_cd321x_snapshot(status_read, &f, &s));
++ ut_assertok(memcmp(&s, &expected, sizeof(s)));
++ return 0;
++}
++DM_TEST(dm_test_cd321x_tbt_measured_length, 0);

@@ -1,0 +1,20 @@
+{
+  "probe": 33,
+  "ram_only": true,
+  "outcome": "blocked at CD321x snapshot before PHY initialization",
+  "errno": -71,
+  "errno_name": "EPROTO",
+  "failing_register": "not yet instrumented",
+  "phy_attempted": false,
+  "acio_attempted": false,
+  "tb3_link_tested": false,
+  "external_disk_accessed": false,
+  "internal_nvme_before_after": true,
+  "reset_observed": true,
+  "ubuntu_return_verified": true,
+  "log_sha256": "d091fa919055be53e7230bcad5d5cc6d20cdbd318458050f69733948a1aba472",
+  "hypothesis": "Length prefix equality in prototype is stricter than Linux lower-bound check; actual rejected register/length not yet captured",
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "installed_boot_bundle_unchanged": true,
+  "linux_followup": "Register 0x59 reports length 11 for the documented nine-byte prefix; all earlier requested register lengths match"
+}

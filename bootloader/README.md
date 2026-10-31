@@ -231,3 +231,8 @@ The diagnostic patch and scoped evidence are retained under
 prototype. The next hardware milestone is repeatable PHY initialization,
 followed by bounded ACIO firmware startup. NHI control rings, router discovery,
 PCIe tunnel setup and external NVMe reads are still absent.
+
+Probe33 TB3 comparison stopped before PHY setup on a strict CD321x length
+check; it does not establish a TB3 link result. The measured Linux register
+response and tested Probe34 correction are recorded in
+[the TB3 comparison](research/tbt-comparison-20261031.md).
