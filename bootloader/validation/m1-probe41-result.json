@@ -1,0 +1,247 @@
+{
+  "probe": 41,
+  "base_probe": 40,
+  "target": "OWC Express 1M2 over USB4",
+  "return_errno": -110,
+  "control_sent": 61,
+  "control_received": 61,
+  "dart_raw_status": "0xc020000",
+  "dart_error_active": false,
+  "lane_states": [
+    7
+  ],
+  "phase2_observed": true,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "usb4_host_guard_pass": true,
+  "preserve_phy_core_init_pass": true,
+  "xhci_start_pass": true,
+  "xhci_stop_pass": true,
+  "internal_nvme_before_after": true,
+  "reset_observed": true,
+  "usb4_cable_info": "0x11",
+  "phy_pipe_registers": {
+    "core:0x8": "0x11833fef",
+    "core:0x48": "0x0",
+    "core:0x4c": "0x0",
+    "core:0x1b0": "0x15570cff",
+    "core:0x2a00": "0x2022",
+    "core:0x20000": "0x1b",
+    "core:0x20004": "0x3",
+    "core:0x20008": "0x1",
+    "core:0x9010": "0x53600000",
+    "core:0x10010": "0x53600000",
+    "pipe:0x0": "0x0",
+    "pipe:0x4": "0x10",
+    "pipe:0xc": "0x11",
+    "pipe:0x10": "0x0",
+    "pipe:0x14": "0x0",
+    "pipe:0x1c": "0x1",
+    "pipe:0x20": "0x9332"
+  },
+  "linux_reference_differences": {
+    "core:0x4c": {
+      "probe41": "0x0",
+      "linux_reference": "0x1"
+    }
+  },
+  "difference_interpretation": "core:0x4c crossbar bit0 follows cable orientation; Linux data 0x16c00013, Probe41 data 0x16c00011. Do not treat as an unexplained configuration mismatch.",
+  "ram_only": true,
+  "external_ssd_io": false,
+  "external_pcie_tunnel": false,
+  "ubuntu_return_verified": true,
+  "log_sha256": "2d655c7198e4ac324200d7721f704e9f7c6803b9ca9edcbe988fc99144f1a1ed",
+  "timing_records": [
+    {
+      "ms": 21867,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 21870,
+      "delta": 3,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 21972,
+      "delta": 105,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 21994,
+      "delta": 127,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 21999,
+      "delta": 132,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 22002,
+      "delta": 135,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 22005,
+      "delta": 138,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 22014,
+      "delta": 147,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 22017,
+      "delta": 150,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 22030,
+      "delta": 163,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 22034,
+      "delta": 167,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 22094,
+      "delta": 227,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 22094,
+      "delta": 227,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 22098,
+      "delta": 231,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 22101,
+      "delta": 234,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 22105,
+      "delta": 238,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 22111,
+      "delta": 244,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22114,
+      "delta": 247,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22247,
+      "delta": 380,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 22251,
+      "delta": 384,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 22254,
+      "delta": 387,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22257,
+      "delta": 390,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22258,
+      "delta": 391,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 22261,
+      "delta": 394,
+      "event": "dwc3-host-begin"
+    },
+    {
+      "ms": 22277,
+      "delta": 410,
+      "event": "dwc3-core-init-begin"
+    },
+    {
+      "ms": 22277,
+      "delta": 410,
+      "event": "dwc3-core-init-return"
+    },
+    {
+      "ms": 22287,
+      "delta": 420,
+      "event": "dwc3-host-return"
+    },
+    {
+      "ms": 22337,
+      "delta": 470,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 22349,
+      "delta": 482,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 22363,
+      "delta": 496,
+      "event": "xhci-start-begin"
+    },
+    {
+      "ms": 22386,
+      "delta": 519,
+      "event": "xhci-start-return"
+    },
+    {
+      "ms": 22399,
+      "delta": 532,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 27467,
+      "delta": 5600,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 27481,
+      "delta": 5614,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 27481,
+      "delta": 5614,
+      "event": "rtkit-shutdown-return"
+    },
+    {
+      "ms": 27487,
+      "delta": 5620,
+      "event": "xhci-stop-begin"
+    },
+    {
+      "ms": 27487,
+      "delta": 5620,
+      "event": "xhci-stop-return"
+    }
+  ],
+  "conclusion": "OWC USB4 reproduces the Phase2-only stall despite native USB host startup; not a Yottamaster/TB3-only failure.",
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "installed_boot_hash_unchanged": true,
+  "grub_next_entry_empty": true,
+  "automatic_return_verified": true
+}
