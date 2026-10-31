@@ -1,0 +1,305 @@
+{
+  "scope": "Saved traffic only; initial host writes compared with frozen Probe22 implementation/log",
+  "inputs_sha256": {
+    "linux_trace": "de25ac73ae3b11a4828f838cae05cb769ebae2efb7f955e23abba7ef89138ea8",
+    "probe22_log": "04bdd096786fdac2bf0598a3ab3b6961dbde59431ad97d85b4e321aa3c212e9e"
+  },
+  "trace_buffer_header": "# entries-in-buffer/entries-written: 2554/2554   #P:8",
+  "adapter_headers_match": {
+    "1": true,
+    "2": true,
+    "3": true,
+    "4": true,
+    "5": true,
+    "6": true,
+    "7": true
+  },
+  "root_configuration_matches_prototype": true,
+  "both_lane_unlock_values_match": true,
+  "cable_info_matches": true,
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "pre_remote_host_writes": [
+    {
+      "time": 365.219207,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 1,
+      "length": 4,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        116507,
+        0,
+        2147483648,
+        536875263
+      ]
+    },
+    {
+      "time": 365.219357,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 25,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        0
+      ]
+    },
+    {
+      "time": 365.219422,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 26,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        2147483685
+      ]
+    },
+    {
+      "time": 365.219547,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 25,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        0
+      ]
+    },
+    {
+      "time": 365.219577,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 26,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        2147483699
+      ]
+    },
+    {
+      "time": 365.222383,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 5,
+      "length": 1,
+      "port": 1,
+      "space": 1,
+      "payload": [
+        45078
+      ]
+    },
+    {
+      "time": 365.222418,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 25,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        0
+      ]
+    },
+    {
+      "time": 365.222449,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 26,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        2147483685
+      ]
+    },
+    {
+      "time": 365.222577,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 25,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        0
+      ]
+    },
+    {
+      "time": 365.222608,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 26,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        2147483685
+      ]
+    },
+    {
+      "time": 365.222857,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 27,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        1260389173
+      ]
+    },
+    {
+      "time": 365.222932,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 30,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        65536000
+      ]
+    },
+    {
+      "time": 365.223009,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 27,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        1126171445
+      ]
+    },
+    {
+      "time": 365.22321,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 25,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        5
+      ]
+    },
+    {
+      "time": 365.223241,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 26,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        2147483664
+      ]
+    },
+    {
+      "time": 365.223374,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 25,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        6
+      ]
+    },
+    {
+      "time": 365.223405,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 26,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        2147483664
+      ]
+    },
+    {
+      "time": 365.223726,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 4,
+      "length": 1,
+      "port": 1,
+      "space": 1,
+      "payload": [
+        182452224
+      ]
+    },
+    {
+      "time": 365.223789,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 4,
+      "length": 1,
+      "port": 2,
+      "space": 1,
+      "payload": [
+        182452224
+      ]
+    },
+    {
+      "time": 365.22382,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 54,
+      "length": 1,
+      "port": 0,
+      "space": 2,
+      "payload": [
+        17
+      ]
+    },
+    {
+      "time": 365.68732,
+      "direction": "tx",
+      "kind": "TB_CFG_PKG_WRITE",
+      "route": 0,
+      "offset": 4,
+      "length": 1,
+      "port": 1,
+      "space": 1,
+      "payload": [
+        1256194048
+      ]
+    }
+  ],
+  "interpretation": {
+    "operations_25_33_10": "Source identifies NVM sector-size, buffer-allocation-parameter and DP-resource queries; not NVM writes or PCIe tunnel creation.",
+    "adapter5_hotplug_write": "Linux writes 0xb016, already the value in Probe22's initial header; no demonstrated missing DHP clear in this capture.",
+    "tmu": "Linux sets TD, sets 1000-interval LOWRES and clears TD at capability 0x1b; prototype omits this. Causality for physical link-up is unproven.",
+    "post_link_write": "Port1 ADP_CS_4 becomes 0x4ae00000 after cable info; do not blindly replay this as a pre-link write."
+  }
+}

@@ -165,3 +165,46 @@ packet-event trace, complete monotonic kernel journal, live DTB and kernel
 configuration. These give an actual working reference for later tunnel
 implementation; U-Boot still has not reached the external router. The raw
 captures are retained locally because they include hardware identifiers.
+
+### Offline comparison and ranked next approaches
+
+Compared the complete successful Linux reconnect trace (2554 events written,
+2554 retained) with frozen Probe22, without starting another hardware test.
+`compare-linux-prelink.py` reproduces the packet comparisons; its sanitized
+result is `linux-prelink-comparison.json`. The audited Linux source is commit
+`517fe27a2ce7fa8d03aa6705a10ff4422197ff5d`; this later source snapshot is not
+claimed to be identical to the running egpu2 binary.
+
+All seven initial adapter headers match. Root configuration, both null-port
+unlock values and Apple cable information also match. Linux makes its first
+remote-router request 0.463635 seconds after the cable-information write;
+Probe22 remained in state 7 for five seconds. Merely extending that wait is
+therefore less informative than checking the remaining initialization gaps.
+
+| Approach | Evidence and next bounded step | Priority |
+| --- | --- | --- |
+| Root-router TMU initialization | Linux sets Time Disruption, programs interval 1000 (LOWRES/normal), then clears Time Disruption before cable activation. Probe22 omits this. Implement capability-derived setup as an isolated candidate; do not hardcode the observed capability address. Linux documents this for CLx support, so necessity for initial training is still unproven. | Strongest concrete implementation difference |
+| CD321x system power state | Linux reads register 0x20 and conditionally requests S0 using SSPS. Probe22 does not inspect it. First record the state; issue no power-state command merely because it exists in Linux. The USB4-negotiated bit alone does not prove S0. | First additional read-only diagnostic |
+| PHY initial state and calibration | Reviewed clock/reset/lane operations show no established missing operation. Successful Linux physical reconnect and U-Boot initialization after USB scanning have different starting states. Compare final runtime-exported calibration values, not only the input DTB. | Next if TMU/S0 do not explain the failure |
+| RTKit SYSLOG | U-Boot omits this endpoint, losing firmware progress diagnostics. M3 readiness and successful host-router DMA argue against assuming firmware is blocked. Adding it requires bounded mailbox servicing. | Diagnostic improvement, not a demonstrated fix |
+| PCIe tunnel/native host/NVMe | These are still required after remote-router discovery. They cannot directly explain the current earlier failure to establish the physical link. | Subsequent implementation stage |
+
+Several extra Linux packets must not be replayed as unexplained magic writes.
+Router operations 0x25, 0x33 and 0x10 query NVM sector size, buffer-allocation
+parameters and DP resources respectively. The hotplug-enable write is 0xb016,
+already present in Probe22's initial adapter header. The later ADP_CS_4 value
+0x4ae00000 occurs after cable activation and must not be moved into pre-link
+setup without identifying its field semantics and dependency.
+
+The existing Sonoma storage75/storage76 and dock77 recordings were also
+checked for coverage. They record PCIe-C, its DART and ACIO RC; dock77 adds
+DP input/crossbar ranges. They do not capture CD321x I2C state, full PHY
+initialization or NHI control packets. Their asynchronous host callback times
+are not hardware delay measurements. They remain useful for PCIe/DART
+lifecycle comparison, but cannot settle S0 or provide a complete pre-link boot
+recipe. Absence of an operation outside the recorded ranges is not evidence
+that macOS omitted it.
+
+This comparison changes no boot files, hardware state, kernel or firmware.
+The next experiment should distinguish the above hypotheses individually;
+it should not combine speculative S0, PHY and TMU changes into one result.
