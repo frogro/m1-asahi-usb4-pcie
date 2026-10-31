@@ -1,0 +1,10 @@
+{
+  "buffer_bytes": 98304,
+  "ring_entries": 128,
+  "usable_entries": 127,
+  "nonoverlapping_ranges": 512,
+  "unchanged_frame_bytes": 256,
+  "unchanged_dart_page_bytes": 16384,
+  "descriptor_reuse": false,
+  "passed": true
+}

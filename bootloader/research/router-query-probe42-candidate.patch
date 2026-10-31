@@ -1,0 +1,302 @@
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -4,7 +4,8 @@
+ #include <linux/types.h>
+ struct udevice;
+ struct apple_cd321x_status;
+-struct apple_nhi_host_info { u32 apple, null_ports, port1_cap, tmu; };
++struct apple_nhi_host_info { u32 apple, null_ports, port1_cap, tmu, dp_in_ports; };
++void apple_nhi_m1_set_queries(bool enabled);
+ /* RAM-only single-use hook, after verified cable info and before link polling. */
+ void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context);
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status);
+@@ -24,6 +25,8 @@
+ typedef int (*apple_nhi_tmu_write_fn)(void *context, unsigned int offset, u32 value);
+ int apple_nhi_m1_tmu_lowres(apple_nhi_read_fn read,
+ 			  apple_nhi_tmu_write_fn write, void *context, u32 cap);
++int apple_nhi_m1_query(apple_nhi_read_fn read, apple_nhi_tmu_write_fn write,
++                        void (*wait)(void *), void *context, u32 opcode, u32 metadata);
+ int apple_nhi_m1_check(void);
+ int apple_nhi_m1_dart_test(unsigned int stage);
+ int apple_nhi_m1_tunables_check(void);
+--- a/cmd/apple_nhi_m1_inventory.c
++++ b/cmd/apple_nhi_m1_inventory.c
+@@ -16,6 +16,7 @@
+ 	u32 data[8], config[4], seen[32], offset, next, cap, vsec, length;
+ 	u32 max_port, upstream, apple = 0, null_ports = 0, port1_cap = 0, tmu = 0;
+ 	unsigned int count = 0, i, port;
++	u32 dp_in_ports = 0;
+ 	int ret;
+ 
+ 	if (!read || !configure || !info)
+@@ -110,6 +111,8 @@
+ 			return -EPROTO;
+ 		if ((data[2] & 0xffffff) == 1)
+ 			null_ports |= 1U << port;
++		if ((data[2] & 0xffffff) == 0xe0101)
++			dp_in_ports |= 1U << port;
+ 		if (port == 1)
+ 			port1_cap = data[1] & 255;
+ 	}
+@@ -119,6 +122,7 @@
+ 	info->null_ports = null_ports;
+ 	info->port1_cap = port1_cap;
+ 	info->tmu = tmu;
++	info->dp_in_ports = dp_in_ports;
+ 	return 0;
+ }
+ 
+@@ -260,3 +264,52 @@
+  puts("NHI-TMU PASS LOWRES interval=1000 TD=0\n");
+  return 0;
+ }
++
++/* Linux usb4_native_switch_op() protocol, restricted to read-only operations.
++ * Reference: Linux usb4.c, Copyright (C) 2019 Intel Corporation;
++ * authors Mika Westerberg and Rajmohan Mani.
++ * No NVM programming/authentication, DP allocation or arbitrary opcode input.
++ * All register traffic is constrained to host route zero by the callbacks.
++ */
++int apple_nhi_m1_query(apple_nhi_read_fn read, apple_nhi_tmu_write_fn write,
++                      void (*wait)(void *), void *context, u32 opcode, u32 metadata)
++{
++ u32 value, data[16];
++ unsigned int i, poll;
++ int ret;
++ if (!read || !write || !wait ||
++     !((opcode == 0x25 || opcode == 0x33) ? metadata == 0 :
++       opcode == 0x10 && (metadata == 5 || metadata == 6)))
++  return -EINVAL;
++ ret = read(context, 0, 2, 0x1a, 1, &value);
++ if (ret) return ret;
++ if (value & (1U << 31)) return -EBUSY;
++ ret = write(context, 0x19, metadata);
++ if (ret) return ret;
++ ret = write(context, 0x1a, (1U << 31) | opcode);
++ if (ret) return ret;
++ for (poll = 0; poll < 10; poll++) {
++  ret = read(context, 0, 2, 0x1a, 1, &value);
++  if (ret) return ret;
++  if (!(value & (1U << 31))) break;
++  if (poll != 9) wait(context);
++ }
++ if (value & (1U << 31)) return -ETIMEDOUT;
++ printf("NHI-QUERY opcode=%#x input=%#x completion=%08x polls=%u\n",
++        opcode, metadata, value, poll + 1);
++ if (value & (1U << 30)) return -EOPNOTSUPP;
++ if ((value & 0x3f000000U) == 0x02000000U && opcode == 0x25)
++  return -EOPNOTSUPP;
++ if (value & 0x3f000000U) return -EIO;
++ ret = read(context, 0, 2, 0x19, 1, &metadata);
++ if (ret) return ret;
++ printf("NHI-QUERY result opcode=%#x metadata=%08x\n", opcode, metadata);
++ if (opcode == 0x33) {
++  if ((metadata & 255) > 16) return -EMSGSIZE;
++  ret = read(context, 0, 2, 9, 16, data);
++  if (ret) return ret;
++  for (i = 0; i < (metadata & 255); i++)
++   printf("NHI-QUERY buffer[%u]=%08x\n", i, data[i]);
++ }
++ return 0;
++}
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -29,7 +29,10 @@
+ #define PDF_BASE 0x501db0000ULL
+ #define DART_BASE 0x501a80000ULL
+ #define PAGE SZ_16K
+-#define RING_COUNT 64
++#define RING_COUNT 128
++/* Two 16K pages per packet block; descriptors still occupy one page each. */
++_Static_assert(RING_COUNT * 256 <= 2 * PAGE, "packet block capacity");
++_Static_assert(RING_COUNT * 16 <= PAGE, "descriptor block capacity");
+ #define DESC_POSTED BIT(22)
+ #define DESC_DONE BIT(21)
+ #define DESC_ERROR (BIT(20) | BIT(22))
+@@ -45,6 +48,9 @@
+  ulong started;
+ };
+ 
++static bool diagnostic_queries;
++void apple_nhi_m1_set_queries(bool enabled) { diagnostic_queries = enabled; }
++
+ static int (*post_cable)(void *);
+ static void *post_cable_context;
+ 
+@@ -78,7 +84,7 @@
+  return 0;
+ }
+ 
+-/* No descriptor is recycled. Only one TX is outstanding, up to 63 reads.
++/* No descriptor is recycled. Only one TX is outstanding, up to 127 transactions.
+  * RX descriptors are published once and only invalidated/read afterwards.
+  * This avoids CPU cache writeback racing a device update on a shared line.
+  */
+@@ -102,7 +108,7 @@
+   invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
+   r->tx[slot].fields = cpu_to_le32(len | (USB4_CFG_ERROR << 12) |
+                                   (USB4_CFG_ERROR << 16) | DESC_POSTED);
+-  flush_dcache_range((ulong)r->buffer + 2 * PAGE, (ulong)r->buffer + 3 * PAGE);
++  flush_dcache_range((ulong)r->buffer + 2 * PAGE, (ulong)r->buffer + 4 * PAGE);
+   flush_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
+   mb();
+   r->sent++;
+@@ -155,7 +161,7 @@
+  invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
+  r->tx[slot].fields = cpu_to_le32(len | (type << 12) | (type << 16) | DESC_POSTED);
+  flush_dcache_range((ulong)r->buffer + 2 * PAGE,
+-                    (ulong)r->buffer + 3 * PAGE);
++                    (ulong)r->buffer + 4 * PAGE);
+  flush_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
+  mb();
+  r->sent++;
+@@ -173,17 +179,17 @@
+    fields = readl(&r->rx[r->received].fields);
+    if (!(fields & DESC_DONE)) break;
+    if (fields & DESC_ERROR) return -EIO;
+-   invalidate_dcache_range((ulong)r->buffer + 3 * PAGE,
+-                           (ulong)r->buffer + 4 * PAGE);
++   invalidate_dcache_range((ulong)r->buffer + 4 * PAGE,
++                           (ulong)r->buffer + 6 * PAGE);
+    mb();
+-   ret = usb4_cfg_decode(&req, r->buffer + 3 * PAGE + r->received * 256,
++   ret = usb4_cfg_decode(&req, r->buffer + 4 * PAGE + r->received * 256,
+                         fields & 0xfff, (fields >> 16) & 15,
+                         (fields >> 12) & 15, data, &response_port);
+    r->received++;
+    if (!ret) got_reply = true;
+    else if (ret != -EAGAIN) return ret;
+    else {
+-    const u8 *packet = r->buffer + 3 * PAGE + (r->received - 1) * 256;
++    const u8 *packet = r->buffer + 4 * PAGE + (r->received - 1) * 256;
+     unsigned int length = fields & 0xfff, j;
+     /* decode already validated bounds, framing and CRC. Never ack by guess. */
+     r->skipped++;
+@@ -247,6 +253,30 @@
+  return diagnostic_xfer(ring, 0, 2, offset, 1, &value, USB4_CFG_WRITE, 0);
+ }
+ 
++static int diagnostic_query_write(void *context, unsigned int offset, u32 value)
++{
++ if ((offset == 0x19 && value != 0 && value != 5 && value != 6) ||
++     (offset == 0x1a && value != 0x80000025 && value != 0x80000033 &&
++      value != 0x80000010) || (offset != 0x19 && offset != 0x1a))
++  return -EINVAL;
++ return diagnostic_xfer(context, 0, 2, offset, 1, &value, USB4_CFG_WRITE, 0);
++}
++
++static void diagnostic_query_wait(void *context) { udelay(50000); }
++
++static int diagnostic_query(struct diagnostic_ring *ring, u32 opcode, u32 input)
++{
++ int ret = apple_nhi_m1_query(diagnostic_read, diagnostic_query_write,
++                              diagnostic_query_wait, ring, opcode, input);
++ /* Unsupported optional queries are reported, as Linux does; transport,
++  * malformed replies and operation errors stop this bounded experiment. */
++ if (ret == -EOPNOTSUPP) {
++  printf("NHI-QUERY unsupported opcode=%#x input=%#x\n", opcode, input);
++  return 0;
++ }
++ return ret;
++}
++
+ static int diagnostic_link(struct diagnostic_ring *ring,
+                            const struct apple_nhi_host_info *info)
+ {
+@@ -357,24 +387,24 @@
+       readl(nhi + 0x80010 + i * 0x4000) & RING_ENABLE)
+    return -EBUSY;
+  }
+- buffer = memalign(PAGE, 4 * PAGE);
++ buffer = memalign(PAGE, 6 * PAGE);
+  if (!buffer) return -ENOMEM;
+- memset(buffer, 0, 4 * PAGE);
+- dva = ops->map(dart, buffer, 4 * PAGE);
++ memset(buffer, 0, 6 * PAGE);
++ dva = ops->map(dart, buffer, 6 * PAGE);
+  ret = apple_dart_get_error(dart);
+  if (ret) return ret; /* uncertain mapping: retain allocation until reset */
+  if (!dva) { free(buffer); return -ENOMEM; }
+  if (dva < PAGE || (dva & (PAGE - 1)) ||
+-     dva > 0x100000000ULL - 5 * PAGE) return -ERANGE;
++     dva > 0x100000000ULL - 7 * PAGE) return -ERANGE;
+  ring.buffer = buffer;
+  ring.tx = buffer;
+  ring.rx = buffer + PAGE;
+  for (i = 0; i < RING_COUNT - 1; i++) {
+   ring.tx[i].address = cpu_to_le64(dva + 2 * PAGE + i * 256);
+-  ring.rx[i].address = cpu_to_le64(dva + 3 * PAGE + i * 256);
++  ring.rx[i].address = cpu_to_le64(dva + 4 * PAGE + i * 256);
+   ring.rx[i].fields = cpu_to_le32(DESC_POSTED);
+  }
+- flush_dcache_range((ulong)buffer, (ulong)buffer + 4 * PAGE);
++ flush_dcache_range((ulong)buffer, (ulong)buffer + 6 * PAGE);
+  mb();
+  writel(0, nhi + 0xd0010);
+  writel((u32)dva, nhi + 0x10000);
+@@ -394,9 +424,19 @@
+  ring.started = get_timer(0);
+  apple_boot_trace("nhi-control-rings-started");
+  ret = apple_nhi_m1_inventory(diagnostic_read, diagnostic_host_config, &ring, &info);
++ if (!ret && diagnostic_queries) {
++  if (info.dp_in_ports != (BIT(5) | BIT(6))) ret = -EPROTO;
++  if (!ret) ret = diagnostic_query(&ring, 0x25, 0);
++  if (!ret) ret = diagnostic_query(&ring, 0x33, 0);
++ }
+  if (!ret) {
+   ring.tmu_cap = info.tmu;
+   ret = apple_nhi_m1_tmu_lowres(diagnostic_read, diagnostic_tmu_write, &ring, info.tmu);
++ }
++ if (!ret && diagnostic_queries) {
++  ret = diagnostic_query(&ring, 0x10, 5);
++  if (!ret) ret = diagnostic_query(&ring, 0x10, 6);
++  if (!ret) puts("NHI-QUERIES complete before lane unlock and cable submit\n");
+  }
+  if (!ret) ret = diagnostic_link(&ring, &info);
+  apple_boot_trace("link-observation-return");
+@@ -413,6 +453,7 @@
+ }
+ 
+ #else
++void apple_nhi_m1_set_queries(bool enabled) {}
+ void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context) {}
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status) { return -ENOSYS; }
+ int apple_nhi_m1_control_read(struct udevice *dart) { return -ENOSYS; }
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -376,15 +376,16 @@
+ 	u32 cap, halted;
+ 	int ret, i;
+ 	unsigned int stage;
+-	bool acio, fresh, tb_only, usb4_host;
++	bool acio, fresh, tb_only, usb4_host, queries;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host") && strcmp(argv[2], "usb4query")))
+ 		return CMD_RET_USAGE;
+ 	fresh = !strcmp(argv[2], "fresh");
+ 	tb_only = !strcmp(argv[2], "tbonly");
+-	usb4_host = !strcmp(argv[2], "usb4host");
++	queries = !strcmp(argv[2], "usb4query");
++	usb4_host = !strcmp(argv[2], "usb4host") || queries;
+ 	hw.hostrun = !strcmp(argv[2], "hostrun") || usb4_host;
+ 	stage = (!strcmp(argv[2], "host") || hw.hostrun || fresh || tb_only) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+ 	acio = !strcmp(argv[2], "acio") || stage;
+@@ -515,7 +516,9 @@
+ 			puts("TBT-ONLY DWC3 remains reset; no late PIPE, xHCI or USB DMA\n");
+ 		if (stage >= 4 && !tb_only)
+ 			apple_nhi_m1_set_post_cable(start_late_pipe, &hw);
++		apple_nhi_m1_set_queries(queries);
+ 		ret = apple_acio_m1_start(stage);
++		apple_nhi_m1_set_queries(false);
+ 		apple_nhi_m1_set_post_cable(NULL, NULL);
+ #if CONFIG_IS_ENABLED(USB_XHCI_HCD)
+         if (hw.retained_xhci) {
+@@ -545,4 +548,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");

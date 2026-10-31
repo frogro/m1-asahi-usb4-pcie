@@ -1,0 +1,6 @@
+{
+  "include/apple_nhi_m1.h": "2b3a257788e1fe08092c6e5009aee3ee302c523d349b075edaf2e4df6cb7b12e",
+  "cmd/apple_nhi_m1_inventory.c": "4fbd0da522e6a40bb5d37a328503afb9c51ff4a91df81486376656cbec6aee91",
+  "cmd/apple_nhi_m1_ring.c": "db1190fe937642a154a03b6f1575d141ce9b804fa42fb3f78b6449cc796a4a4d",
+  "cmd/apple_atc_m1.c": "d51325996efb517dc4cc8e398d0f536a2b3fba407765ff7f676af2b6b2b26cfa"
+}

@@ -1,0 +1,884 @@
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=1
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=1
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=2
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=3
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=4
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=5
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=6
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=7
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=8
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=9
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=00000025 polls=10
+NHI-QUERY result opcode=0x25 metadata=00001000
+NHI-QUERY opcode=0x25 input=0 completion=01000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=02000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=03000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=04000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=05000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=06000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=07000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=08000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=09000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=0a000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=0b000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=0c000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=0d000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=0e000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=0f000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=10000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=11000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=12000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=13000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=14000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=15000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=16000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=17000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=18000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=19000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=1a000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=1b000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=1c000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=1d000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=1e000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=1f000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=20000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=21000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=22000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=23000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=24000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=25000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=26000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=27000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=28000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=29000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=2a000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=2b000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=2c000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=2d000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=2e000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=2f000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=30000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=31000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=32000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=33000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=34000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=35000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=36000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=37000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=38000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=39000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=3a000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=3b000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=3c000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=3d000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=3e000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=3f000025 polls=1
+NHI-QUERY opcode=0x25 input=0 completion=40000025 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=2
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=3
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=4
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=5
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=6
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=7
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=8
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=9
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=10
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00000000
+NHI-QUERY buffer[1]=00010001
+NHI-QUERY buffer[2]=00020002
+NHI-QUERY buffer[3]=00030003
+NHI-QUERY buffer[4]=00040004
+NHI-QUERY opcode=0x33 input=0 completion=01000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=02000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=03000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=04000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=05000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=06000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=07000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=08000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=09000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=0a000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=0b000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=0c000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=0d000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=0e000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=0f000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=10000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=11000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=12000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=13000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=14000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=15000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=16000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=17000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=18000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=19000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=1a000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=1b000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=1c000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=1d000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=1e000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=1f000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=20000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=21000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=22000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=23000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=24000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=25000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=26000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=27000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=28000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=29000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=2a000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=2b000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=2c000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=2d000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=2e000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=2f000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=30000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=31000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=32000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=33000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=34000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=35000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=36000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=37000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=38000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=39000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=3a000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=3b000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=3c000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=3d000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=3e000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=3f000033 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=40000033 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=1
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=1
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=2
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=3
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=4
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=5
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=6
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=7
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=8
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=9
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=10
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x5 completion=01000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=02000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=03000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=04000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=05000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=06000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=07000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=08000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=09000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=0a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=0b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=0c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=0d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=0e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=0f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=10000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=11000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=12000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=13000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=14000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=15000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=16000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=17000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=18000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=19000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=1a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=1b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=1c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=1d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=1e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=1f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=20000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=21000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=22000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=23000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=24000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=25000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=26000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=27000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=28000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=29000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=2a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=2b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=2c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=2d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=2e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=2f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=30000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=31000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=32000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=33000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=34000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=35000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=36000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=37000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=38000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=39000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=3a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=3b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=3c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=3d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=3e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=3f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x5 completion=40000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=1
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=1
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=2
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=3
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=4
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=5
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=6
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=7
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=8
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=9
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=10
+NHI-QUERY result opcode=0x10 metadata=00001000
+NHI-QUERY opcode=0x10 input=0x6 completion=01000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=02000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=03000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=04000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=05000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=06000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=07000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=08000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=09000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=0a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=0b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=0c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=0d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=0e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=0f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=10000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=11000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=12000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=13000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=14000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=15000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=16000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=17000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=18000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=19000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=1a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=1b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=1c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=1d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=1e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=1f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=20000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=21000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=22000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=23000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=24000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=25000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=26000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=27000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=28000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=29000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=2a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=2b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=2c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=2d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=2e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=2f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=30000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=31000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=32000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=33000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=34000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=35000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=36000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=37000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=38000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=39000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=3a000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=3b000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=3c000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=3d000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=3e000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=3f000010 polls=1
+NHI-QUERY opcode=0x10 input=0x6 completion=40000010 polls=1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000011
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000012
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000013
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000014
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000015
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000016
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000017
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000018
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000019
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000001a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000001b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000001c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000001d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000001e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000001f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000020
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000021
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000022
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000023
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000024
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000025
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000026
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000027
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000028
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000029
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000002a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000002b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000002c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000002d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000002e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000002f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000030
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000031
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000032
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000033
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000034
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000035
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000036
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000037
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000038
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000039
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000003a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000003b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000003c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000003d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000003e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000003f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000040
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000041
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000042
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000043
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000044
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000045
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000046
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000047
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000048
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000049
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000004a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000004b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000004c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000004d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000004e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000004f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000050
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000051
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000052
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000053
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000054
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000055
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000056
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000057
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000058
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000059
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000005a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000005b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000005c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000005d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000005e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000005f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000060
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000061
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000062
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000063
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000064
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000065
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000066
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000067
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000068
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000069
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000006a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000006b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000006c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000006d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000006e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000006f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000070
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000071
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000072
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000073
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000074
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000075
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000076
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000077
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000078
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000079
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000007a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000007b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000007c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000007d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000007e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000007f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000080
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000081
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000082
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000083
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000084
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000085
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000086
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000087
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000088
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000089
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000008a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000008b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000008c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000008d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000008e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000008f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000090
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000091
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000092
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000093
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000094
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000095
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000096
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000097
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000098
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000099
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000009a
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000009b
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000009c
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000009d
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000009e
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=0000009f
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a0
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a2
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a3
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a4
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a5
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a6
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a7
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a8
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000a9
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000aa
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ab
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ac
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ad
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ae
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000af
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b0
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b2
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b3
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b4
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b5
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b6
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b7
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b8
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000b9
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ba
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000bb
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000bc
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000bd
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000be
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000bf
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c0
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c2
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c3
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c4
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c5
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c6
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c7
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c8
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000c9
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ca
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000cb
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000cc
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000cd
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ce
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000cf
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d0
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d2
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d3
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d4
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d5
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d6
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d7
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d8
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000d9
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000da
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000db
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000dc
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000dd
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000de
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000df
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e0
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e2
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e3
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e4
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e5
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e6
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e7
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e8
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000e9
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ea
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000eb
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ec
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ed
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ee
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ef
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f0
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f1
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f2
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f3
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f4
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f5
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f6
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f7
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f8
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000f9
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000fa
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000fb
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000fc
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000fd
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000fe
+NHI-QUERY opcode=0x33 input=0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=000000ff
+QUERY FAULT TESTS: 2615 cases, zero failures
