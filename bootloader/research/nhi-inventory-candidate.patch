@@ -1,0 +1,331 @@
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -25,32 +25,96 @@
+ #define PDF_BASE 0x501db0000ULL
+ #define DART_BASE 0x501a80000ULL
+ #define PAGE SZ_16K
+-#define RING_COUNT 16
++#define RING_COUNT 64
+ #define DESC_POSTED BIT(22)
+ #define DESC_DONE BIT(21)
+ #define DESC_ERROR (BIT(20) | BIT(22))
+ #define RING_ENABLE BIT(31)
+ #define RING_RAW BIT(30)
+ struct diagnostic_desc { u64 address; u32 fields, time; };
++struct diagnostic_ring {
++ void *buffer, *nhi, *dart_regs;
++ struct diagnostic_desc *tx, *rx;
++ unsigned int sent, received;
++ ulong started;
++};
++
++/* No descriptor is recycled. Only one TX is outstanding, up to 63 reads.
++ * RX descriptors are published once and only invalidated/read afterwards.
++ * This avoids CPU cache writeback racing a device update on a shared line.
++ */
++static int diagnostic_read(void *context, unsigned int port, unsigned int space,
++                           unsigned int offset, unsigned int words, u32 *data)
++{
++ struct diagnostic_ring *r = context;
++ struct usb4_cfg_request req = {
++  .route = 0, .offset = offset, .port = port, .space = space,
++  .seq = r->sent & 3, .words = words, .type = USB4_CFG_READ,
++ };
++ unsigned int slot = r->sent, response_port = 0;
++ u32 fields = 0, tx_flags = 0;
++ ulong started;
++ bool got_reply = false;
++ int len, ret = -ETIMEDOUT;
++
++ if (slot >= RING_COUNT - 1 || r->received >= RING_COUNT - 1)
++  return -ENOSPC;
++ if (get_timer(r->started) >= 10000)
++  return -ETIMEDOUT;
++ len = usb4_cfg_encode(&req, NULL, r->buffer + 2 * PAGE + slot * 256, 256);
++ if (len < 0) return len;
++ /* Previous TX completed before this function can be called again. */
++ invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
++ r->tx[slot].fields = cpu_to_le32(len | BIT(12) | BIT(16) | DESC_POSTED);
++ flush_dcache_range((ulong)r->buffer + 2 * PAGE,
++                    (ulong)r->buffer + 3 * PAGE);
++ flush_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
++ mb();
++ r->sent++;
++ writel(r->sent << 16, r->nhi + 0x10008);
++ started = get_timer(0);
++ while (get_timer(started) < 2000 && get_timer(r->started) < 10000) {
++  invalidate_dcache_range((ulong)r->rx, (ulong)r->rx + PAGE);
++  invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
++  mb();
++  tx_flags = readl(&r->tx[slot].fields);
++  if (readl(r->dart_regs + 0x40) & BIT(31)) return -EFAULT;
++  while (!got_reply && r->received < RING_COUNT - 1) {
++   fields = readl(&r->rx[r->received].fields);
++   if (!(fields & DESC_DONE)) break;
++   if (fields & DESC_ERROR) return -EIO;
++   invalidate_dcache_range((ulong)r->buffer + 3 * PAGE,
++                           (ulong)r->buffer + 4 * PAGE);
++   mb();
++   ret = usb4_cfg_decode(&req, r->buffer + 3 * PAGE + r->received * 256,
++                        fields & 0xfff, (fields >> 16) & 15,
++                        (fields >> 12) & 15, data, &response_port);
++   r->received++;
++   if (!ret) got_reply = true;
++   else if (ret != -EAGAIN) return ret;
++  }
++  if (got_reply && (tx_flags & DESC_DONE)) {
++   printf("NHI read port=%u space=%u offset=%#x words=%u response-port=%u tx=%u rx=%u\n",
++          port, space, offset, words, response_port, r->sent, r->received);
++   return 0;
++  }
++  udelay(50);
++ }
++ printf("NHI read timeout port=%u space=%u offset=%#x TX=%#x RX=%#x\n",
++        port, space, offset, tx_flags, fields);
++ return -ETIMEDOUT;
++}
+ 
+ int apple_nhi_m1_control_read(struct udevice *dart)
+ {
+  const struct iommu_ops *ops = device_get_ops(dart);
+- const struct usb4_cfg_request req = {
+-  .route = 0, .offset = 0, .port = 0, .space = 2, .seq = 0,
+-  .words = 4, .type = USB4_CFG_READ,
+- };
+  void *nhi = map_sysmem(NHI_BASE, 0x100000);
+  void *pdf = map_sysmem(PDF_BASE, 0x30004);
+  void *dart_regs = map_sysmem(DART_BASE, 0x4000);
+- struct diagnostic_desc *tx, *rx;
++ struct diagnostic_ring ring = { .nhi = nhi, .dart_regs = dart_regs };
+  void *buffer;
+  dma_addr_t dva;
+- ulong started;
+- u32 fields = 0, data[4], tx_flags = 0;
+- unsigned int port = 0, next = 0;
+- int len, i, ret;
+- bool got_reply = false, enabled = false;
++ int i, ret;
+ 
+  ret = apple_dart_get_error(dart);
+  if (ret) return ret;
+@@ -63,25 +127,22 @@
+  buffer = memalign(PAGE, 4 * PAGE);
+  if (!buffer) return -ENOMEM;
+  memset(buffer, 0, 4 * PAGE);
+- len = usb4_cfg_encode(&req, NULL, buffer + 2 * PAGE, 256);
+- if (len < 0) { free(buffer); return len; }
+  dva = ops->map(dart, buffer, 4 * PAGE);
+  ret = apple_dart_get_error(dart);
+  if (ret) return ret; /* uncertain mapping: retain allocation until reset */
+  if (!dva) { free(buffer); return -ENOMEM; }
+  if (dva < PAGE || (dva & (PAGE - 1)) ||
+      dva > 0x100000000ULL - 5 * PAGE) return -ERANGE;
+- tx = buffer;
+- rx = buffer + PAGE;
+- tx[0].address = cpu_to_le64(dva + 2 * PAGE);
+- tx[0].fields = cpu_to_le32(len | BIT(12) | BIT(16) | DESC_POSTED);
++ ring.buffer = buffer;
++ ring.tx = buffer;
++ ring.rx = buffer + PAGE;
+  for (i = 0; i < RING_COUNT - 1; i++) {
+-  rx[i].address = cpu_to_le64(dva + 3 * PAGE + i * 256);
+-  rx[i].fields = cpu_to_le32(DESC_POSTED);
++  ring.tx[i].address = cpu_to_le64(dva + 2 * PAGE + i * 256);
++  ring.rx[i].address = cpu_to_le64(dva + 3 * PAGE + i * 256);
++  ring.rx[i].fields = cpu_to_le32(DESC_POSTED);
+  }
+  flush_dcache_range((ulong)buffer, (ulong)buffer + 4 * PAGE);
+  mb();
+- /* Polling only. RX accepts all PDFs, as Linux control rings do. */
+  writel(0, nhi + 0xd0010);
+  writel((u32)dva, nhi + 0x10000);
+  writel((u32)(dva >> 32), nhi + 0x10004);
+@@ -96,54 +157,21 @@
+  writel(0xffffffff, pdf);
+  writel(RING_ENABLE | RING_RAW, nhi + 0x80010);
+  writel(RING_ENABLE | RING_RAW, nhi + 0x10010);
+- enabled = true;
+  writel(RING_COUNT - 1, nhi + 0x80008);
+- writel(1 << 16, nhi + 0x10008);
+- ret = -ETIMEDOUT;
+- started = get_timer(0);
+- while (get_timer(started) < 2000) {
+-  invalidate_dcache_range((ulong)rx, (ulong)rx + PAGE);
+-  invalidate_dcache_range((ulong)tx, (ulong)tx + PAGE);
+-  mb();
+-  tx_flags = readl(&tx[0].fields);
+-  if (readl(dart_regs + 0x40) & BIT(31)) { ret = -EFAULT; break; }
+-  while (!got_reply && next < RING_COUNT - 1) {
+-   fields = readl(&rx[next].fields);
+-   if (!(fields & DESC_DONE)) break;
+-   if (fields & DESC_ERROR) { ret = -EIO; goto stop; }
+-   invalidate_dcache_range((ulong)buffer + 3 * PAGE,
+-                          (ulong)buffer + 4 * PAGE);
+-   mb();
+-   ret = usb4_cfg_decode(&req, buffer + 3 * PAGE + next * 256,
+-                        fields & 0xfff, (fields >> 16) & 15,
+-                        (fields >> 12) & 15, data, &port);
+-   next++;
+-   if (!ret) got_reply = true;
+-   else if (ret != -EAGAIN) goto stop;
+-  }
+-  if (got_reply && (tx_flags & DESC_DONE)) { ret = 0; break; }
+-  ret = -ETIMEDOUT;
+-  udelay(50);
+- }
+-stop:
+- if (enabled) {
+-  writel(0, nhi + 0x10010);
+-  writel(0, nhi + 0x80010);
+-  mb();
+-  if (readl(nhi + 0x10010) || readl(nhi + 0x80010)) ret = -EBUSY;
+- }
+- printf("NHI control ret=%d TX=%#x RX=%#x consumed=%u DART-error=%#x\n",
+-        ret, tx_flags, fields, next, readl(dart_regs + 0x40));
+- /* Even successful stop readback is not proof that DMA has drained.
+-  * Keep both mapping and allocation, including page tables, until reset.
+-  */
++ ring.started = get_timer(0);
++ ret = apple_nhi_m1_inventory(diagnostic_read, &ring);
++ writel(0, nhi + 0x10010);
++ writel(0, nhi + 0x80010);
++ mb();
++ if (readl(nhi + 0x10010) || readl(nhi + 0x80010)) ret = -EBUSY;
++ if (readl(dart_regs + 0x40) & BIT(31)) ret = -EFAULT;
++ printf("NHI inventory transport ret=%d sent=%u received=%u DART-error=%#x\n",
++        ret, ring.sent, ring.received, readl(dart_regs + 0x40));
++ /* A stop readback is not proof that DMA drained. Never free on return. */
+  puts("NHI control buffers and DART retained until mandatory reset\n");
+- if (!ret) {
+-  printf("NHI-HOST-READ PASS port=%u data=%08x %08x %08x %08x\n",
+-         port, data[0], data[1], data[2], data[3]);
+- }
+  return ret;
+ }
++
+ #else
+ int apple_nhi_m1_control_read(struct udevice *dart) { return -ENOSYS; }
+ #endif
+--- /dev/null
++++ b/cmd/apple_nhi_m1_inventory.c
+@@ -0,0 +1,90 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Read-only host-router inventory, never unlocks a port or writes cable info.
++ * Layout: Linux drivers/thunderbolt/{cap.c,tb_regs.h,apple.c}.
++ * Copyright (c) 2014 Andreas Noever <andreas.noever@gmail.com>
++ * Copyright (C) 2018, Intel Corporation
++ * Copyright The Asahi Linux Contributors
++ */
++#include <apple_nhi_m1.h>
++#include <linux/errno.h>
++#include <stdio.h>
++
++int apple_nhi_m1_inventory(apple_nhi_read_fn read, void *context)
++{
++	u32 data[8], seen[32], offset, next, cap, vsec, length;
++	u32 max_port, upstream, apple = 0, null_ports = 0;
++	unsigned int count = 0, i, port;
++	int ret;
++
++	if (!read)
++		return -EINVAL;
++	ret = read(context, 0, 2, 0, 5, data);
++	if (ret)
++		return ret;
++	max_port = (data[1] >> 14) & 63;
++	upstream = (data[1] >> 8) & 63;
++	if ((data[0] & 0xffff) != 0x05ac || !max_port || max_port > 16 ||
++	    upstream > max_port || data[2] || (data[3] & 0x7fffffff) ||
++	    ((data[1] >> 20) & 7))
++		return -EPROTO;
++	printf("NHI host vendor/device=%08x max-port=%u upstream=%u version=%02x enabled=%u\n",
++	       data[0], max_port, upstream, data[4] >> 24, data[3] >> 31);
++	offset = data[1] & 255;
++	while (offset) {
++		if (offset < 5 || offset > 0x1ffe)
++			return -ERANGE;
++		if (count == 32)
++			return -E2BIG;
++		for (i = 0; i < count; i++)
++			if (seen[i] == offset)
++				return -ELOOP;
++		seen[count++] = offset;
++		ret = read(context, 0, 2, offset, 2, data);
++		if (ret)
++			return ret;
++		cap = (data[0] >> 8) & 255;
++		vsec = (data[0] >> 16) & 255;
++		next = data[0] & 255;
++		length = 1;
++		if (cap == 5) {
++			length = data[0] >> 24;
++			if (!length) {
++				if (next)
++					return -EPROTO;
++				next = data[1] & 0xffff;
++				length = data[1] >> 16;
++				if (length < 2)
++					return -EPROTO;
++			}
++			if (length > 0x2000 - offset)
++				return -ERANGE;
++		} else if (cap != 3) {
++			return -EPROTO;
++		}
++		printf("NHI capability offset=%#x id=%#x vsec=%#x length=%u next=%#x raw=%08x %08x\n",
++		       offset, cap, vsec, length, next, data[0], data[1]);
++		if (cap == 5 && !vsec) {
++			if (apple || length < 2)
++				return -EPROTO;
++			apple = offset;
++		}
++		offset = next;
++	}
++	if (!apple)
++		return -ENOENT;
++	for (port = 1; port <= max_port; port++) {
++		ret = read(context, port, 1, 0, 8, data);
++		if (ret)
++			return ret;
++		printf("NHI adapter port=%u type=%06x header=%08x %08x %08x %08x %08x %08x %08x %08x\n",
++		       port, data[2] & 0xffffff, data[0], data[1], data[2],
++		       data[3], data[4], data[5], data[6], data[7]);
++		if ((data[2] & 0xffffff) && ((data[3] >> 20) & 63) != port)
++			return -EPROTO;
++		if ((data[2] & 0xffffff) == 1)
++			null_ports |= 1U << port;
++	}
++	printf("NHI-HOST-INVENTORY PASS capabilities=%u apple=%#x null-ports=%#x; read-only\n",
++	       count, apple, null_ports);
++	return 0;
++}
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -308,3 +308,4 @@
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_acio_m1.o
+ 
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1.o apple_nhi_m1_ring.o
++obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1_inventory.o
+--- a/cmd/Kconfig
++++ b/cmd/Kconfig
+@@ -3241,6 +3241,7 @@
+ config CMD_APPLE_ATC_M1
+ 	bool "Explicit M1 port1 PHY diagnostic"
+ 	depends on DM_I2C && DM_USB && POWER_DOMAIN
++	depends on !ARCH_APPLE || APPLE_DART
+ 	select APPLE_ATC_M1
+ 	select USB4_CFG_CODEC
+ 	select APPLE_CD321X_STATUS
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -5,6 +5,10 @@
+ struct udevice;
+ int apple_nhi_m1_control_check(void);
+ int apple_nhi_m1_control_read(struct udevice *dart);
++typedef int (*apple_nhi_read_fn)(void *context, unsigned int port,
++			       unsigned int space, unsigned int offset,
++			       unsigned int words, u32 *data);
++int apple_nhi_m1_inventory(apple_nhi_read_fn read, void *context);
+ int apple_nhi_m1_check(void);
+ int apple_nhi_m1_dart_test(unsigned int stage);
+ int apple_nhi_m1_tunables_check(void);

@@ -1,0 +1,40 @@
+{
+  "utc": "2026-10-31T17:25:56.303944+00:00",
+  "probe17": {
+    "host_capabilities": "pass",
+    "first_port_read": "timeout before host activation",
+    "ubuntu_return": true
+  },
+  "probe18": {
+    "hardware_run": false,
+    "superseded_by": 19
+  },
+  "probe19": {
+    "host_configuration": "pass",
+    "host_adapter_headers": 7,
+    "host_capabilities": 7,
+    "null_ports": "0x6",
+    "port_unlock": "pass",
+    "cable_info": "0x11, readback passed",
+    "lane1_state": 7,
+    "linux_state_name": "TB_PORT_UNPLUGGED",
+    "remote_router_read": "not attempted: link did not become ready",
+    "overall": "incomplete, bounded timeout -110",
+    "sent": 37,
+    "received": 42,
+    "dart_error_raw": "0x04020000",
+    "dart_error_valid_bit31": false,
+    "rtkit_shutdown": 0,
+    "internal_hash_before_after": "pass",
+    "ubuntu_ssh_confirmed": "2026-10-31T17:24:35Z",
+    "external_disk_access": false,
+    "pcie_tunnel": false,
+    "installed_changes": false
+  },
+  "software": {
+    "production_mock_cases": 69,
+    "sandbox_cases": 57,
+    "m1_build": "pass"
+  },
+  "next_step": "Capture full link PHY status and unsolicited packet types/payloads; compare PHY mode and event acknowledgement against Linux. A longer timeout is not a proven fix."
+}

@@ -1,0 +1,68 @@
+{
+  "revision": 1,
+  "bytes_exported": 76,
+  "declared_bytes": 74,
+  "crc32c_valid": true,
+  "entries": [
+    {
+      "type": "port",
+      "index": 1,
+      "length": 8,
+      "disabled": false,
+      "link_number": 0,
+      "dual_link_present": true,
+      "dual_port": 2
+    },
+    {
+      "type": "port",
+      "index": 2,
+      "length": 8,
+      "disabled": false,
+      "link_number": 1,
+      "dual_link_present": true,
+      "dual_port": 1
+    },
+    {
+      "type": "port",
+      "index": 3,
+      "length": 3,
+      "disabled": false
+    },
+    {
+      "type": "port",
+      "index": 4,
+      "length": 2,
+      "disabled": false
+    },
+    {
+      "type": "port",
+      "index": 5,
+      "length": 5,
+      "disabled": false
+    },
+    {
+      "type": "port",
+      "index": 6,
+      "length": 5,
+      "disabled": false
+    },
+    {
+      "type": "port",
+      "index": 7,
+      "length": 2,
+      "disabled": false
+    },
+    {
+      "type": "generic",
+      "index": 1,
+      "length": 13
+    },
+    {
+      "type": "generic",
+      "index": 2,
+      "length": 6
+    }
+  ],
+  "uid_omitted": true,
+  "source": "Probe5 m1n1 exported apple,thunderbolt-drom; decoded using Linux eeprom.c"
+}

@@ -198,3 +198,32 @@ The host C tests can be compiled individually with a C compiler, for example
 These mocks establish software behavior under injected failures, not hardware
 coverage beyond the numbered logs. Passed hardware tests are not repeated
 without a specific new reason.
+
+
+## Combined host/link discovery (Probe17–19)
+
+Apply `nhi-inventory-candidate.patch` after the Probe16 chain, followed by
+`nhi-combined-link-candidate.patch`. These remain isolated M1 research patches.
+Probe18 was prepared but never run; Probe19 combined its work with link stages.
+
+Probe17 read seven capabilities but timed out on the first adapter read.
+Probe19 enabled the host router with checked readback, read all seven adapters,
+validated the DROM and lane pairing, unlocked ports 1/2 and wrote/read back
+cable information 0x11 derived from the current CD321x snapshot. The lane
+remained at state 7 (Linux TB_PORT_UNPLUGGED) for all ten polls. The external
+router read was NOT attempted. Overall result: bounded timeout -110, incomplete.
+Both internal NVMe hashes and firmware shutdown passed; Ubuntu returned
+automatically and was verified over SSH.
+
+See `nhi-combined-link-result.json`, the Probe19 UART log, source reproduction
+records and the 69 production-code mock cases / 57 sandbox cases. The frozen
+source retains stale host-only comments/messages about write scope; the actual
+combined scope includes the checked port-unlock and cable writes described
+above. No external-router writes or external disk access occurred.
+
+Next compare full PHY status and unsolicited packet contents against Linux
+link/event handling. RX count 42 versus TX count 37 indicates extra packets,
+not a decoded diagnosis. DMA storage remains retained until mandatory reset.
+PCIe tunnel setup, external NVMe reads and safe OS handover remain absent.
+Discovery is intended to become generic; this diagnostic deliberately requires
+the validated M1 host lane mapping and USB4 mode. No installed changes.

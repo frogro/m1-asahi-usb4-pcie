@@ -1,0 +1,19 @@
+{
+  "head": "552486f3c101b6b1b54dfa018cea664bbc808e23",
+  "scope": "Actual downstream working-tree files, including existing local kernel patches; not a claim that all code is upstream",
+  "files_sha256": {
+    "drivers/thunderbolt/apple.c": "f9871f5b2cda6e9a76f17e0162626c926f179b2bb8d69fc396774d0105b4f3ff",
+    "drivers/thunderbolt/cap.c": "0ff71c95cfdee422a07b595a2ec8fe4143756725bc1c05d470ad59f31781c596",
+    "drivers/thunderbolt/tb_regs.h": "44fa3c1df358a675f23c3fd86af7467fd0541aa8f4822c116d2eb81b0f566300",
+    "drivers/thunderbolt/switch.c": "7b6eae484a1eb67f570b7044715528377f17877865640355895b16cea6939f56",
+    "drivers/thunderbolt/usb4.c": "bd8b943a5ab4eeb59ad0f8151fd45a748657cd461d945509cef1a029320597e5",
+    "drivers/thunderbolt/tb.c": "163a94fb6ffbe0caec2ba6f9dba97c8b8245903944c457a442313cc1b5045bae",
+    "drivers/thunderbolt/tunnel.c": "129454d35d7d4e77e987cea28da884905ecd763269b779809130e0c97ce86bdd",
+    "drivers/thunderbolt/path.c": "06454cb34668f0d0de261de82e9ecd0e91fa04ce8ad24e7e4e0a99fbbf230aa0",
+    "drivers/thunderbolt/eeprom.c": "b49c326b51224d29421107d93e99ed574dd6dfd8b052d5bfd506ebd8d6b3c8bc",
+    "drivers/thunderbolt/nhi.c": "ac2c7e95366d30fde202bf5d39d7e528d3d321b3270eddb5ee1920f621c66879",
+    "drivers/pci/controller/pcie-apple-pciec.c": "f1f0ac2e91a75c66958637db0806111c2fb13e22ad354abea7b0255d73c57452",
+    "drivers/iommu/apple-dart.c": "f66d932a35e79fdb6d4a2534b80cd6fbb2ba22cbd32a60a867b9dc60bbc1096f",
+    "include/linux/usb/pd.h": "44d70640b835d67680a6b9bef269e2977053379ed20ceca1ebe7f05a6e2285c6"
+  }
+}
