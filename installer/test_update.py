@@ -9,6 +9,33 @@ import install as core
 import update
 
 class UpdateTests(unittest.TestCase):
+    def test_verification_rejects_a_different_running_kernel(self):
+        with patch.object(update.platform,'release',return_value='7.2.0-stock'),patch.object(core,'json_write') as write:
+            with self.assertRaisesRegex(RuntimeError,'not running'):update.verify_running()
+            write.assert_not_called()
+
+    def test_consumed_grub_selection_is_not_a_pending_boot(self):
+        self.assertEqual(core.pending_grub_entries('next_entry=\nsaved_entry=Ubuntu\n'),[])
+        self.assertEqual(core.pending_grub_entries('next_entry=test\n'),['next_entry=test'])
+
+    def test_full_boot_uses_internal_root_without_deleting_old_kernels(self):
+        root=dict(uuid='aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',fsroot='/',fstype='ext4')
+        boot=dict(uuid='11111111-2222-3333-4444-555555555555')
+        roomy=update.boot_storage(root,boot,500*1024**2)
+        self.assertEqual(roomy['boot_directory'],'/boot')
+        tight=update.boot_storage(root,boot,38*1024**2)
+        self.assertEqual(tight['boot_uuid'],root['uuid'])
+        self.assertTrue(tight['boot_directory'].startswith('/var/lib/asahi-kernel-update/'))
+        m=dict(tight,root_uuid=root['uuid'],internal_esp_uuid='1234-ABCD',release=core.RELEASE,model='APPLE SSD')
+        self.assertIn('($externalboot)'+tight['boot_prefix']+'/Image-',core.grub_entry(m))
+        import tempfile,subprocess
+        with tempfile.NamedTemporaryFile(mode='w') as f:
+            f.write(core.grub_entry(m));f.flush()
+            subprocess.run(['grub-script-check',f.name],check=True)
+        root.update(fstype='btrfs',fsroot='/root')
+        self.assertTrue(update.boot_storage(root,boot,0)['boot_prefix'].startswith('/root/var/lib/'))
+        with self.assertRaises(RuntimeError):core.grub_entry(dict(m,boot_prefix='/../escape'))
+
     def test_newer_kernel_guard_and_custom_suffixes(self):
         values=['6.12.8','7.2.12-other-build','7.2.13-generic','7.3.0-asahi','7.10.0']
         self.assertEqual(update.newer_releases(values),values[2:])

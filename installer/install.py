@@ -162,6 +162,12 @@ def recheck_disk(original):
     require(not disk_reasons(matches[0]), 'Target became mounted or busy')
 
 
+def pending_grub_entries(environment):
+    # GRUB consumes a one-shot selection by writing an empty next_entry.
+    return [line for line in environment.splitlines()
+            if line.startswith('next_entry=') and line.split('=', 1)[1].strip()]
+
+
 def boot_options(m):
     result = OPTIONS
     if m.get('os_id', 'ubuntu') == 'fedora':
@@ -177,6 +183,9 @@ def grub_entry(m):
     boot, root, esp = (uuid_ok(m[k]) for k in ('boot_uuid', 'root_uuid', 'internal_esp_uuid'))
     rel = m['release']
     require(bool(re.fullmatch(r'[A-Za-z0-9._+-]+', rel)), 'Invalid kernel release')
+    prefix=m.get('boot_prefix', '')
+    require(prefix == '' or (bool(re.fullmatch(r'/[A-Za-z0-9_./+-]+', prefix))
+                            and '..' not in Path(prefix).parts), 'Invalid GRUB boot directory')
     entry = 'asahi-external-' + root
     os_name = 'Fedora Asahi Remix' if m.get('os_id') == 'fedora' else 'Ubuntu Asahi'
     arm_command = 'sudo asahi-kernel-update --arm' if m.get('target') == 'internal-update' else 'sudo asahi-external-boot --arm ' + root
@@ -189,10 +198,10 @@ def grub_entry(m):
     if search --no-floppy --fs-uuid --set=systemesp {esp}; then
       if [ -f ($systemesp)/m1n1/external-{root}.armed ]; then
         if search --no-floppy --fs-uuid --set=externalboot {boot}; then
-          linux ($externalboot)/Image-{rel} root=UUID={root} {boot_options(m)}
-          initrd ($externalboot)/initrd.img-{rel}
+          linux ($externalboot){prefix}/Image-{rel} root=UUID={root} {boot_options(m)}
+          initrd ($externalboot){prefix}/initrd.img-{rel}
         else
-          echo 'External USB boot filesystem not found. Connect it directly to USB-C.'
+          echo 'Configured boot filesystem not found. Check the selected installation medium.'
           sleep --interruptible 15
         fi
       else
@@ -260,7 +269,7 @@ def host_check():
     require(Path('/lib/firmware/vendor/apple').is_dir(), 'Local Apple vendor firmware missing')
     require(Path('/boot/efi/asahi/all_firmware.tar.gz').is_file(), 'Local firmware archive missing')
     require(Path('/boot/efi/vendorfw/firmware.cpio').is_file(), 'Bootloader vendor firmware archive missing')
-    require('next_entry=' not in output('grub-editenv', '/boot/grub/grubenv', 'list'),
+    require(not pending_grub_entries(output('grub-editenv', '/boot/grub/grubenv', 'list')),
             'Another one-time GRUB selection is pending')
     return esp
 
@@ -601,7 +610,7 @@ def disarm(root_uuid):
     require(digest(state / 'boot-original.bin') == m['original_sha'], 'Backup hash changed')
     require(digest(live) in (m['original_sha'], m['candidate_sha']), 'Unknown active bundle; refusing overwrite')
     env = output('grub-editenv', '/boot/grub/grubenv', 'list')
-    next_entries = [line for line in env.splitlines() if line.startswith('next_entry=')]
+    next_entries = pending_grub_entries(env)
     require(not next_entries or next_entries == ['next_entry=asahi-external-' + root_uuid],
             'A different one-time boot is pending; refusing to change it')
     atomic(live, (state / 'boot-original.bin').read_bytes())

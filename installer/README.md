@@ -99,9 +99,11 @@ Die Installations-Mounts und chroot-Mounts laufen in einem privaten Mount-Namens
 
 [update.py](update.py) ist ein **separater experimenteller Updateweg** für ein bereits installiertes Ubuntu Asahi oder Fedora Asahi Remix. Er ergänzt denselben festgelegten Kernel samt passenden Modulen und DTB, erzeugt die Initramfs mit dem vorhandenen System und fügt einen eigenen GRUB-Eintrag hinzu. Er führt weder eine Neuinstallation noch ein `apt`-/`dnf`-Distributionsupgrade aus. Benutzer, Passwörter, `/home` und Netzwerkeinstellungen werden nicht ersetzt. Die Kontodateien werden vor/nach der Vorbereitung anhand von Hashes verglichen. Die mitgelieferte AVD-Firmware und DCP-Audio-UCM-Dateien werden aktualisiert; vorhandene Exemplare werden gesichert.
 
-**Validierungsstand:** Versionsschutz, Dateisicherung/Rücknahme und GRUB-Logik sind automatisiert geprüft. Der komplette Updateweg auf einem internen Ubuntu sowie insbesondere die Fedora-Boot-/SELinux-Integration sind noch nicht auf Hardware getestet. Die erfolgreiche Ubuntu-Imageprüfung oben ist kein Fedora-Test. Fedora-Neuinstallation bleibt weiterhin ausgeschlossen.
+**Validierungsstand:** Versionsschutz, Dateisicherung/Rücknahme und GRUB-Logik sind automatisiert geprüft. Am 31. Oktober 2026 wurde der Updateweg aus dem internen Ubuntu 26.04.1 auf einem Mac mini M1 ausgeführt: neuer Kernel von der internen Rootpartition gestartet, SSH und bedienbares Mac-HDMI bestätigt, originale Bootdatei im Initramfs wiederhergestellt, bisheriger Standard erhalten. Dies ist **keine vollständige Funktionsfreigabe**: Der erste PCIe-Tunnel-Host-Probe lief in einen Timeout; nach einem einzelnen manuellen Reprobe wurde die RX 6900 XT sichtbar, ihre PSP-Initialisierung scheiterte anschließend mit `-22`. Die Fedora-Boot-/SELinux-Integration ist weiterhin nicht auf Hardware getestet. Fedora-Neuinstallation bleibt ebenfalls ausgeschlossen.
 
-Voraussetzungen dieser ersten Version: Mac mini M1/J274, direkt eingebundenes internes NVMe-Root mit ext4 oder Btrfs, separates ext4-`/boot`, vorhandenes Asahi-m1n1/GRUB und lokale Gerätefirmware. Verschlüsseltes Root/LVM und andere Partitionierungsvarianten sind noch nicht unterstützt. Benötigt werden Python ab 3.12, dracut/lsinitrd, kmod, zstd, tar, device-tree-compiler und die GRUB-Werkzeuge der jeweiligen Distribution; Fedora benötigt außerdem `restorecon`. Mindestens 450 MiB frei in `/boot`, 3 GiB auf Root und Platz für die Boot-Bundle-Sicherung auf der ESP. Alte Kernel werden nicht zur Platzbeschaffung gelöscht.
+Voraussetzungen dieser ersten Version: Mac mini M1/J274, direkt eingebundenes internes NVMe-Root mit ext4 oder Btrfs, separates ext4-`/boot`, vorhandenes Asahi-m1n1/GRUB und lokale Gerätefirmware. Verschlüsseltes Root/LVM und andere Partitionierungsvarianten sind noch nicht unterstützt. Benötigt werden Python ab 3.12, dracut/lsinitrd, kmod, zstd, tar, device-tree-compiler und die GRUB-Werkzeuge der jeweiligen Distribution; Fedora benötigt außerdem `restorecon`. Mindestens 3 GiB frei auf Root und Platz für die Boot-Bundle-Sicherung auf der ESP.
+
+Sind mindestens 450 MiB in `/boot` frei, werden die neuen Startdateien dort abgelegt. Andernfalls nutzt der Installer `/var/lib/asahi-kernel-update/<Release>/boot` auf der internen Rootpartition; GRUB erhält deren UUID und den passenden Dateipfad (bei Btrfs einschließlich Subvolume). Die Dateien bleiben vollständig auf der internen SSD. **Alte Kernel und Testdateien in `/boot` werden nicht gelöscht.** Der Plan zeigt den gewählten Speicherort. Der zusätzliche GRUB-Generator wird nach den vorhandenen Generatoren einsortiert, und die bisherige Reihenfolge wird geprüft. Ein leeres `next_entry=` nach einem früheren einmaligen Start ist keine noch ausstehende Bootauswahl.
 
 Beide Skripte in dasselbe Verzeichnis laden und zunächst nur den Plan ansehen:
 
@@ -120,9 +122,15 @@ sudo python3 update.py --prepare
 # Der Dialog verlangt PREPARE; bis hierhin kein Neustart und keine Boot-Aktivierung.
 sudo asahi-kernel-update --arm
 # Erst dann selbst neu starten.
+# Nach erfolgreichem Start Kernel, Root und Boot-Rückweg prüfen und dokumentieren:
+sudo asahi-kernel-update --verify-running
 ```
 
 Der bisherige Standardkernel bleibt ausgewählt. Menü-Reihenfolge und Standardauswahl werden nach dem GRUB-Neuaufbau überprüft. Der zusätzliche Kernel ist nur nach der einmaligen Aktivierung startfähig; der Initramfs-Hook stellt das originale Boot-Bundle wieder her. Zum Abbrechen vor dem Neustart: `sudo asahi-kernel-update --cancel-boot`. Dies entfernt keine vorbereiteten Kerneldateien und nimmt keine Firmwareaktualisierung zurück. Sicherungen und Manifest liegen unter `/var/lib/asahi-kernel-update/<Release>/`. Die oben beschriebene Grenze des Rückwegs vor dem Initramfs-Start gilt auch hier.
+
+`--verify-running` bestätigt ausschließlich den passenden laufenden Kernel, die Root-/Boot-Zuordnung, unveränderte Startdateien und die wiederhergestellte Bootdatei. Es prüft weder eGPU-Berechnungen noch Hotplug, Displayausgänge oder Suspend und stuft entsprechende Journalfehler nicht als bestanden ein.
+
+Der Abgleich am 31. Oktober mit dem protokollierten erfolgreichen USB-Start und den erhaltenen SanDisk-GRUB-Einträgen ergab identische funktionale Kernelparameter. Ziel-UUID, Dateipfade und Kernelrelease unterscheiden sich erwartungsgemäß; das vorbereitete m1n1-Bundle stimmt per SHA-256 mit der USB-Referenz überein. Die interne Initramfs ist neu erzeugt und nicht identisch mit der damaligen USB-Initramfs samt gerätespezifischen Autorisierungs-/Reprobe-Hooks. Daraus folgt keine Bestätigung identischen PCIe-Initialisierungsverhaltens. GRUB-Syntax und tatsächlich gestartete interne Rootpartition sind geprüft; 10.573 ausgelieferte Dateien wurden ohne Abweichung mit dem festgelegten Releasearchiv verglichen. Der physische SanDisk wurde für diesen Abgleich nicht erneut eingehängt.
 
 ### Wenn bereits ein neuerer Kernel installiert ist
 

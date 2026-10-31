@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: MIT
 """Prepare an additional kernel on existing internal Ubuntu/Fedora Asahi.
 Default: read-only plan. No disk formatting, user creation or distribution upgrade.
-Hardware testing of this new update flow remains pending.
+Internal Ubuntu boot validated; peripheral and Fedora validation remain incomplete.
 """
 import argparse
 import contextlib
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -19,6 +20,17 @@ import tempfile
 import install as core
 
 STATE = Path('/var/lib/asahi-kernel-update') / core.RELEASE
+
+
+def boot_storage(root, boot, free_boot):
+    if free_boot >= 450*1024**2:
+        return dict(boot_directory='/boot',boot_prefix='',boot_uuid=core.uuid_ok(boot['uuid']))
+    # GRUB can read the already supported unencrypted internal root filesystem.
+    # Keep every existing /boot artifact rather than deleting an older kernel.
+    directory=STATE/'boot'
+    subvolume=root['fsroot'].strip('/') if root['fstype']=='btrfs' else ''
+    prefix='/'+'/'.join(v for v in (subvolume,str(directory).lstrip('/')) if v)
+    return dict(boot_directory=str(directory),boot_prefix=prefix,boot_uuid=core.uuid_ok(root['uuid']))
 
 
 def kernel_version(release):
@@ -75,9 +87,10 @@ def context():
     parent = core.output('lsblk','-n','-o','PKNAME',source).strip()
     model = core.output('lsblk','-dn','-o','MODEL','/dev/'+Path(parent).name)
     return dict(os_id=info['ID'], os_name=info.get('PRETTY_NAME'), commands=cmd,
-                root_uuid=core.uuid_ok(root['uuid']), boot_uuid=core.uuid_ok(boot['uuid']),
+                root_uuid=core.uuid_ok(root['uuid']), system_boot_uuid=core.uuid_ok(boot['uuid']),
                 internal_esp_uuid=esp, root_subvolume=root['fsroot'] if root['fstype']=='btrfs' else '/',
-                root_fstype=root['fstype'], release=core.RELEASE, model=model, target='internal-update')
+                root_fstype=root['fstype'], release=core.RELEASE, model=model, target='internal-update',
+                **boot_storage(root,boot,shutil.disk_usage('/boot').free))
 
 
 def preflight(m, space=True):
@@ -93,15 +106,17 @@ def preflight(m, space=True):
     live=Path('/boot/efi/m1n1/boot.bin')
     core.require(live.is_file() and Path(cmd['cfg']).is_file(), 'Existing Asahi m1n1/GRUB setup missing')
     core.require(not list(live.parent.glob('*.armed')) and not (live.parent/'usb-test-armed').exists(), 'Another boot is armed')
-    core.require('next_entry=' not in core.output(cmd['edit'],cmd['env'],'list'), 'Another one-time GRUB selection is pending')
+    core.require(not core.pending_grub_entries(core.output(cmd['edit'],cmd['env'],'list')), 'Another one-time GRUB selection is pending')
     if space:
-        core.require(shutil.disk_usage('/boot').free >= 450*1024**2, 'At least 450 MiB free in /boot required; no old kernels are deleted')
+        if m['boot_directory']=='/boot':
+            core.require(shutil.disk_usage('/boot').free >= 450*1024**2, 'At least 450 MiB free in /boot required')
         core.require(shutil.disk_usage('/').free >= 3*core.GIB, 'At least 3 GiB free in root required')
         core.require(shutil.disk_usage(live.parent).free >= 2*live.stat().st_size+2*1024**2,
                      'ESP needs room for a bundle backup and atomic staging')
     core.require('module.sig_enforce=1' not in Path('/proc/cmdline').read_text(),
                  'Enforced module signature policy requires a separately validated key enrollment')
     core.boot_options(m)
+    core.grub_entry(m)
 
 
 def plan():
@@ -170,10 +185,11 @@ def prepare(allow_older=False):
     newer=newer_releases(releases)
     core.require(not newer or allow_older, 'Newer kernel(s) installed: '+', '.join(newer)+'. Use --allow-older only for an additional test kernel; defaults stay unchanged.')
     core.require(not STATE.exists(), 'This release already has update state; inspect it before retrying')
+    boot=Path(m['boot_directory'])
     core.require(not Path('/lib/modules',core.RELEASE).exists(), 'Matching module directory already exists')
     for prefix in ('Image-','vmlinuz-','initrd.img-','config-','System.map-'):
-        core.require(not Path('/boot',prefix+core.RELEASE).exists(), 'Matching boot file already exists: '+prefix+core.RELEASE)
-    core.require(not Path('/boot/dtbs',core.RELEASE).exists(), 'Matching DTB directory already exists')
+        core.require(not (boot/(prefix+core.RELEASE)).exists(), 'Matching boot file already exists: '+prefix+core.RELEASE)
+    core.require(not (boot/'dtbs'/core.RELEASE).exists(), 'Matching DTB directory already exists')
     core.require(not Path('/usr/lib/dracut/modules.d/92asahi-kernel-update').exists(), 'Existing update hook needs review')
     print('Prepare additional kernel:',core.RELEASE,'on',m['os_name'])
     print('Keep all existing users, settings and kernels. Boot default remains unchanged.')
@@ -202,9 +218,9 @@ def prepare(allow_older=False):
             core.atomic(STATE/'boot-candidate.bin',candidate)
             # These new version-specific trees cannot replace an existing kernel.
             shutil.copytree(stage/'lib/modules'/core.RELEASE,Path('/lib/modules')/core.RELEASE,symlinks=True)
-            shutil.copytree(stage/'boot/dtbs'/core.RELEASE,Path('/boot/dtbs')/core.RELEASE,symlinks=True)
+            shutil.copytree(stage/'boot/dtbs'/core.RELEASE,boot/'dtbs'/core.RELEASE,symlinks=True)
             for prefix in ('Image-','config-','System.map-'):
-                save_and_write('boot/'+prefix+core.RELEASE,(stage/'boot'/ (prefix+core.RELEASE)).read_bytes(),m['changed'])
+                save_and_write(str((boot/(prefix+core.RELEASE)).relative_to('/')),(stage/'boot'/ (prefix+core.RELEASE)).read_bytes(),m['changed'])
             for file in (stage/'usr').rglob('*'):
                 if not file.is_file():continue
                 relative=file.relative_to(stage).as_posix()
@@ -230,18 +246,18 @@ install() {
 '''
             save_and_write('usr/lib/dracut/modules.d/92asahi-kernel-update/module-setup.sh',setup,m['changed'],0o755)
             if m['os_id']=='fedora':
-                core.run('restorecon','-RF','/lib/modules/'+core.RELEASE,'/boot/dtbs/'+core.RELEASE,
+                core.run('restorecon','-RF','/lib/modules/'+core.RELEASE,boot/'dtbs'/core.RELEASE,
                          '/usr/lib/asahi-kernel-update','/usr/lib/dracut/modules.d/92asahi-kernel-update')
                 for change in m['changed']:core.run('restorecon','-F','/'+change['path'])
             core.run('depmod','-a',core.RELEASE)
             core.run('dracut','--force','--no-hostonly','--no-hostonly-cmdline',
                      '--add','asahi-kernel-update','--add-drivers','uas usb_storage '+m['root_fstype'],
-                     '/boot/initrd.img-'+core.RELEASE,core.RELEASE)
-            core.verify_initramfs(Path('/'),Path('/boot'),extra_modules=(m['root_fstype'],))
-            if m['os_id']=='fedora':core.run('restorecon','-F','/boot/initrd.img-'+core.RELEASE)
-            m['files']={name:core.digest(Path('/boot')/name) for name in
+                     boot/('initrd.img-'+core.RELEASE),core.RELEASE)
+            core.verify_initramfs(Path('/'),boot,extra_modules=(m['root_fstype'],))
+            if m['os_id']=='fedora':core.run('restorecon','-F',boot/('initrd.img-'+core.RELEASE))
+            m['files']={name:core.digest(boot/name) for name in
                         ('Image-'+core.RELEASE,'initrd.img-'+core.RELEASE,'config-'+core.RELEASE)}
-            generator='etc/grub.d/43_asahi_kernel_update_'+m['root_uuid']
+            generator='etc/grub.d/zz_asahi_kernel_update_'+m['root_uuid']
             save_and_write(generator,'#!/bin/sh\nexec tail -n +3 "$0"\n'+core.grub_entry(m),m['changed'],0o755)
             core.run(*m['commands']['rebuild'])
             core.run(m['commands']['check'],grub)
@@ -271,15 +287,15 @@ install() {
 def arm(cancel=False):
     m=json.loads((STATE/'manifest.json').read_text())
     current=context()
-    for key in ('os_id','root_uuid','boot_uuid','internal_esp_uuid'):
+    for key in ('os_id','root_uuid','system_boot_uuid','internal_esp_uuid'):
         core.require(current[key]==m[key], 'Boot context changed: '+key)
-    core.require(m['status']=='prepared-not-boot-tested','Preparation did not finish')
+    core.require(m['status'] in ('prepared-not-boot-tested','boot-verified'),'Preparation did not finish')
     cmd=m['commands']; live=Path('/boot/efi/m1n1/boot.bin')
     marker=live.parent/('external-'+m['root_uuid']+'.armed')
     core.require(core.digest(STATE/'boot-original.bin')==m['original_sha'],'Backup changed')
     core.require(core.digest(live) in (m['original_sha'],m['candidate_sha']),'Unexpected active boot bundle')
     env=core.output(cmd['edit'],cmd['env'],'list')
-    next_entries=[s for s in env.splitlines() if s.startswith('next_entry=')]
+    next_entries=core.pending_grub_entries(env)
     expected='next_entry=asahi-external-'+m['root_uuid']
     core.require(not next_entries or next_entries==[expected], 'Another boot selection is pending')
     if cancel:
@@ -288,7 +304,7 @@ def arm(cancel=False):
         core.run(cmd['edit'],cmd['env'],'unset','next_entry')
         os.sync();print('Original boot restored; prepared kernel files retained.');return
     preflight(m,space=False)
-    for name,sha in m['files'].items():core.require(core.digest(Path('/boot')/name)==sha,'Boot file changed: '+name)
+    for name,sha in m['files'].items():core.require(core.digest(Path(m['boot_directory'])/name)==sha,'Boot file changed: '+name)
     core.require(core.digest(STATE/'boot-candidate.bin')==m['candidate_sha'],'Candidate changed')
     core.require(core.grub_entry(m).strip() in Path(cmd['cfg']).read_text(),'Menu configuration changed')
     core.require(shutil.disk_usage(live.parent).free>=2*live.stat().st_size+2*1024**2,'ESP too full for safe staging')
@@ -305,6 +321,25 @@ def arm(cancel=False):
     os.sync();print('One-time kernel start armed; not rebooted. Original boot bundle restores in initramfs.')
 
 
+def verify_running():
+    core.require(platform.release()==core.RELEASE, 'The prepared kernel is not running')
+    m=json.loads((STATE/'manifest.json').read_text())
+    current=context()
+    for key in ('root_uuid','system_boot_uuid','internal_esp_uuid'):
+        core.require(current[key]==m[key], 'Different installation is running: '+key)
+    for name,sha in m['files'].items():
+        core.require(core.digest(Path(m['boot_directory'])/name)==sha,'Boot file changed: '+name)
+    live=Path('/boot/efi/m1n1/boot.bin')
+    core.require(core.digest(live)==m['original_sha'],'Original boot bundle has not been restored')
+    core.require(not (live.parent/('external-'+m['root_uuid']+'.armed')).exists(),'Boot marker remains armed')
+    m.update(status='boot-verified',boot_validation=dict(
+        utc=datetime.now(timezone.utc).isoformat(),
+        boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+        scope='Matching kernel/root/boot files and restored boot bundle only; no peripheral functional certification'))
+    core.json_write(STATE/'manifest.json',m)
+    print('Kernel boot verified; default unchanged. Peripheral errors must be assessed separately.')
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     g=p.add_mutually_exclusive_group()
@@ -312,12 +347,14 @@ def main():
     g.add_argument('--prepare',action='store_true')
     g.add_argument('--arm',action='store_true')
     g.add_argument('--cancel-boot',action='store_true')
+    g.add_argument('--verify-running',action='store_true')
     p.add_argument('--allow-older',action='store_true',help='Explicitly permit preparing an older upstream version alongside newer kernels')
     a=p.parse_args()
     core.require(not a.allow_older or a.prepare, '--allow-older requires --prepare')
-    if a.prepare or a.arm or a.cancel_boot:
+    if a.prepare or a.arm or a.cancel_boot or a.verify_running:
         with core.exclusive_operation():
             if a.prepare:prepare(a.allow_older)
+            elif a.verify_running:verify_running()
             else:arm(a.cancel_boot)
     else:plan()
 
