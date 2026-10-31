@@ -1,0 +1,621 @@
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI-DART-MAP PASS; map/unmap/remove only, no DMA issued
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART mapped size=0x8000 iova=1
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI-DART-MAP PASS; map/unmap/remove only, no DMA issued
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART mapped size=0x8000 iova=4000
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI DART config=0 params2=0
+NHI DART initial TCR[0]=0
+NHI DART initial TCR[1]=0
+NHI DART initial TCR[2]=0
+NHI DART initial TCR[3]=0
+NHI DART initial TCR[4]=0
+NHI DART initial TCR[5]=0
+NHI DART initial TCR[6]=0
+NHI DART initial TCR[7]=0
+NHI DART initial TCR[8]=0
+NHI DART initial TCR[9]=0
+NHI DART initial TCR[10]=0
+NHI DART initial TCR[11]=0
+NHI DART initial TCR[12]=0
+NHI DART initial TCR[13]=0
+NHI DART initial TCR[14]=0
+NHI DART initial TCR[15]=0
+NHI DART initial tables empty; no inherited mapping
+
+NHI DART stream1 translation enabled; all other streams disabled
+
+NHI-TUNABLES PASS; all rings remain disabled
+
+NHI DART lifecycle: 35 cases, zero failures; no hardware DMA

@@ -1,0 +1,361 @@
+--- /dev/null
++++ b/cmd/apple_nhi_m1.c
+@@ -0,0 +1,189 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* J274 port1 NHI diagnostic, no ring activation or external storage access.
++ * Register layout and stream assignment derived from Asahi Linux apple.c
++ * and t8103.dtsi. Copyright The Asahi Linux Contributors.
++ * Copyright (c) Sven Peter <sven@kernel.org>
++ */
++#include <apple_nhi_m1.h>
++#include <linux/errno.h>
++#ifdef CONFIG_ARCH_APPLE
++#include <apple_dart.h>
++#include <asm/global_data.h>
++#include <asm/io.h>
++#include <dm.h>
++#include <dm/device-internal.h>
++#include <dm/lists.h>
++#include <dm/ofnode.h>
++#include <iommu.h>
++#include <linux/ioport.h>
++#include <linux/sizes.h>
++#include <malloc.h>
++#include <mapmem.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++#define ACIO_PATH "/soc/cio@501ac0000"
++#define NHI_PATH ACIO_PATH "/nhi@f00000"
++#define DART_PATH ACIO_PATH "/iommu@a80000"
++#define NHI_BASE 0x501f00000ULL
++#define DART_BASE 0x501a80000ULL
++
++static int exact_resource(ofnode node, const char *name, u64 addr, u64 size)
++{
++	struct resource res;
++	int ret = name ? ofnode_read_resource_byname(node, name, &res) :
++			 ofnode_read_resource(node, 0, &res);
++
++	if (ret)
++		return ret;
++	return res.start == addr && resource_size(&res) == size ? 0 : -ERANGE;
++}
++
++int apple_nhi_m1_check(void)
++{
++	ofnode node = ofnode_path(DART_PATH), nhi = ofnode_path(NHI_PATH);
++	struct ofnode_phandle_args args;
++	int ret;
++
++	if (!ofnode_device_is_compatible(ofnode_root(), "apple,j274") ||
++	    !ofnode_device_is_compatible(node, "apple,t8103-dart") ||
++	    !ofnode_device_is_compatible(nhi, "apple,t8103-usb4-nhi") ||
++	    ofnode_is_enabled(node) || ofnode_is_enabled(nhi) ||
++	    !ofnode_read_bool(node, "u-boot,force-dart-translation"))
++		return -ENODEV;
++	ret = exact_resource(node, NULL, DART_BASE, 0x4000);
++	if (ret)
++		return ret;
++	ret = exact_resource(nhi, "nhi", NHI_BASE, 0x100000);
++	if (ret)
++		return ret;
++	ret = ofnode_parse_phandle_with_args(nhi, "iommus", "#iommu-cells",
++					   0, 0, &args);
++	if (ret || args.args_count != 1 || args.args[0] != 1 ||
++	    !ofnode_equal(args.node, node))
++		return -EINVAL;
++	return 0;
++}
++
++/* Only called after ACIO firmware is ready and power is held. */
++static int rings_idle(void)
++{
++	void *nhi = map_sysmem(NHI_BASE, 0x100000);
++	u32 value;
++	int i;
++
++	for (i = 0; i < 12; i++) {
++		value = readl(nhi + 0x10000 + i * 0x4000 + 0x10);
++		if (value == 0xffffffff || (value & BIT(31)))
++			return -EBUSY;
++		value = readl(nhi + 0x80000 + i * 0x4000 + 0x10);
++		if (value == 0xffffffff || (value & BIT(31)))
++			return -EBUSY;
++	}
++	return 0;
++}
++
++/* Probe13 observed 0x80080 on all cold streams. Do not treat this alone
++ * as ownership: accept only that exact state or disabled TCR, and require
++ * every TTBR to be invalid. Active/unknown mappings must never be replaced.
++ * The caller also proves all NHI rings disabled before touching this DART.
++ */
++static int empty_translation(void *regs)
++{
++	u32 value;
++	int sid, index, ret = 0;
++
++	for (sid = 0; sid < 16; sid++) {
++		value = readl(regs + 0x100 + sid * 4);
++		printf("NHI DART initial TCR[%d]=%#x\n", sid, value);
++		if (value != 0 && value != 0x80080)
++			ret = -EBUSY;
++		for (index = 0; index < 4; index++) {
++			value = readl(regs + 0x200 + sid * 16 + index * 4);
++			if (value & BIT(31)) {
++				printf("NHI DART valid TTBR[%d,%d]=%#x\n", sid, index, value);
++				ret = -EBUSY;
++			}
++		}
++	}
++	value = readl(regs + 0x20);
++	if (value == 0xffffffff || (value & BIT(2)))
++		ret = -EBUSY;
++	if (!ret)
++		puts("NHI DART initial tables empty; no inherited mapping\n");
++	return ret;
++}
++
++int apple_nhi_m1_dart_test(void)
++{
++	struct udevice *dart = NULL;
++	const struct iommu_ops *ops;
++	void *regs = map_sysmem(DART_BASE, 0x4000);
++	void *buffer = NULL;
++	dma_addr_t dva;
++	u32 value;
++	int i, ret;
++
++	ret = apple_nhi_m1_check();
++	if (ret)
++		return ret;
++	ret = rings_idle();
++	if (ret)
++		return ret;
++	value = readl(regs + 0x60);
++	printf("NHI DART config=%#x params2=%#x\n", value, readl(regs + 4));
++	if (value == 0xffffffff || (value & BIT(15)))
++		return -EBUSY;
++	ret = empty_translation(regs);
++	if (ret)
++		return ret;
++	ret = lists_bind_fdt(gd->dm_root, ofnode_path(DART_PATH), &dart,
++			    lists_driver_lookup_name("apple_dart"), false);
++	if (ret || !dart)
++		return ret ? ret : -ENODEV;
++	ret = device_probe(dart);
++	if (ret)
++		return ret;
++	ret = apple_dart_limit_stream(dart, 1);
++	if (ret)
++		return ret;
++	for (i = 0; i < 16; i++) {
++		if (readl(regs + 0x100 + i * 4) != (i == 1 ? BIT(7) : 0))
++			return -EIO;
++	}
++	puts("NHI DART stream1 translation enabled; all other streams disabled\n");
++	ops = device_get_ops(dart);
++	buffer = memalign(SZ_16K, 2 * SZ_16K);
++	if (!buffer)
++		return -ENOMEM;
++	memset(buffer, 0xa5, 2 * SZ_16K);
++	dva = ops->map(dart, buffer, 2 * SZ_16K);
++	ret = apple_dart_get_error(dart);
++	/* On any uncertain failure retain the buffer until mandatory reset. */
++	if (ret)
++		return ret;
++	if (!dva) {
++		free(buffer);
++		return -ENOMEM;
++	}
++	printf("NHI DART mapped size=%#x iova=%llx\n", 2 * SZ_16K, (u64)dva);
++	if (dva < SZ_16K || dva > 0x100000000ULL - 3 * SZ_16K ||
++	    (dva & (SZ_16K - 1)))
++		return -ERANGE;
++	ret = rings_idle();
++	if (ret)
++		return ret;
++	ops->unmap(dart, dva, 2 * SZ_16K);
++	ret = apple_dart_get_error(dart);
++	if (ret)
++		return ret;
++	free(buffer);
++	ret = device_remove(dart, DM_REMOVE_NORMAL);
++	if (ret)
++		return ret;
++	puts("NHI-DART-MAP PASS; map/unmap/remove only, no DMA issued\n");
++	return 0;
++}
++#else
++int apple_nhi_m1_check(void) { return -ENOSYS; }
++int apple_nhi_m1_dart_test(void) { return -ENOSYS; }
++#endif
+--- a/cmd/apple_acio_m1.c
++++ b/cmd/apple_acio_m1.c
+@@ -6,6 +6,7 @@
+  * Power/reset operations use U-Boot's existing Apple PMGR provider.
+  */
+ #include <apple_acio_m1.h>
++#include <apple_nhi_m1.h>
+ #include <linux/errno.h>
+ #ifdef CONFIG_ARCH_APPLE
+ #include <apple_acio_prereq.h>
+@@ -157,7 +158,7 @@
+  .flags = DM_FLAG_DEFAULT_PD_CTRL_OFF,
+ };
+ 
+-int apple_acio_m1_start(bool read_nhi)
++int apple_acio_m1_start(unsigned int stage)
+ {
+  struct udevice *pd, *rstdev, *owner, *mbox;
+  struct reset_ctl rst = {};
+@@ -219,7 +220,7 @@
+  ret = readl_poll_sleep_timeout(rc + 0xa8, state, state != 0xffffffff && (state & GENMASK(30,24)), 100, 500000);
+  printf("ACIO firmware state=%#x ret=%d\n", state, ret);
+  if (!ret) puts("ACIO M3 READY PASS; no NHI/tunnel/DMA\n");
+- if (!ret && read_nhi) {
++ if (!ret && stage >= 1) {
+   u32 cap = readl(map_sysmem(0x501f00000ULL, 4));
+   printf("ACIO NHI HOP_COUNT raw=%#x count=%u\n", cap, cap & 0x3ff);
+   /* J274 NHI has 12 TX/RX ring pairs in the tested Linux DT. No writes. */
+@@ -228,6 +229,7 @@
+   else
+    puts("NHI-READONLY PASS; no configuration, rings or DMA\n");
+  }
++ if (!ret && stage >= 2) ret = apple_nhi_m1_dart_test();
+  shutdown = apple_rtkit_shutdown(rtk, APPLE_RTKIT_PWR_STATE_SLEEP);
+  printf("ACIO RTKit shutdown ret=%d\n", shutdown);
+  if (!ret) ret = shutdown;
+@@ -239,5 +241,5 @@
+ 
+ #else
+ int apple_acio_m1_check(void) { return -ENOSYS; }
+-int apple_acio_m1_start(bool read_nhi) { return -ENOSYS; }
++int apple_acio_m1_start(unsigned int stage) { return -ENOSYS; }
+ #endif
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -2,6 +2,7 @@
+ /* Explicit J274 port1 PHY diagnostic. Never used by boot_targets. */
+ #include <apple_atc_m1.h>
+ #include <apple_acio_m1.h>
++#include <apple_nhi_m1.h>
+ #include <apple_cd321x.h>
+ #include <asm/io.h>
+ #include <command.h>
+@@ -164,13 +165,19 @@
+ 	void *xhci;
+ 	u32 cap, halted;
+ 	int ret, i;
++	unsigned int stage;
+ 	bool acio;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart")))
+ 		return CMD_RET_USAGE;
+-	acio = !strcmp(argv[2], "acio") || !strcmp(argv[2], "nhi");
++	stage = !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
++	acio = !strcmp(argv[2], "acio") || stage;
++	if (stage >= 2) {
++		ret = apple_nhi_m1_check();
++		if (ret) goto fail;
++	}
+ 	if (acio) {
+ 		ret = apple_acio_m1_check();
+ 		if (ret) goto fail;
+@@ -247,7 +254,7 @@
+ 	}
+ 	if (acio) {
+ 		puts("ATC-M1 PHY retained for ACIO; xHCI remains halted\n");
+-		ret = apple_acio_m1_start(!strcmp(argv[2], "nhi"));
++		ret = apple_acio_m1_start(stage);
+ 		if (ret) goto fail;
+ 	} else {
+ 		puts("ATC-M1 PHY SEQUENCE PASS; DWC3 held reset, no ACIO/NHI/tunnel/DMA\n");
+@@ -261,4 +268,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi - M3 readiness and optional NHI read; no DMA");
++	   "1 check|start|acio|nhi|dart - staged M3/NHI/DART diagnostic; no DMA");
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -306,3 +306,5 @@
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_atc_m1.o
+ 
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_acio_m1.o
++
++obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1.o
+--- /dev/null
++++ b/include/apple_nhi_m1.h
+@@ -0,0 +1,6 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef APPLE_NHI_M1_H
++#define APPLE_NHI_M1_H
++int apple_nhi_m1_check(void);
++int apple_nhi_m1_dart_test(void);
++#endif
+--- a/include/apple_acio_m1.h
++++ b/include/apple_acio_m1.h
+@@ -3,5 +3,5 @@
+ #define APPLE_ACIO_M1_H
+ #include <linux/types.h>
+ int apple_acio_m1_check(void);
+-int apple_acio_m1_start(bool read_nhi);
++int apple_acio_m1_start(unsigned int stage);
+ #endif
+--- a/include/apple_dart.h
++++ b/include/apple_dart.h
+@@ -9,4 +9,7 @@
+  */
+ int apple_dart_get_error(struct udevice *dev);
+ 
++/* Only before DMA starts: leave translation enabled for this stream alone. */
++int apple_dart_limit_stream(struct udevice *dev, unsigned int stream);
++
+ #endif
+--- a/drivers/iommu/apple_dart.c
++++ b/drivers/iommu/apple_dart.c
+@@ -223,6 +223,30 @@
+ 		return -EINVAL;
+ 	priv = dev_get_priv(dev);
+ 	return priv->error;
++}
++
++/* Diagnostic only: caller must prove all DMA engines idle first. */
++int apple_dart_limit_stream(struct udevice *dev, unsigned int stream)
++{
++	struct apple_dart_priv *priv;
++	int sid, i, ret = apple_dart_get_error(dev);
++
++	if (ret)
++		return ret;
++	priv = dev_get_priv(dev);
++	if (priv->bypass || !priv->l1 || stream >= priv->nsid)
++		return -EINVAL;
++	for (sid = 0; sid < priv->nsid; sid++)
++		writel(0, priv->base + DART_TCR(priv, sid));
++	ret = apple_dart_sync(priv);
++	if (ret)
++		return ret;
++	for (i = 0; i < DIV_ROUND_UP(priv->nsid, 32); i++)
++		writel(i == stream / 32 ? BIT(stream % 32) : 0,
++		       priv->base + DART_SID_ENABLE(priv, i));
++	writel(priv->tcr_translate_enable,
++	       priv->base + DART_TCR(priv, stream));
++	return 0;
+ }
+ 
+ static int apple_dart_probe(struct udevice *dev)
+@@ -302,7 +326,8 @@
+ 	}
+ 
+ 	params2 = readl(priv->base + DART_PARAMS2);
+-	if (priv->tcr_bypass && (params2 & DART_PARAMS2_BYPASS_SUPPORT)) {
++	if (priv->tcr_bypass && (params2 & DART_PARAMS2_BYPASS_SUPPORT) &&
++	    !dev_read_bool(dev, "u-boot,force-dart-translation")) {
+ 		for (sid = 0; sid < priv->nsid; sid++) {
+ 			writel(priv->tcr_bypass,
+ 			       priv->base + DART_TCR(priv, sid));

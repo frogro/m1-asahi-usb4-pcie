@@ -1,0 +1,20 @@
+--- a/drivers/iommu/apple_dart.c
++++ b/drivers/iommu/apple_dart.c
+@@ -37,7 +37,7 @@
+ #define  DART_T8110_PARAMS4_NSID_MASK		(0x1ff << 0)
+ #define DART_T8110_TLB_CMD		0x0080
+ #define  DART_T8110_TLB_CMD_BUSY		BIT(31)
+-#define  DART_T8110_TLB_CMD_FLUSH_ALL		BIT(8)
++#define  DART_T8110_TLB_CMD_FLUSH_ALL		0
+ #define DART_T8110_ERROR		0x0100
+ #define DART_T8110_ERROR_MASK		0x0104
+ #define DART_T8110_ERROR_ADDR_LO	0x0170
+@@ -114,7 +114,7 @@
+ 	mb();
+ 
+ 	writel(DART_T8110_TLB_CMD_FLUSH_ALL,
+-	       priv->base + DART_T8110_TLB_CMD_FLUSH_ALL);
++	       priv->base + DART_T8110_TLB_CMD);
+ 	while (readl(priv->base + DART_T8110_TLB_CMD) &
+ 	       DART_T8110_TLB_CMD_BUSY)
+ 		continue;

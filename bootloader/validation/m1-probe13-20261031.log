@@ -1,0 +1,98 @@
+U-Boot 2026.07-gb33034a515a0-dirty (Oct 31 2026 - 17:30:00 +0100)
+
+Model: Apple Mac mini (M1, 2020)
+DRAM:  15.2 GiB
+Core:  179 devices, 21 uclasses, devicetree: board
+WDT:   Started watchdog@23d2b0000 with servicing every 1000ms (60s timeout)
+Loading Environment from nowhere... OK
+In:    serial,usbkbd,spikbid,mtpkbd
+Out:   vidconsole,serial
+Err:   vidconsole,serial
+Model: Apple Mac mini (M1, 2020)
+
+starting USB...
+USB XHCI 1.10
+USB XHCI 1.00
+Bus usb@502280000: 1 USB Device(s) found
+Bus xhci_pci: 2 USB Device(s) found
+       scanning usb for storage devices... 0 Storage Device(s) found
+
+Hit any key to stop autoboot: 0
+UBOOT-PROBE13 NHI-DART-INITIAL-STATUS
+373831 bytes read in 1 ms (356.5 MiB/s)
+sha256 for b9be00000 ... b9be5b446 ==> ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9
+INTERNAL-NVME-BEFORE PASS
+ATC-M1 port=1 mode=USB4 swapped=0 validated=5 groups
+PHY-CHECK PASS
+ACIO preflight PD 0x458=0x300
+ACIO preflight PD 0x460=0x300
+ACIO preflight PD 0x468=0x300
+ACIO preflight PD 0x450=0x300
+ATC-M1 port=1 mode=USB4 swapped=0 validated=5 groups
+ATC-M1 selected DWC3 halted; other USB hosts untouched
+ATC-M1 stage=1
+ATC-M1 stage=2
+ATC-M1 stage=3
+ATC-M1 stage=13
+ATC-M1 stage=4
+ATC-M1 stage=5
+ATC-M1 stage=6
+ATC-M1 stage=7
+ATC-M1 stage=14
+ATC-M1 released DWC3: command=0x0 status=0x801
+ATC-M1 stage=8
+ATC-M1 stage=9
+ATC-M1 stage=10
+ATC-M1 stage=11
+ATC-M1 PHY retained for ACIO; xHCI remains halted
+ACIO preflight PD 0x458=0x300
+ACIO preflight PD 0x460=0x300
+ACIO preflight PD 0x468=0x300
+ACIO preflight PD 0x450=0x300
+ACIO power PD 0x448=0x20ff
+ACIO PCIe-C reset-before-power PASS
+ACIO power PD 0x458=0x3ff
+ACIO power PD 0x460=0x2ff
+ACIO power PD 0x468=0x2ff
+ACIO power PD 0x450=0x3ff
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+ACIO SRAM ep=1 iova=1000ae00 size=4000 ret=0
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+ACIO NHI HOP_COUNT raw=0xc count=12
+NHI-READONLY PASS; no configuration, rings or DMA
+NHI DART config=0x10000 params2=0x10033
+NHI DART initial TCR[0]=0x80080
+NHI DART initial TCR[1]=0x80080
+NHI DART initial TCR[2]=0x80080
+NHI DART initial TCR[3]=0x80080
+NHI DART initial TCR[4]=0x80080
+NHI DART initial TCR[5]=0x80080
+NHI DART initial TCR[6]=0x80080
+NHI DART initial TCR[7]=0x80080
+NHI DART initial TCR[8]=0x80080
+NHI DART initial TCR[9]=0x80080
+NHI DART initial TCR[10]=0x80080
+NHI DART initial TCR[11]=0x80080
+NHI DART initial TCR[12]=0x80080
+NHI DART initial TCR[13]=0x80080
+NHI DART initial TCR[14]=0x80080
+NHI DART initial TCR[15]=0x80080
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=-16; power held until mandatory full reset
+ATC-M1 diagnostic error=-16; no automatic retry
+ACIO-START FAIL
+373831 bytes read in 1 ms (356.5 MiB/s)
+sha256 for b9be00000 ... b9be5b446 ==> ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9
+INTERNAL-NVME-AFTER PASS
+CD321x bus=0 addr=3f status=108280ef data=16c00011
+USB4=1 TBT=0 USB3=0 orientation=0 active_cable=1
+USB4 mode=07 EUDO=2667e000
+Status only: no PHY setup, tunnel or disk access performed.
+OWC-DISK-NOT-ACCESSED
+NO-NHI-OR-TUNNEL
+RESET-IN-10-SECONDS
+resetting ...

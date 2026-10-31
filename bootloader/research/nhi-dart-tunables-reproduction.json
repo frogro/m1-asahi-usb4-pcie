@@ -1,0 +1,11 @@
+{
+  "base": "Probe10 reproduced source",
+  "incremental_patches": {
+    "dart-t8110-command-candidate.patch": "9e095de9ffcf9e6446e42f3c75da547c8c31a2c885f458034be7dcf08f466040",
+    "dart-bounded-flush-candidate.patch": "30434d652ecca84a1b06af8664be8f0febbf2cf1c065402de511e296e40a1536",
+    "nhi-dart-map-candidate.patch": "2402ffd4cdeff0d97868cf0b351139e3cd73c76a9fe3dbc99a29a7f4569ebe1d",
+    "nhi-tunables-candidate.patch": "08602fd6816811c126bb790b67b20c4758e18c54865d67103a96f9a6cb1876d2"
+  },
+  "changed_files_compared": 8,
+  "all_match": true
+}

@@ -1,0 +1,81 @@
+{
+  "utc": "2026-10-31T16:56:32.754206+00:00",
+  "scope": "RAM-only J274 port1 diagnostics; research outside prototype manifest and all installers",
+  "hardware": {
+    "probe11": {
+      "dart_checks": "passed twice",
+      "first_return": "Ubuntu early boot stalled; manual restart required",
+      "second_return": "automatic"
+    },
+    "probe12": {
+      "result": "guard rejected inherited TCR before mapping",
+      "ubuntu_return": "automatic"
+    },
+    "probe13": {
+      "result": "observed all 16 TCR values 0x80080; original guard rejected mapping",
+      "ubuntu_return": "automatic"
+    },
+    "probe14": {
+      "result": "32 KiB translated map/unmap passed with empty TTBR guard",
+      "runs": 2,
+      "ubuntu_return": "automatic for both completed runs"
+    },
+    "probe15": {
+      "result": "29 RC and 226 NHI tunables plus DART map/unmap passed",
+      "runs": 1,
+      "ubuntu_return": "automatic"
+    },
+    "probe16": {
+      "result": "host-router configuration read via NHI DMA passed",
+      "runs": 1,
+      "route": 0,
+      "response_port": 7,
+      "response_words": [
+        "200005ac",
+        "0001c71b",
+        "00000000",
+        "00000000"
+      ],
+      "tx_descriptor": "0x611010",
+      "rx_descriptor": "0x201020",
+      "received_packets": 1,
+      "dart_error_raw": "0x04020000",
+      "dart_error_valid_bit31": false,
+      "rtkit_shutdown": 0,
+      "internal_nvme_before_after": "expected SHA-256 matched",
+      "reset_observed": true,
+      "ubuntu_return": "SSH verified 2026-10-31 16:54:38 UTC",
+      "external_disk_accessed": false
+    }
+  },
+  "software": {
+    "sandbox_cases": 57,
+    "sandbox_failures": 0,
+    "ring_codec_mock_cases": 17,
+    "preflight_mock_cases": 111,
+    "dart_lifecycle_mock_cases": 35,
+    "acio_sequence_mock_cases": 32,
+    "tunable_mock_cases": 41,
+    "dart_mock_cases": 16,
+    "m1_cross_build": "passed",
+    "sandbox_build": "passed"
+  },
+  "payload_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "0fa956e91a652b6b0c7b0f2f98e03836e59ae5b87d3eb96ef822de7a95660ddd",
+    "m1n1-uboot-probe-hv.bin": "e08667a86015e020e569fc51106382780c8f6de11b8230faaba61c60da7f933b",
+    "u-boot-nodtb.bin": "0418e55707974b92ec12b99b52be1ccedaad18e81e13921ec572033ffccf26a5",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "7e56f568f3a537382ec3124857079e2868a6ae15bc0d3814774e055651a3d5c5"
+  },
+  "limitations": [
+    "One M1 port, USB4 cable orientation 0 only",
+    "Host-router control read only; no remote router discovery or PCIe tunnel",
+    "All DMA allocations and DART mappings retained until mandatory reset, including after success",
+    "T8110 command correction has software coverage only",
+    "No installed bootloader or partition changes",
+    "No safe OS handover established"
+  ],
+  "next": "Bounded host capability and adapter discovery, then guarded port unlock and CD321x cable-info programming; external router read before any PCIe tunnel",
+  "excluded": "Linux reset-ACK classifier remains excluded"
+}

@@ -1,0 +1,208 @@
+--- a/drivers/iommu/apple_dart.c
++++ b/drivers/iommu/apple_dart.c
+@@ -3,10 +3,12 @@
+  * Copyright (C) 2021 Mark Kettenis <kettenis@openbsd.org>
+  */
+ 
++#include <apple_dart.h>
+ #include <cpu_func.h>
+ #include <dm.h>
+ #include <iommu.h>
+ #include <linux/sizes.h>
++#include <linux/iopoll.h>
+ #include <lmb.h>
+ #include <memalign.h>
+ #include <asm/io.h>
+@@ -59,6 +61,9 @@
+ 	((priv)->ttbr_base + 4 * (priv)->nttbr * (sid) + 4 * (idx))
+ #define  DART_TTBR_SHIFT	12
+ 
++/* Linux uses 100 us; keep a bounded 1 ms diagnostic margin here. */
++#define DART_TLB_TIMEOUT_US	1000
++
+ #define DART_PAGE_SIZE		SZ_16K
+ #define DART_PAGE_MASK		(DART_PAGE_SIZE - 1)
+ 
+@@ -87,12 +92,14 @@
+ 	u32 tcr_bypass;
+ 	int ttbr_base;
+ 	u32 ttbr_valid;
+-	void (*flush_tlb)(struct apple_dart_priv *priv);
++	int (*flush_tlb)(struct apple_dart_priv *priv);
++	int error;
+ };
+ 
+-static void apple_dart_t8020_flush_tlb(struct apple_dart_priv *priv)
++static int apple_dart_t8020_flush_tlb(struct apple_dart_priv *priv)
+ {
+ 	int i;
++	u32 val;
+ 
+ 	/* Publish page-table writes before invalidating cached translations. */
+ 	mb();
+@@ -103,21 +110,35 @@
+ 		       priv->base + DART_T8020_TLB_SIDMASK + 4 * i);
+ 	}
+ 	writel(DART_T8020_TLB_CMD_FLUSH, priv->base + DART_T8020_TLB_CMD);
+-	while (readl(priv->base + DART_T8020_TLB_CMD) &
+-	       DART_T8020_TLB_CMD_BUSY)
+-		continue;
+-}
+-
+-static void apple_dart_t8110_flush_tlb(struct apple_dart_priv *priv)
+-{
++	return readl_poll_sleep_timeout(priv->base + DART_T8020_TLB_CMD,
++					val, !(val & DART_T8020_TLB_CMD_BUSY),
++					1, DART_TLB_TIMEOUT_US);
++}
++
++static int apple_dart_t8110_flush_tlb(struct apple_dart_priv *priv)
++{
++	u32 val;
++
+ 	/* Publish page-table writes before invalidating cached translations. */
+ 	mb();
+ 
+ 	writel(DART_T8110_TLB_CMD_FLUSH_ALL,
+ 	       priv->base + DART_T8110_TLB_CMD);
+-	while (readl(priv->base + DART_T8110_TLB_CMD) &
+-	       DART_T8110_TLB_CMD_BUSY)
+-		continue;
++	return readl_poll_sleep_timeout(priv->base + DART_T8110_TLB_CMD,
++					val, !(val & DART_T8110_TLB_CMD_BUSY),
++					1, DART_TLB_TIMEOUT_US);
++}
++
++/* A failed invalidation leaves translation ownership uncertain. */
++static int apple_dart_sync(struct apple_dart_priv *priv)
++{
++	if (!priv->error) {
++		priv->error = priv->flush_tlb(priv);
++		if (priv->error)
++			printf("Apple DART: TLB invalidation failed (%d); DMA mappings blocked\n",
++			       priv->error);
++	}
++	return priv->error;
+ }
+ 
+ static dma_addr_t apple_dart_map(struct udevice *dev, void *addr, size_t size)
+@@ -128,7 +149,7 @@
+ 	int i, idx;
+ 
+ 	/* Zero is outside our IOVA aperture and denotes a failed mapping. */
+-	if (!size || size - 1 > (phys_addr_t)-1 - (phys_addr_t)addr)
++	if (priv->error || !size || size - 1 > (phys_addr_t)-1 - (phys_addr_t)addr)
+ 		return 0;
+ 	if (priv->bypass)
+ 		return (phys_addr_t)addr;
+@@ -152,7 +173,9 @@
+ 	}
+ 	flush_dcache_range((unsigned long)&priv->l2[idx],
+ 			   (unsigned long)&priv->l2[idx + i]);
+-	priv->flush_tlb(priv);
++	/* Keep the IOVA reserved on failure; never publish it to the device. */
++	if (apple_dart_sync(priv))
++		return 0;
+ 
+ 	return dva + off;
+ }
+@@ -164,7 +187,7 @@
+ 	phys_size_t psize;
+ 	int i, idx;
+ 
+-	if (priv->bypass)
++	if (priv->error || priv->bypass)
+ 		return;
+ 	/* Reject failed mappings and ranges outside the page-table aperture. */
+ 	if (!size || addr < priv->dvabase || addr >= priv->dvaend ||
+@@ -180,7 +203,9 @@
+ 		priv->l2[idx + i] = DART_L2_INVAL;
+ 	flush_dcache_range((unsigned long)&priv->l2[idx],
+ 			   (unsigned long)&priv->l2[idx + i]);
+-	priv->flush_tlb(priv);
++	/* Do not recycle an IOVA whose old translation may still be cached. */
++	if (apple_dart_sync(priv))
++		return;
+ 
+ 	io_lmb_free(&priv->io_lmb, dva, psize);
+ }
+@@ -189,6 +214,16 @@
+ 	.map = apple_dart_map,
+ 	.unmap = apple_dart_unmap,
+ };
++
++int apple_dart_get_error(struct udevice *dev)
++{
++	struct apple_dart_priv *priv;
++
++	if (!dev || device_get_ops(dev) != &apple_dart_ops)
++		return -EINVAL;
++	priv = dev_get_priv(dev);
++	return priv->error;
++}
+ 
+ static int apple_dart_probe(struct udevice *dev)
+ {
+@@ -260,7 +295,11 @@
+ 		for (i = 0; i < priv->nttbr; i++)
+ 			writel(0, priv->base + DART_TTBR(priv, sid, i));
+ 	}
+-	priv->flush_tlb(priv);
++	ret = apple_dart_sync(priv);
++	if (ret) {
++		io_lmb_teardown(&priv->io_lmb);
++		return ret;
++	}
+ 
+ 	params2 = readl(priv->base + DART_PARAMS2);
+ 	if (priv->tcr_bypass && (params2 & DART_PARAMS2_BYPASS_SUPPORT)) {
+@@ -310,7 +349,10 @@
+ 			addr += DART_PAGE_SIZE;
+ 		}
+ 	}
+-	priv->flush_tlb(priv);
++	/* Tables are now hardware-visible: retain them on uncertain failure. */
++	ret = apple_dart_sync(priv);
++	if (ret)
++		return ret;
+ 
+ 	/* Enable all streams. */
+ 	for (i = 0; i < DIV_ROUND_UP(priv->nsid, 32); i++)
+@@ -328,7 +370,10 @@
+ static int apple_dart_remove(struct udevice *dev)
+ {
+ 	struct apple_dart_priv *priv = dev_get_priv(dev);
+-	int sid, i;
++	int sid, i, ret;
++
++	if (priv->error)
++		return priv->error;
+ 
+ 	/* Disable translations. */
+ 	for (sid = 0; sid < priv->nsid; sid++)
+@@ -339,7 +384,9 @@
+ 		for (i = 0; i < priv->nttbr; i++)
+ 			writel(0, priv->base + DART_TTBR(priv, sid, i));
+ 	}
+-	priv->flush_tlb(priv);
++	ret = apple_dart_sync(priv);
++	if (ret)
++		return ret;
+ 
+ 	io_lmb_teardown(&priv->io_lmb);
+ 
+--- /dev/null
++++ b/include/apple_dart.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef __APPLE_DART_H
++#define __APPLE_DART_H
++
++struct udevice;
++
++/* Check after unmap before releasing buffers. A fault requires a full reset
++ * in the diagnostic caller; the generic IOMMU unmap callback returns void.
++ */
++int apple_dart_get_error(struct udevice *dev);
++
++#endif

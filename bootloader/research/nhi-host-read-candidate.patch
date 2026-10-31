@@ -1,0 +1,280 @@
+--- a/cmd/apple_nhi_m1.c
++++ b/cmd/apple_nhi_m1.c
+@@ -64,6 +64,11 @@
+ 	return 0;
+ }
+ 
++int apple_nhi_m1_control_check(void)
++{
++	return exact_resource(ofnode_path(NHI_PATH), "pdf", 0x501db0000ULL, 0x30004);
++}
++
+ /* Same BE32 offset/clear-mask/set-value format as Linux apple_tunable.
+  * Validate BOTH groups before power or MMIO, then revalidate before applying.
+  */
+@@ -168,7 +173,7 @@
+ 	return ret;
+ }
+ 
+-int apple_nhi_m1_dart_test(bool tune)
++int apple_nhi_m1_dart_test(unsigned int stage)
+ {
+ 	struct udevice *dart = NULL;
+ 	const struct iommu_ops *ops;
+@@ -206,7 +211,7 @@
+ 			return -EIO;
+ 	}
+ 	puts("NHI DART stream1 translation enabled; all other streams disabled\n");
+-	if (tune) {
++	if (stage >= 3) {
+ 		ret = apple_nhi_m1_tunables_apply(true);
+ 		if (!ret)
+ 			ret = rings_idle();
+@@ -214,6 +219,8 @@
+ 			return ret;
+ 		puts("NHI-TUNABLES PASS; all rings remain disabled\n");
+ 	}
++	if (stage >= 4)
++		return apple_nhi_m1_control_read(dart);
+ 	ops = device_get_ops(dart);
+ 	buffer = memalign(SZ_16K, 2 * SZ_16K);
+ 	if (!buffer)
+@@ -247,8 +254,9 @@
+ 	return 0;
+ }
+ #else
++int apple_nhi_m1_control_check(void) { return -ENOSYS; }
+ int apple_nhi_m1_tunables_check(void) { return -ENOSYS; }
+ int apple_nhi_m1_tunables_apply(bool nhi) { return -ENOSYS; }
+ int apple_nhi_m1_check(void) { return -ENOSYS; }
+-int apple_nhi_m1_dart_test(bool tune) { return -ENOSYS; }
++int apple_nhi_m1_dart_test(unsigned int stage) { return -ENOSYS; }
+ #endif
+--- /dev/null
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -0,0 +1,149 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* RAM-only M1 host-router read, never an external PCIe tunnel.
++ * Ring layout/sequence derived from Asahi Linux apple.c, nhi.c and ctl.c.
++ * Copyright The Asahi Linux Contributors
++ * Copyright (c) Sven Peter <sven@kernel.org>
++ * Copyright (c) 2014 Andreas Noever <andreas.noever@gmail.com>
++ * Copyright (C) 2018, Intel Corporation
++ */
++#include <apple_nhi_m1.h>
++#include <linux/errno.h>
++#ifdef CONFIG_ARCH_APPLE
++#include <apple_dart.h>
++#include <asm/io.h>
++#include <cpu_func.h>
++#include <dm.h>
++#include <iommu.h>
++#include <linux/delay.h>
++#include <linux/sizes.h>
++#include <malloc.h>
++#include <mapmem.h>
++#include <time.h>
++#include <usb4_cfg.h>
++
++#define NHI_BASE 0x501f00000ULL
++#define PDF_BASE 0x501db0000ULL
++#define DART_BASE 0x501a80000ULL
++#define PAGE SZ_16K
++#define RING_COUNT 16
++#define DESC_POSTED BIT(22)
++#define DESC_DONE BIT(21)
++#define DESC_ERROR (BIT(20) | BIT(22))
++#define RING_ENABLE BIT(31)
++#define RING_RAW BIT(30)
++struct diagnostic_desc { u64 address; u32 fields, time; };
++
++int apple_nhi_m1_control_read(struct udevice *dart)
++{
++ const struct iommu_ops *ops = device_get_ops(dart);
++ const struct usb4_cfg_request req = {
++  .route = 0, .offset = 0, .port = 0, .space = 2, .seq = 0,
++  .words = 4, .type = USB4_CFG_READ,
++ };
++ void *nhi = map_sysmem(NHI_BASE, 0x100000);
++ void *pdf = map_sysmem(PDF_BASE, 0x30004);
++ void *dart_regs = map_sysmem(DART_BASE, 0x4000);
++ struct diagnostic_desc *tx, *rx;
++ void *buffer;
++ dma_addr_t dva;
++ ulong started;
++ u32 fields = 0, data[4], tx_flags = 0;
++ unsigned int port = 0, next = 0;
++ int len, i, ret;
++ bool got_reply = false, enabled = false;
++
++ ret = apple_dart_get_error(dart);
++ if (ret) return ret;
++ if (readl(dart_regs + 0x40) & BIT(31)) return -EFAULT;
++ for (i = 0; i < 12; i++) {
++  if (readl(nhi + 0x10010 + i * 0x4000) & RING_ENABLE ||
++      readl(nhi + 0x80010 + i * 0x4000) & RING_ENABLE)
++   return -EBUSY;
++ }
++ buffer = memalign(PAGE, 4 * PAGE);
++ if (!buffer) return -ENOMEM;
++ memset(buffer, 0, 4 * PAGE);
++ len = usb4_cfg_encode(&req, NULL, buffer + 2 * PAGE, 256);
++ if (len < 0) { free(buffer); return len; }
++ dva = ops->map(dart, buffer, 4 * PAGE);
++ ret = apple_dart_get_error(dart);
++ if (ret) return ret; /* uncertain mapping: retain allocation until reset */
++ if (!dva) { free(buffer); return -ENOMEM; }
++ if (dva < PAGE || (dva & (PAGE - 1)) ||
++     dva > 0x100000000ULL - 5 * PAGE) return -ERANGE;
++ tx = buffer;
++ rx = buffer + PAGE;
++ tx[0].address = cpu_to_le64(dva + 2 * PAGE);
++ tx[0].fields = cpu_to_le32(len | BIT(12) | BIT(16) | DESC_POSTED);
++ for (i = 0; i < RING_COUNT - 1; i++) {
++  rx[i].address = cpu_to_le64(dva + 3 * PAGE + i * 256);
++  rx[i].fields = cpu_to_le32(DESC_POSTED);
++ }
++ flush_dcache_range((ulong)buffer, (ulong)buffer + 4 * PAGE);
++ mb();
++ /* Polling only. RX accepts all PDFs, as Linux control rings do. */
++ writel(0, nhi + 0xd0010);
++ writel((u32)dva, nhi + 0x10000);
++ writel((u32)(dva >> 32), nhi + 0x10004);
++ writel(0, nhi + 0x10008);
++ writel(RING_COUNT, nhi + 0x1000c);
++ writel(2, nhi + 0x10014);
++ writel((u32)(dva + PAGE), nhi + 0x80000);
++ writel((u32)((dva + PAGE) >> 32), nhi + 0x80004);
++ writel(0, nhi + 0x80008);
++ writel((256 << 16) | RING_COUNT, nhi + 0x8000c);
++ writel(0xffffffff, nhi + 0x80014);
++ writel(0xffffffff, pdf);
++ writel(RING_ENABLE | RING_RAW, nhi + 0x80010);
++ writel(RING_ENABLE | RING_RAW, nhi + 0x10010);
++ enabled = true;
++ writel(RING_COUNT - 1, nhi + 0x80008);
++ writel(1 << 16, nhi + 0x10008);
++ ret = -ETIMEDOUT;
++ started = get_timer(0);
++ while (get_timer(started) < 2000) {
++  invalidate_dcache_range((ulong)rx, (ulong)rx + PAGE);
++  invalidate_dcache_range((ulong)tx, (ulong)tx + PAGE);
++  mb();
++  tx_flags = readl(&tx[0].fields);
++  if (readl(dart_regs + 0x40) & BIT(31)) { ret = -EFAULT; break; }
++  while (!got_reply && next < RING_COUNT - 1) {
++   fields = readl(&rx[next].fields);
++   if (!(fields & DESC_DONE)) break;
++   if (fields & DESC_ERROR) { ret = -EIO; goto stop; }
++   invalidate_dcache_range((ulong)buffer + 3 * PAGE,
++                          (ulong)buffer + 4 * PAGE);
++   mb();
++   ret = usb4_cfg_decode(&req, buffer + 3 * PAGE + next * 256,
++                        fields & 0xfff, (fields >> 16) & 15,
++                        (fields >> 12) & 15, data, &port);
++   next++;
++   if (!ret) got_reply = true;
++   else if (ret != -EAGAIN) goto stop;
++  }
++  if (got_reply && (tx_flags & DESC_DONE)) { ret = 0; break; }
++  ret = -ETIMEDOUT;
++  udelay(50);
++ }
++stop:
++ if (enabled) {
++  writel(0, nhi + 0x10010);
++  writel(0, nhi + 0x80010);
++  mb();
++  if (readl(nhi + 0x10010) || readl(nhi + 0x80010)) ret = -EBUSY;
++ }
++ printf("NHI control ret=%d TX=%#x RX=%#x consumed=%u DART-error=%#x\n",
++        ret, tx_flags, fields, next, readl(dart_regs + 0x40));
++ /* Even successful stop readback is not proof that DMA has drained.
++  * Keep both mapping and allocation, including page tables, until reset.
++  */
++ puts("NHI control buffers and DART retained until mandatory reset\n");
++ if (!ret) {
++  printf("NHI-HOST-READ PASS port=%u data=%08x %08x %08x %08x\n",
++         port, data[0], data[1], data[2], data[3]);
++ }
++ return ret;
++}
++#else
++int apple_nhi_m1_control_read(struct udevice *dart) { return -ENOSYS; }
++#endif
+--- a/cmd/apple_acio_m1.c
++++ b/cmd/apple_acio_m1.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* RAM-only J274 port1 ACIO readiness diagnostic. Staged NHI/DART checks; no ring DMA.
++/* RAM-only J274 port1 ACIO readiness diagnostic. Staged NHI/DART checks and bounded host-router read.
+  * Sequence derived from Asahi Linux thunderbolt/apple.c and reset-apple-cio.c.
+  * Copyright The Asahi Linux Contributors
+  * Copyright (c) Sven Peter <sven@kernel.org>
+@@ -230,7 +230,7 @@
+    puts("NHI-READONLY PASS; no configuration, rings or DMA\n");
+  }
+  if (!ret && stage >= 3) ret = apple_nhi_m1_tunables_apply(false);
+- if (!ret && stage >= 2) ret = apple_nhi_m1_dart_test(stage >= 3);
++ if (!ret && stage >= 2) ret = apple_nhi_m1_dart_test(stage);
+  shutdown = apple_rtkit_shutdown(rtk, APPLE_RTKIT_PWR_STATE_SLEEP);
+  printf("ACIO RTKit shutdown ret=%d\n", shutdown);
+  if (!ret) ret = shutdown;
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -170,10 +170,14 @@
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host")))
+ 		return CMD_RET_USAGE;
+-	stage = !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
++	stage = !strcmp(argv[2], "host") ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+ 	acio = !strcmp(argv[2], "acio") || stage;
++	if (stage >= 4) {
++		ret = apple_nhi_m1_control_check();
++		if (ret) goto fail;
++	}
+ 	if (stage >= 3) {
+ 		ret = apple_nhi_m1_tunables_check();
+ 		if (ret) goto fail;
+@@ -272,4 +276,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune - staged M3/NHI/DART diagnostic; no DMA");
++	   "1 check|start|acio|nhi|dart|tune|host - staged M3/NHI/DART diagnostic; no DMA");
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -307,4 +307,4 @@
+ 
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_acio_m1.o
+ 
+-obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1.o
++obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1.o apple_nhi_m1_ring.o
+--- a/cmd/Kconfig
++++ b/cmd/Kconfig
+@@ -3242,6 +3242,7 @@
+ 	bool "Explicit M1 port1 PHY diagnostic"
+ 	depends on DM_I2C && DM_USB && POWER_DOMAIN
+ 	select APPLE_ATC_M1
++	select USB4_CFG_CODEC
+ 	select APPLE_CD321X_STATUS
+ 	help
+ 	  Check or configure only J274 port1. Never used in normal boot.
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -2,8 +2,11 @@
+ #ifndef APPLE_NHI_M1_H
+ #define APPLE_NHI_M1_H
+ #include <linux/types.h>
++struct udevice;
++int apple_nhi_m1_control_check(void);
++int apple_nhi_m1_control_read(struct udevice *dart);
+ int apple_nhi_m1_check(void);
+-int apple_nhi_m1_dart_test(bool tune);
++int apple_nhi_m1_dart_test(unsigned int stage);
+ int apple_nhi_m1_tunables_check(void);
+ int apple_nhi_m1_tunables_apply(bool nhi);
+ #endif

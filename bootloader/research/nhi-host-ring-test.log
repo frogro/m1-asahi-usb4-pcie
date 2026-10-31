@@ -1,0 +1,30 @@
+NHI control ret=0 TX=0x200000 RX=0x201020 consumed=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI-HOST-READ PASS port=0 data=12340000 12340001 12340002 12340003
+NHI control ret=-110 TX=0x411010 RX=0x400000 consumed=0 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI control ret=-74 TX=0x200000 RX=0x201020 consumed=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI control ret=-110 TX=0x200000 RX=0x400000 consumed=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI control ret=-5 TX=0x200000 RX=0x301020 consumed=0 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI control ret=-14 TX=0x200000 RX=0 consumed=0 DART-error=0x80000000
+NHI control buffers and DART retained until mandatory reset
+
+NHI control ret=-16 TX=0x200000 RX=0x201020 consumed=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI control ret=-110 TX=0x411010 RX=0x201020 consumed=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI control ret=0 TX=0x200000 RX=0x201020 consumed=2 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI-HOST-READ PASS port=0 data=12340000 12340001 12340002 12340003
+NHI control ring production/codec mock: 17 cases, zero failures; no hardware DMA

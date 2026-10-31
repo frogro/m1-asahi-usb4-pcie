@@ -141,5 +141,60 @@ from the patch chain. See `nhi-m1-patch-reproduction.json` and the Probe10 logs.
 The boot-script footer `NO-NHI-OR-TUNNEL` means no NHI transport initialization;
 the explicit `NHI-READONLY PASS` line records the capacity-register read.
 
-The next hardware gate is bounded DART error handling before NHI ring DMA.
-See `nhi-dma-next-steps.md`; no new DMA implementation is claimed here.
+The subsequent DART and first NHI DMA gates are recorded below.
+See `nhi-dma-next-steps.md` for the remaining external-link work.
+
+
+## Bounded DART and first host-router DMA (Probe11–16)
+
+These remain research candidates, outside `prototype.json`, the kernel series,
+installer and installed bootloader. Apply after the Probe10 chain in this order:
+
+1. `dart-t8110-command-candidate.patch`
+2. `dart-bounded-flush-candidate.patch`
+3. `nhi-dart-map-candidate.patch` (final Probe14 state)
+4. `nhi-tunables-candidate.patch` (Probe15)
+5. `nhi-host-read-candidate.patch` (Probe16)
+
+The reproduction JSON files record byte-for-byte comparisons with the source
+used for the diagnostic builds. Payload SHA-256 values and individual results
+are in `nhi-host-result.json`; hardware logs are under `../validation/`.
+
+DART flushes have a 1 ms deadline and latch faults. Failed map/unmap/remove
+paths retain uncertain allocations and page tables. Generic U-Boot unmap is
+still void: arbitrary callers must not assume that a timed-out unmap permits
+freeing their buffers. The new diagnostic checks the explicit fault status.
+The separate T8110 register correction is software-tested only, not M1 proof
+of M2 behavior.
+
+Probe12 correctly refused inherited nonzero TCR state. Probe13 established
+that all 16 TCR values were 0x80080. Probe14 accepts only zero or that observed
+value, requires all 64 translation-table entries to be invalid and all NHI
+rings stopped, and enables translation only for SID1. Its 32 KiB map/unmap
+passed twice. Probe15 additionally applied 29 RC and 226 NHI calibration
+triplets, with prevalidated register bounds, while rings remained disabled.
+
+Probe16 transmitted one route-zero configuration read through control ring0
+with a two-second response deadline. The response passed framing, sequence,
+route and CRC validation: `200005ac 0001c71b 00000000 00000000`, response port 7.
+One RX descriptor completed, TX completed, and ring-disable readbacks passed.
+The DART error register contained 0x04020000 with its error-valid bit clear;
+this is not a claim that the raw register was zero. Internal NVMe hashes
+matched before/after; RTKit shutdown succeeded and Ubuntu returned automatically.
+
+Even a successful ring-stop readback is not proof of drained DMA. All 64 KiB
+of descriptors/data and their mappings remain allocated until mandatory reset.
+No external router, PCIe tunnel or OWC disk access occurred. Safe OS handover
+and actual external boot remain unimplemented. The first Probe11 fallback
+stalled during Ubuntu early boot and needed manual restart; its second return
+and the subsequent completed probes returned automatically. No cause is claimed
+for that isolated fallback failure.
+
+The latest M1 and sandbox builds pass. The 57 sandbox cases are supplemented
+by extracted-production host mocks: 17 ring/codec, 111 preflight, 35 DART
+lifecycle and 32 ACIO-sequence cases, plus 41 tunable and 16 DART cases.
+The host C tests can be compiled individually with a C compiler, for example
+`cc -O1 -g -fsanitize=address,undefined nhi-host-ring-test.c -o /tmp/nhi-ring-test`.
+These mocks establish software behavior under injected failures, not hardware
+coverage beyond the numbered logs. Passed hardware tests are not repeated
+without a specific new reason.

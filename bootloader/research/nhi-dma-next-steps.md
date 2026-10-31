@@ -1,6 +1,9 @@
-# NHI DMA implementation gate after Probe10
+# NHI DMA and external-link implementation gates
 
-Status: source audit and implementation plan, not an implemented DMA driver.
+Status as of Probe16: bounded host-router ring0 read implemented and passed
+on M1 hardware. This is a RAM diagnostic, not a general DMA/boot driver.
+The original audit below explains the prerequisites now addressed; the
+external-link and OS-handover work remains open.
 No installed bootloader, kernel installer or prototype manifest changes.
 
 ## Source baseline and provenance
@@ -22,7 +25,7 @@ The NHI Linux driver requests a 42-bit DMA mask. Validate its aperture and
 
 ## Required DART work before a hardware DMA test
 
-The current U-Boot T8020 and T8110 flush functions wait forever on BUSY.
+The pinned upstream U-Boot T8020 and T8110 flush functions wait forever on BUSY.
 Their void callbacks cannot propagate a timeout. Linux's corresponding
 stream commands use bounded polling and return an error.
 
@@ -64,9 +67,31 @@ Then repeat internal-NVMe read regression before enabling NHI DMA.
    enable an external PCIe tunnel in that test.
 6. Stop rings before firmware sleep and DART teardown. Failed stop means no
    buffer reuse and mandatory reset, not OS handover.
-7. Only after repeated host-router reads: program CD321x-derived cable info,
+7. After the passed host-router read: program CD321x-derived cable info,
    discover the external router, establish PCIe tunnel, enumerate PCIe/NVMe,
    and perform bounded read-only storage validation before GRUB integration.
 
 Acceptance remains actual hardware evidence. Twelve reported rings and M3
 readiness prove neither USB4 link training nor external NVMe boot.
+
+
+## Next bounded diagnostic after Probe16
+
+Do not repeat the passed single-read probe. Extend control transport to bounded
+multiple reads, enumerate the host capability chain and adapter headers, and
+locate the Apple vendor capability. Reject cyclic/out-of-range capability
+pointers and malformed responses before writes. Do not assume the observed
+response port 7 identifies the physical downstream port.
+
+The Linux reference `drivers/thunderbolt/apple.c` initializes the domain,
+requires the host DROM, discovers the Apple vendor capability, unlocks null
+ports, then writes negotiated cable information. Preserve that order and
+validate the DROM/port mapping and CD321x mode/orientation first. Cable-info
+programming can initiate link training; it is a separate hardware gate from
+read-only discovery. Its success must be checked by a bounded remote-router
+configuration read, not inferred from local register readback.
+
+Only then implement the separate PCIe adapter and tunneled-PCIe DART, resource
+windows, tunnel paths, external enumeration and read-only NVMe hash check.
+Graceful DMA ownership transfer/cleanup before GRUB and OS entry remains a
+separate prerequisite; the current diagnostic requires a whole-machine reset.

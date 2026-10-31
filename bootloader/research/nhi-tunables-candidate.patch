@@ -1,0 +1,155 @@
+--- a/cmd/apple_nhi_m1.c
++++ b/cmd/apple_nhi_m1.c
+@@ -64,6 +64,61 @@
+ 	return 0;
+ }
+ 
++/* Same BE32 offset/clear-mask/set-value format as Linux apple_tunable.
++ * Validate BOTH groups before power or MMIO, then revalidate before applying.
++ */
++static int tunable_load(bool nhi, const u32 **data, int *bytes)
++{
++	u32 off, size = nhi ? 0x100000 : 0xc000;
++	int i;
++
++	*data = ofnode_get_property(ofnode_path(nhi ? NHI_PATH : ACIO_PATH),
++			nhi ? "apple,tunable-nhi" : "apple,tunable-rc", bytes);
++	if (!*data || *bytes <= 0)
++		return -ENOENT;
++	if (*bytes > 65532 || *bytes % 12)
++		return -EINVAL;
++	for (i = 0; i < *bytes / 4; i += 3) {
++		off = be32_to_cpu((*data)[i]);
++		if ((off & 3) || off > size - 4)
++			return -ERANGE;
++		/* NHI ring control registers are not tuning targets. */
++		if (nhi && !((off >= 0xe8000 && off < 0x100000) ||
++			     (off >= 0x4000 && off < 0x4400)))
++			return -EPERM;
++	}
++	return 0;
++}
++
++int apple_nhi_m1_tunables_check(void)
++{
++	const u32 *data;
++	int bytes, ret = tunable_load(false, &data, &bytes);
++
++	return ret ? ret : tunable_load(true, &data, &bytes);
++}
++
++int apple_nhi_m1_tunables_apply(bool nhi)
++{
++	const u32 *data;
++	void *regs;
++	u32 off, mask, value;
++	int i, bytes, ret = tunable_load(nhi, &data, &bytes);
++
++	if (ret)
++		return ret;
++	regs = map_sysmem(nhi ? NHI_BASE : 0x501ac0000ULL,
++			  nhi ? 0x100000 : 0xc000);
++	for (i = 0; i < bytes / 4; i += 3) {
++		off = be32_to_cpu(data[i]);
++		mask = be32_to_cpu(data[i + 1]);
++		value = be32_to_cpu(data[i + 2]);
++		writel((readl(regs + off) & ~mask) | value, regs + off);
++	}
++	printf("ACIO %s tunables applied count=%d\n", nhi ? "NHI" : "RC", bytes / 12);
++	return 0;
++}
++
+ /* Only called after ACIO firmware is ready and power is held. */
+ static int rings_idle(void)
+ {
+@@ -113,7 +168,7 @@
+ 	return ret;
+ }
+ 
+-int apple_nhi_m1_dart_test(void)
++int apple_nhi_m1_dart_test(bool tune)
+ {
+ 	struct udevice *dart = NULL;
+ 	const struct iommu_ops *ops;
+@@ -151,6 +206,14 @@
+ 			return -EIO;
+ 	}
+ 	puts("NHI DART stream1 translation enabled; all other streams disabled\n");
++	if (tune) {
++		ret = apple_nhi_m1_tunables_apply(true);
++		if (!ret)
++			ret = rings_idle();
++		if (ret)
++			return ret;
++		puts("NHI-TUNABLES PASS; all rings remain disabled\n");
++	}
+ 	ops = device_get_ops(dart);
+ 	buffer = memalign(SZ_16K, 2 * SZ_16K);
+ 	if (!buffer)
+@@ -184,6 +247,8 @@
+ 	return 0;
+ }
+ #else
++int apple_nhi_m1_tunables_check(void) { return -ENOSYS; }
++int apple_nhi_m1_tunables_apply(bool nhi) { return -ENOSYS; }
+ int apple_nhi_m1_check(void) { return -ENOSYS; }
+-int apple_nhi_m1_dart_test(void) { return -ENOSYS; }
++int apple_nhi_m1_dart_test(bool tune) { return -ENOSYS; }
+ #endif
+--- a/cmd/apple_acio_m1.c
++++ b/cmd/apple_acio_m1.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* RAM-only J274 port1 ACIO readiness diagnostic. No NHI, DART or DMA.
++/* RAM-only J274 port1 ACIO readiness diagnostic. Staged NHI/DART checks; no ring DMA.
+  * Sequence derived from Asahi Linux thunderbolt/apple.c and reset-apple-cio.c.
+  * Copyright The Asahi Linux Contributors
+  * Copyright (c) Sven Peter <sven@kernel.org>
+@@ -229,7 +229,8 @@
+   else
+    puts("NHI-READONLY PASS; no configuration, rings or DMA\n");
+  }
+- if (!ret && stage >= 2) ret = apple_nhi_m1_dart_test();
++ if (!ret && stage >= 3) ret = apple_nhi_m1_tunables_apply(false);
++ if (!ret && stage >= 2) ret = apple_nhi_m1_dart_test(stage >= 3);
+  shutdown = apple_rtkit_shutdown(rtk, APPLE_RTKIT_PWR_STATE_SLEEP);
+  printf("ACIO RTKit shutdown ret=%d\n", shutdown);
+  if (!ret) ret = shutdown;
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -170,10 +170,14 @@
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune")))
+ 		return CMD_RET_USAGE;
+-	stage = !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
++	stage = !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+ 	acio = !strcmp(argv[2], "acio") || stage;
++	if (stage >= 3) {
++		ret = apple_nhi_m1_tunables_check();
++		if (ret) goto fail;
++	}
+ 	if (stage >= 2) {
+ 		ret = apple_nhi_m1_check();
+ 		if (ret) goto fail;
+@@ -268,4 +272,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart - staged M3/NHI/DART diagnostic; no DMA");
++	   "1 check|start|acio|nhi|dart|tune - staged M3/NHI/DART diagnostic; no DMA");
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -1,6 +1,9 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+ #ifndef APPLE_NHI_M1_H
+ #define APPLE_NHI_M1_H
++#include <linux/types.h>
+ int apple_nhi_m1_check(void);
+-int apple_nhi_m1_dart_test(void);
++int apple_nhi_m1_dart_test(bool tune);
++int apple_nhi_m1_tunables_check(void);
++int apple_nhi_m1_tunables_apply(bool nhi);
+ #endif

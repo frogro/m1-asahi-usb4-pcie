@@ -1,0 +1,24 @@
+PASS normal mapping/unmapping/remove
+PASS delayed flush completes within deadline
+Apple DART: TLB invalidation failed (-110); DMA mappings blocked
+PASS first probe timeout bounded before allocations
+Apple DART: TLB invalidation failed (-110); DMA mappings blocked
+PASS second probe timeout retains hardware-visible tables; streams not enabled
+Apple DART: TLB invalidation failed (-110); DMA mappings blocked
+PASS map timeout returns failure and quarantines IOVA
+PASS latched map fault does not retry after hardware recovery
+PASS faulted unmap/remove cannot recycle resources
+Apple DART: TLB invalidation failed (-110); DMA mappings blocked
+PASS unmap timeout observable and IOVA retained
+Apple DART: TLB invalidation failed (-110); DMA mappings blocked
+PASS remove timeout retains resources
+PASS T8110 flush-all command address and encoding
+Apple DART: TLB invalidation failed (-110); DMA mappings blocked
+PASS T8110 permanent BUSY bounded
+PASS existing bypass success unchanged
+PASS status rejects wrong device
+PASS force translation despite bypass capability; only SID1 enabled
+PASS invalid stream rejected before writes
+Apple DART: TLB invalidation failed (-110); DMA mappings blocked
+PASS stream-limit invalidation timeout leaves streams disabled
+cases=16 failures=0
