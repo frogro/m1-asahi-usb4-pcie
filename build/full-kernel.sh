@@ -85,6 +85,12 @@ test -s "$repo/artifacts/modules.txt"
 find "$stage/lib/modules/$release" -type f -name '*.ko*' -print0 | xargs -0 -n1 modinfo -F vermagic | sort -u > "$repo/artifacts/vermagic.txt"
 if grep -v "^$release " "$repo/artifacts/vermagic.txt"; then exit 1; fi
 cp certs/signing_key.x509 "$repo/artifacts/module-signing-certificate.x509"
+if grep -Eq '^CONFIG_VIDEO_APPLE_AVD=[ym]$' .config; then
+ bash "$repo/build/avd-firmware.sh" "$work/avd-firmware" "$stage" "$repo/artifacts"
+ test -s "$stage/usr/lib/firmware/apple/avd-fw-v2-t0.bin"
+fi
+# These cards have their own digital PCM and jack control. Do not change macaudio.
+cp -a "$repo/build/rootfs-supplements/usr" "$stage/"
 # This exports a build result only; nothing writes to this machine's /boot or /lib/modules.
 tar --zstd -cf "$repo/artifacts/linux-$release-arm64.tar.zst" -C "$stage" .
 zstd -T2 -3 vmlinux -o "$repo/artifacts/vmlinux-$release.zst"
