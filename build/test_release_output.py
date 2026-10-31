@@ -15,10 +15,17 @@ class ReleaseOutputTests(unittest.TestCase):
     def test_missing_tag_and_draft_are_created_at_exact_commit(self):
         ref = {'object': {'type': 'commit', 'sha': 'a'*40}}
         release = {'id': 3, 'draft': True, 'tag_name': 'kernel-build-12-1'}
-        with patch.object(m, 'gh', side_effect=[None, ref, None, release]) as gh:
+        with patch.object(m, 'gh', side_effect=[None, ref, None, [], release]) as gh:
             self.assertEqual(release, m.ensure_draft('owner/repo', 'kernel-build-12-1', 'a'*40))
             self.assertEqual({'ref': 'refs/tags/kernel-build-12-1', 'sha': 'a'*40}, gh.call_args_list[1].kwargs['payload'])
-            self.assertTrue(gh.call_args_list[3].kwargs['payload']['draft'])
+            self.assertTrue(gh.call_args_list[4].kwargs['payload']['draft'])
+
+    def test_existing_draft_is_found_through_release_list(self):
+        ref = {'object': {'type': 'commit', 'sha': 'a'*40}}
+        release = {'id': 3, 'draft': True, 'tag_name': 'kernel-build-12-1'}
+        with patch.object(m, 'gh', side_effect=[ref, None, [release]]) as gh:
+            self.assertEqual(release, m.ensure_draft('owner/repo', 'kernel-build-12-1', 'a'*40))
+            self.assertEqual(3, gh.call_count)
 
     def test_existing_wrong_tag_is_never_moved(self):
         with patch.object(m, 'gh', return_value={'object': {'type': 'commit', 'sha': 'b'*40}}) as gh:
@@ -48,7 +55,7 @@ class ReleaseOutputTests(unittest.TestCase):
             digest = m.hashlib.sha256(f.read_bytes()).hexdigest()
             asset = {'name': f.name, 'size': f.stat().st_size, 'state': 'uploaded', 'digest': 'sha256:'+digest}
             with patch.object(m, 'gh', side_effect=[RuntimeError('interrupted'), None, {'assets': [asset]}]) as gh, patch.object(m.time, 'sleep'):
-                m.upload('owner/repo', 'kernel-build-12-1', [f])
+                m.upload('owner/repo', 'kernel-build-12-1', 3, [f])
                 self.assertEqual(3, gh.call_count)
                 self.assertEqual(gh.call_args_list[0], gh.call_args_list[1])
 
@@ -57,7 +64,7 @@ class ReleaseOutputTests(unittest.TestCase):
             f = Path(tmp)/'RUN.txt'; f.write_text('exact-build-identity')
             with patch.object(m, 'gh', side_effect=[None, {'assets': [{'name': f.name, 'size': f.stat().st_size, 'state':'uploaded', 'digest':'sha256:wrong'}]}]):
                 with self.assertRaisesRegex(RuntimeError, 'verification failed'):
-                    m.upload('owner/repo', 'kernel-build-12-1', [f])
+                    m.upload('owner/repo', 'kernel-build-12-1', 3, [f])
 
 
 if __name__ == '__main__':

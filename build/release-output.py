@@ -37,6 +37,15 @@ def ensure_draft(repo, tag, commit):
         raise RuntimeError('Release tag does not point to the exact build commit')
     release = gh('api', prefix + '/releases/tags/' + tag, optional=True)
     if release is None:
+        # The by-tag REST endpoint does not return unpublished drafts.
+        page = 1
+        while True:
+            releases = gh('api', prefix + f'/releases?per_page=100&page={page}')
+            release = next((r for r in releases if r['tag_name'] == tag), None)
+            if release is not None or len(releases) < 100:
+                break
+            page += 1
+    if release is None:
         release = gh('api', '--method', 'POST', prefix + '/releases', payload={
             'tag_name': tag, 'target_commitish': commit, 'draft': True,
             'name': 'Kernel build ' + tag + ' (not installed)',
@@ -46,7 +55,7 @@ def ensure_draft(repo, tag, commit):
     return release
 
 
-def upload(repo, tag, paths):
+def upload(repo, tag, release_id, paths):
     for path in paths:
         for attempt in range(3):
             try:
@@ -56,7 +65,7 @@ def upload(repo, tag, paths):
                 if attempt == 2:
                     raise
                 time.sleep(2 ** attempt)
-    release = gh('api', 'repos/' + repo + '/releases/tags/' + tag)
+    release = gh('api', 'repos/' + repo + '/releases/' + str(release_id))
     assets = {a['name']: a for a in release['assets']}
     for path in paths:
         with path.open('rb') as stream:
@@ -85,7 +94,7 @@ def main():
     record = out / 'RUN.txt'
     record.write_text(f'Build-only output. No deployment.\nRun: https://github.com/{repo}/actions/runs/{run}\nCommit: {commit}\n')
     if args.phase == 'prepare':
-        upload(repo, tag, [record])
+        upload(repo, tag, release['id'], [record])
         print('Exact tag, draft creation and asset upload verified before compilation:', tag)
         return
     # RUN.txt is deterministic, so regenerating it does not invalidate sums.
@@ -96,7 +105,7 @@ def main():
     subprocess.run(['python3', 'build/prepare-assets.py'], check=True)
     gh('api', '--method', 'PATCH', 'repos/' + repo + '/releases/' + str(release['id']),
        payload={'body': notes.read_text()})
-    upload(repo, tag, sorted(f for f in out.iterdir() if f.is_file() and f.stat().st_size))
+    upload(repo, tag, release['id'], sorted(f for f in out.iterdir() if f.is_file() and f.stat().st_size))
     print('Draft assets uploaded and SHA-256 verified:', tag)
 
 
