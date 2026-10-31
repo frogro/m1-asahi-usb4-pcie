@@ -41,3 +41,18 @@ the affected base files and every resulting file compared byte-for-byte with
 the candidate checkout. The [manifest](../validation/probe43-cumulative-source-manifest.json)
 records their hashes. This preserves the preceding probe work as well as the
 new measurement; it remains an experimental diagnostic, not an installer release.
+
+## Hardware result
+
+Probe43 returned all 61 reviewed powered PHY/PIPE/USB2 values exactly equal to
+the connected, two-lane Linux reference. All 81 NHI control transactions replied,
+but both lanes remained in state 7 and firmware reported Phase2 only. No remote
+router or external PCIe tunnel was reached. Internal NVMe hashes match. The
+planned reset returned to stock Ubuntu with the original boot bundle unchanged.
+
+This rules out a missing final value within this sampled set, not differences
+in initialization order or transient states. The user also reported that the
+OWC LED may have been off. Existing CD321x register 0x20 is SYSTEM_POWER_STATE,
+not POWER_STATUS (0x3f), and neither is a physical voltage measurement. A
+bounded read-only power-status comparison is the next diagnostic before new
+PCIe-C initialization writes. No power fault or repair is claimed.
