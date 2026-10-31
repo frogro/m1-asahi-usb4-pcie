@@ -1,0 +1,9 @@
+{
+  "result": "passed",
+  "image_sha256": "00d2cc3f715df0c307f1e16cb09b8ea092f46a0d62ee89b33c551676ee4885e4",
+  "kernel_sha256": "7b990cf7d8e975e9e65b196685a32ee012c4010fe5699c7ca3b382ceea69e17c",
+  "release": "7.2.12-usb4sd4-egpu2",
+  "initrd_size": 62512890,
+  "physical_disks_partitioned": false,
+  "boot_configuration_activated": false
+}

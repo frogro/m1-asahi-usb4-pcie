@@ -1,0 +1,17 @@
+name: External installer checks
+on:
+  push:
+    paths: ['installer/**', '.github/workflows/installer-checks.yml']
+  pull_request:
+    paths: ['installer/**', '.github/workflows/installer-checks.yml']
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - run: sudo apt-get update && sudo apt-get install -y grub-common device-tree-compiler
+      - run: python3 -m unittest discover -s installer -p 'test_*.py' -v
+      - run: python3 installer/install.py --plan
+      - run: python3 installer/update.py --plan

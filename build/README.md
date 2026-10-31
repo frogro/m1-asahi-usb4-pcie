@@ -13,13 +13,13 @@ The new release is `7.2.12-usb4sd3`. Existing enabled options must remain unchan
 
 ## Outputs
 
-The workflow stores results as assets of a draft release in this private repository. It does not use Actions artifact or cache storage. Files exceeding the release asset limit are split into numbered `.partNNN` pieces; concatenate them in numeric order before extraction.
+The workflow stores results as assets of a draft release in this repository (draft assets require repository access). It does not use Actions artifact or cache storage. Files exceeding the release asset limit are split into numbered `.partNNN` pieces; concatenate them in numeric order before extraction.
 
 - `linux-7.2.12-usb4sd3-arm64.tar.zst`: kernel Image, System.map, configuration, DTBs and all matching staged modules, with module debug symbols stripped and BTF retained.
 - Compressed `vmlinux` with the configured debug information.
 - Configuration comparison, module list/vermagic, Module.symvers, public signing certificate, applied commit metadata, build log and SHA-256 hashes.
 
-The archive is not an installer and contains no initramfs or modified m1n1 boot image. A later installation must separately prepare a matching initramfs and the existing Asahi boot pipeline, keep all current kernels, and use an explicit additional boot entry.
+The archive is not an installer and contains no initramfs or modified m1n1 boot image. The experimental [external installer](../installer/README.md) separately prepares these for a later hardware test. Other installations must separately prepare a matching initramfs and the existing Asahi boot pipeline, keep all current kernels, and use an explicit additional boot entry.
 
 When AVD is enabled, the build now includes all six Apple video decoder firmware variants under `usr/lib/firmware/apple`, built from AsahiLinux/avd-fw commit `c870554fce20b9ee5ac46885c698d11e6a313948` with all codecs enabled. The firmware license and source/hash manifest are included; a separate firmware archive and Debian package allow installation without rebuilding the kernel. Missing firmware or incorrect variant sizes fail the build. The first Yotta installation had omitted this separate firmware, causing AVD probe error -2. Other machine-specific vendor firmware and AMD firmware must still be supplied by system preparation.
 
