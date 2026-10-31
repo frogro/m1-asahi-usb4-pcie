@@ -82,3 +82,25 @@ and initramfs could remain on the external drive.
 Sources: [OWC compatibility description](https://www.owc.com/blog/what-is-a-diy-drive-how-owcs-express-lineup-of-build-your-own-ssd-options-gives-you-more-control-over-your-storage),
 [Asahi U-Boot boot flow](https://asahilinux.org/docs/sw/u-boot/),
 the archived Probe22 UART log and the local downstream Linux source above.
+
+## Clarification: suppress USB4 negotiation before boot
+
+The requested policy is explicitly to prevent USB4 negotiation and select
+native USB3 over the same cable, then permit USB4 under Linux. It is not
+merely to ignore an already negotiated USB4 connection.
+
+A subsequent source check found a material limitation: Sven Peter's
+[CD321x mode-control patch, reviewed by Heikki Krogerus](https://lists.openwall.net/linux-kernel/2026/09/07/1667)
+states that Apple's controller firmware selects alternate modes and Linux
+cannot influence that selection. The local audited driver likewise sets
+`cd321x_data.no_mode_control = true`. Its USB4/native-USB transition handling
+reacts to firmware status; it is not a policy API to force that transition.
+
+Consequently there is no established software switch in the examined driver
+that implements the requested USB3-only boot policy. This does not prove a
+preboot or firmware-specific mechanism impossible, but discovering such a
+mechanism is a prerequisite, not an already available implementation step.
+Commands documented for other TI TPS controller variants must not be assumed
+compatible with Apple's CD321x firmware. No speculative PD-register writes
+were made. Prioritize identifying an evidenced CD321x policy mechanism before
+another hardware probe for this alternative.
