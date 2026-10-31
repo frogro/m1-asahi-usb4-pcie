@@ -1,0 +1,45 @@
+{
+  "probe": 47,
+  "base_probe": 46,
+  "change": "Remove only the five pre-populated PCIe-C tunable properties from incoming DT; let the unchanged boot stage supply them and validate against the same 43 Linux tuples",
+  "removed_properties": [
+    {
+      "node": "/soc/pcie@530000000",
+      "property": "apple,tunable-debug"
+    },
+    {
+      "node": "/soc/pcie@530000000",
+      "property": "apple,tunable-fabric"
+    },
+    {
+      "node": "/soc/pcie@530000000/pci@0,0",
+      "property": "apple,tunable"
+    },
+    {
+      "node": "/soc/pcie@530000000",
+      "property": "apple,tunable-oe-fabric"
+    },
+    {
+      "node": "/soc/pcie@530000000",
+      "property": "apple,tunable-rc"
+    }
+  ],
+  "pciec_nodes_match_probe44_input": true,
+  "uboot_binary_unchanged": true,
+  "boot_stage_binary_unchanged": true,
+  "checks_unchanged": true,
+  "hardware_pending": true,
+  "ram_only": true,
+  "external_disk_io": false,
+  "external_pcie_tunnel": false,
+  "payload_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe47-pciec-generated-tunables",
+  "artifact_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "7b6fa71b584443b9b87185c2790c6b3fad53df5588c0dd506eb0df33afde407e",
+    "u-boot-nodtb.bin": "c3df6df82d6a8d8b9876a147cbd1d0a5e54198e8441c0ce419a3ec8f9be10697",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "fdb447553e484bacefd9749d768ad3f07ed7d1c1f96bc6c2dda89682f9a7a698",
+    "m1n1-uboot-probe-hv.bin": "f0cbd5a786f5e5eb5f32cf62756809f3c50144009df65b862767989b33665f24",
+    "run-hv-once.py": "47986e902c2b487c04aba9192f3732fb2eca73fe66203e5a28df5b983449ba31"
+  }
+}

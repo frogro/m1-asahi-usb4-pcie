@@ -1,0 +1,20 @@
+{
+  "probe": 46,
+  "run_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe46-pciec-preflight/hv-run-20261031T234258Z",
+  "hardware_result": "Preflight rejected apple,tunable-debug length 24 instead of 12 bytes",
+  "errno": -22,
+  "resource_debug_address": "0x520200000",
+  "resource_debug_size": "0x4000",
+  "input_property_bytes": 12,
+  "runtime_property_bytes": 24,
+  "runtime_contents_not_dumped": true,
+  "pciec_cold_prepare_ran": false,
+  "link_comparison_performed": false,
+  "internal_nvme_hashes_match": true,
+  "reset_observed": true,
+  "automatic_return_verified": false,
+  "return_check": "SSH not yet reachable; pending",
+  "external_disk_access": false,
+  "uart_sha256": "be3a6f809c2c392c950baa862cf49565dd0e6a885e7df771257819b68b80d699",
+  "next_step": "Probe47 removes the five injected input tunable properties; unchanged strict runtime validation"
+}

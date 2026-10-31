@@ -13,3 +13,16 @@ logic, not proof of live DT compatibility or successful hardware initialization.
 
 If preflight fails again, initialization remains blocked. If it passes, the
 existing bounded Probe45 comparison runs. No external disk is accessed.
+
+## Hardware result
+
+The debug resource address and size matched. The first property
+`apple,tunable-debug` was present but contained 24 bytes rather than the
+expected 12. The input DT has 12 bytes; the boot-stage handoff changed it.
+Preflight rejected the length before new PCIe-C initialization. No link
+comparison was performed. Both internal control hashes matched and the
+planned reset was observed. See result JSON for recovery verification.
+
+The next run removes the injected input properties and retains every runtime
+check. A successful validation would demonstrate that the boot stage supplies
+the expected values without manual duplication.
