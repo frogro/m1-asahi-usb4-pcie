@@ -4,18 +4,50 @@ Der Installer bereitet eine **Neuinstallation** auf einem ausgewählten USB-Lauf
 
 **Status:** Logik-, GRUB-, Image- und DTB-Prüfungen bestanden. Zusätzlich wurde auf dem Mac eine isolierte frische Ubuntu-Image-Datei eingerichtet, mit dem Kernelarchiv ergänzt und eine passende Initramfs erfolgreich erzeugt; siehe [Prüfergebnis](image-validation.json). Eine vollständige Installation mit diesem neuen Installer und ihr erster Hardwarestart stehen aus. Der bisher getestete direkte USB-Bootweg dient als Vorlage, ersetzt diesen Test aber nicht. Keine Garantie für alle USB-Gehäuse, Docks oder andere Apple-Modelle.
 
-## Festgelegter Stand
+## Automatische Build-Auswahl
 
-| Bestandteil | Festlegung |
-|---|---|
-| Kernel / Module / DTBs | `7.2.12-usb4sd4-egpu2`, 43 Patches |
-| Build-Repository-Commit | `7b20516bd4be77bb885989e288754f56149898c4` |
-| UbuntuAsahi-Kernelbasis | `f7734f4c91c0f47d9e762786968057bec99a0788` |
-| Release | `kernel-build-41155087907-1` |
-| Frisches Rootfs | offizielles `ubuntu-desktop-26.04-20260528.zip` |
-| Initramfs | auf dem Ziel frisch mit dessen dracut für genau diese Kernelversion erzeugt |
+Installer und interner Updater wählen standardmäßig den **neuesten veröffentlichten,
+kompatiblen Gesamtkernel mit erfolgreichem Build**. Es wird keine feste eGPU-Revision
+mehr automatisch vorausgesetzt. Der aktuelle angebotene Stand ist unter
+[Latest](https://github.com/frogro/m1-asahi-usb4-pcie/releases/latest) sichtbar.
 
-Image und Kernelarchiv sind im Installer mit SHA-256 festgelegt. Der Imagehash wurde beim Abruf vom offiziellen HTTPS-Server ermittelt; er ist keine zusätzliche Signatur des Distributionsherstellers. Es wird nicht stillschweigend „latest“ installiert. Die lokale Installationsakte hält die Versionen, Commitstände, UUIDs und Startdatei-Hashes fest. Benutzerprogramme/Mesa stammen aus dem Ubuntu-Asahi-Image; sie haben naturgemäß keinen gemeinsamen Git-Commit mit dem Kernel. Fedora-Kompatibilität wird daraus nicht abgeleitet.
+Der Veröffentlichungsworkflow prüft den erfolgreichen Kernel-Lauf auf `main`,
+Konfigurationsvergleich, Archivprüfsummen und den Inhalt des Pakets: Kernel,
+Module einschließlich AMDGPU, J274-DTB und AVD-Firmware. Erst danach veröffentlicht
+er `installer-manifest.json` und das Release. Nur der neueste Build erhält das
+GitHub-Label **Latest**; das erneute Veröffentlichen eines älteren Laufs stuft
+Latest nicht zurück. Fehlgeschlagene oder unvollständige Builds bleiben Entwürfe.
+Ein erfolgreicher Build ersetzt keine Hardwaretests; die Release-Titel benennen
+diese Grenze ausdrücklich.
+
+Beide Programme prüfen zusätzlich den zugehörigen GitHub-Actions-Lauf und den
+SHA-256-Digest des angebotenen Archivs. Bei Netzfehlern, widersprüchlichen Daten
+oder fehlenden kompatiblen Releases wird **vor Änderungen abgebrochen**. Es gibt
+keinen stillen Rückfall auf einen eingebauten alten Kernel. Der aktuelle
+Installationsvertrag `j274-egpu-v1` umfasst ARM64/J274, die vollständige
+`7.2.12-usb4sd4-egpuN`-Serie und die Kernelbasis
+`f7734f4c91c0f47d9e762786968057bec99a0788`. Eine andere Basis, Architektur oder
+Bootschnittstelle benötigt eine erneute Installer-Anpassung.
+
+Für einen reproduzierbaren Lauf kann ein konkreter freigegebener Build gewählt werden:
+
+```sh
+python3 asahi-external-install.py --plan --kernel-tag kernel-build-41155087907-1
+python3 update.py --plan --kernel-tag kernel-build-41155087907-1
+```
+
+Denselben Schalter bei `--install` beziehungsweise `--prepare` verwenden, um genau
+diesen Stand zu installieren. Ohne Pin kann ein späterer Vorbereitungslauf einen
+neueren Build auswählen als der vorherige reine Plan. Die ausgewählte Version,
+der Commit und die Prüfsumme werden vor der Bestätigung angezeigt und im lokalen
+Manifest gespeichert. Innerhalb eines Installationslaufs wird nicht neu aufgelöst.
+
+Das frische Rootfs bleibt das offizielle `ubuntu-desktop-26.04-20260528.zip` mit
+festgelegtem SHA-256. Dieser Hash ist keine zusätzliche Herstellersignatur.
+Die Initramfs wird für den ausgewählten Kernel auf dem Ziel erzeugt; Module und
+DTB stammen aus demselben geprüften Archiv. Mesa und Anwendungen stammen aus dem
+Distributionsimage. Das bisherige [Image-Prüfergebnis](image-validation.json)
+bezieht sich ausdrücklich auf **egpu2**, nicht automatisch auf spätere Builds.
 
 ## Erst nur ansehen
 
@@ -97,7 +129,7 @@ Die Installations-Mounts und chroot-Mounts laufen in einem privaten Mount-Namens
 
 ## Vorhandenes internes System: zusätzlichen Kernel vorbereiten
 
-[update.py](update.py) ist ein **separater experimenteller Updateweg** für ein bereits installiertes Ubuntu Asahi oder Fedora Asahi Remix. Er ergänzt denselben festgelegten Kernel samt passenden Modulen und DTB, erzeugt die Initramfs mit dem vorhandenen System und fügt einen eigenen GRUB-Eintrag hinzu. Er führt weder eine Neuinstallation noch ein `apt`-/`dnf`-Distributionsupgrade aus. Benutzer, Passwörter, `/home` und Netzwerkeinstellungen werden nicht ersetzt. Die Kontodateien werden vor/nach der Vorbereitung anhand von Hashes verglichen. Die mitgelieferte AVD-Firmware und DCP-Audio-UCM-Dateien werden aktualisiert; vorhandene Exemplare werden gesichert.
+[update.py](update.py) ist ein **separater experimenteller Updateweg** für ein bereits installiertes Ubuntu Asahi oder Fedora Asahi Remix. Er ergänzt denselben automatisch ausgewählten Gesamtkernel samt passenden Modulen und DTB, erzeugt die Initramfs mit dem vorhandenen System und fügt einen eigenen GRUB-Eintrag hinzu. Er führt weder eine Neuinstallation noch ein `apt`-/`dnf`-Distributionsupgrade aus. Benutzer, Passwörter, `/home` und Netzwerkeinstellungen werden nicht ersetzt. Die Kontodateien werden vor/nach der Vorbereitung anhand von Hashes verglichen. Die mitgelieferte AVD-Firmware und DCP-Audio-UCM-Dateien werden aktualisiert; vorhandene Exemplare werden gesichert.
 
 **Validierungsstand:** Versionsschutz, Dateisicherung/Rücknahme und GRUB-Logik sind automatisiert geprüft. Am 31. Oktober 2026 wurde der Updateweg aus dem internen Ubuntu 26.04.1 auf einem Mac mini M1 ausgeführt: neuer Kernel von der internen Rootpartition gestartet, SSH und bedienbares Mac-HDMI bestätigt, originale Bootdatei im Initramfs wiederhergestellt, bisheriger Standard erhalten. Dies ist **keine vollständige Funktionsfreigabe**: Der erste PCIe-Tunnel-Host-Probe lief in einen Timeout; nach einem einzelnen manuellen Reprobe wurde die RX 6900 XT sichtbar, ihre PSP-Initialisierung scheiterte anschließend mit `-22`. Die Fedora-Boot-/SELinux-Integration ist weiterhin nicht auf Hardware getestet. Fedora-Neuinstallation bleibt ebenfalls ausgeschlossen.
 
@@ -137,3 +169,23 @@ Der Abgleich am 31. Oktober mit dem protokollierten erfolgreichen USB-Start und 
 Der Installer portiert unsere Patches **nicht automatisch auf diesen neueren Kernel**. Er bietet den geprüften Build `7.2.12-usb4sd4-egpu2` zusätzlich an. Erkennt er eine höhere Linux-Basisversion unter den installierten oder laufenden Kerneln, stoppt `--prepare` vor Änderungen. Nur für einen ausdrücklich gewollten Paralleltest lässt sich das mit `--prepare --allow-older` freigeben; der bisherige Standard bleibt auch dann erhalten.
 
 Eine bereits vorhandene exakt gleichnamige Release wird niemals blind überschrieben. Unterschiedliche Distributions-/Test-Suffixe bei gleicher Linux-Basisversion lassen sich nicht zuverlässig als neuer/älter einordnen; sie bleiben getrennte Builds. Eine neuere Versionsnummer allein beweist weder, dass unsere Funktionen enthalten sind, noch dass ein älterer Testkernel mit sämtlichen inzwischen aktualisierten Benutzerprogrammen kompatibel ist. Eine Portierung auf eine neuere Basis braucht einen eigenen Build und Tests.
+
+## Vorbereitete Updateversionen bleiben fest zugeordnet
+
+`--arm`, `--cancel-boot` und `--verify-running` fragen GitHub nicht ab. Sie verwenden
+ausschließlich die gespeicherte Vorbereitung. Bei mehreren Vorbereitungen ist die
+Version mit `--release VERSION` anzugeben; `--verify-running` verwendet standardmäßig
+die tatsächlich laufende Kernelversion. Beispiel:
+
+```sh
+sudo asahi-kernel-update --arm --release 7.2.12-usb4sd4-egpu2
+sudo asahi-kernel-update --cancel-boot --release 7.2.12-usb4sd4-egpu2
+sudo asahi-kernel-update --verify-running
+```
+
+Neue Vorbereitungen bekommen eigene GRUB-IDs, versionierte Rückwegsdateien und
+Dracut-Module. Ein Modul wird nur für seine zugehörige Kernelversion eingebunden.
+Die bisherige generische Rückwegsversion bleibt erhalten, wird aber aus der neuen
+Initramfs ausgeschlossen. Bestehende Kernel und ihre Initramfs werden nicht
+überschrieben. Ältere Vorbereitungen ohne Versions-ID bleiben weiterhin über ihren
+gespeicherten Stand prüfbar. Der Standardstart wird weiterhin nicht automatisch geändert.

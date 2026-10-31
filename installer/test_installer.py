@@ -67,7 +67,7 @@ class InstallerTests(unittest.TestCase):
                 i.grub_entry(dict(self.manifest, **{key:'1234; reboot'}))
 
     def test_only_plan_default_no_writes(self):
-        with patch('sys.argv', ['install.py']), patch.object(i,'install') as install:
+        with patch('sys.argv', ['install.py']), patch.object(i,'select_build'), patch.object(i,'install') as install:
             i.main()
             install.assert_not_called()
 

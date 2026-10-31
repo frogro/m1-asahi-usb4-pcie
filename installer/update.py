@@ -17,9 +17,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import install as core
 
-STATE = Path('/var/lib/asahi-kernel-update') / core.RELEASE
+STATE_ROOT = Path('/var/lib/asahi-kernel-update')
+STATE = STATE_ROOT / core.RELEASE
 
 
 def boot_storage(root, boot, free_boot):
@@ -121,7 +123,7 @@ def preflight(m, space=True):
 
 def plan():
     print('READ-ONLY: add a kernel; preserve users, /home, network settings and old kernels.')
-    print('Pinned build:',core.RELEASE,core.BUILD_COMMIT)
+    print('Selected build:',core.RELEASE,core.BUILD_COMMIT)
     releases=installed_releases()
     print('Installed/running releases:', ', '.join(releases))
     newer=newer_releases(releases)
@@ -178,6 +180,23 @@ def verify_preserved_boot_selection(before, after, entry):
     core.require(defaults(before)==defaults(after), 'GRUB default changed; refusing activation')
 
 
+def dracut_setup(release, backup_path):
+    core.release_name(release)
+    relative_path(backup_path)
+    setup='''#!/bin/bash
+check() { [ "$kernel" = '@RELEASE@' ] || return 1; return 0; }
+depends() { echo fs-lib; }
+installkernel() { instmods nvme_apple vfat; }
+install() {
+    inst_multiple blkid mount umount modprobe sha256sum cut cp mv rm mkdir sync touch
+    inst_simple /@BACKUP@
+    inst_hook initqueue/settled 05 "$moddir/restore.sh"
+    inst_hook pre-mount 05 "$moddir/restore.sh"
+}
+'''
+    return setup.replace('@RELEASE@',release).replace('@BACKUP@',backup_path)
+
+
 def prepare(allow_older=False):
     m=context();preflight(m)
     releases=installed_releases()
@@ -190,12 +209,16 @@ def prepare(allow_older=False):
     for prefix in ('Image-','vmlinuz-','initrd.img-','config-','System.map-'):
         core.require(not (boot/(prefix+core.RELEASE)).exists(), 'Matching boot file already exists: '+prefix+core.RELEASE)
     core.require(not (boot/'dtbs'/core.RELEASE).exists(), 'Matching DTB directory already exists')
-    core.require(not Path('/usr/lib/dracut/modules.d/92asahi-kernel-update').exists(), 'Existing update hook needs review')
+    module = 'asahi-kernel-update-' + core.release_name(core.RELEASE)
+    hook_dir = 'usr/lib/dracut/modules.d/92' + module
+    backup_path = 'usr/lib/asahi-kernel-update/' + core.RELEASE + '/boot-original.bin'
+    core.require(not Path('/'+hook_dir).exists(), 'This version already has an update hook')
+    m.update(boot_manager_schema=2, entry_id='asahi-update-'+m['root_uuid']+'-'+core.RELEASE)
     print('Prepare additional kernel:',core.RELEASE,'on',m['os_name'])
     print('Keep all existing users, settings and kernels. Boot default remains unchanged.')
     core.require(input('Type PREPARE to continue: ') == 'PREPARE','Cancelled')
     STATE.mkdir(parents=True,mode=0o700)
-    m.update(status='preparing',build_commit=core.BUILD_COMMIT,kernel_base=core.KERNEL_BASE,
+    m.update(status='preparing',selected_build=core.SELECTED_BUILD,build_commit=core.BUILD_COMMIT,kernel_base=core.KERNEL_BASE,
              kernel_sha256=core.KERNEL_SHA,changed=[])
     core.json_write(STATE/'manifest.json',m)
     # Preserve account databases as hashes only, never store their contents in the manifest.
@@ -230,34 +253,24 @@ def prepare(allow_older=False):
                 core.require(not file.is_symlink(), 'Unexpected supplement symlink')
                 save_and_write(relative,file.read_bytes(),m['changed'])
             hook=core.restore_hook(m).replace('/usr/lib/asahi-external/boot-original.bin',
-                                             '/usr/lib/asahi-kernel-update/boot-original.bin')
-            save_and_write('usr/lib/asahi-kernel-update/boot-original.bin',original,m['changed'])
-            save_and_write('usr/lib/dracut/modules.d/92asahi-kernel-update/restore.sh',hook,m['changed'],0o755)
-            setup='''#!/bin/bash
-check() { return 0; }
-depends() { echo fs-lib; }
-installkernel() { instmods nvme_apple vfat; }
-install() {
-    inst_multiple blkid mount umount modprobe sha256sum cut cp mv rm mkdir sync touch
-    inst_simple /usr/lib/asahi-kernel-update/boot-original.bin
-    inst_hook initqueue/settled 05 "$moddir/restore.sh"
-    inst_hook pre-mount 05 "$moddir/restore.sh"
-}
-'''
-            save_and_write('usr/lib/dracut/modules.d/92asahi-kernel-update/module-setup.sh',setup,m['changed'],0o755)
+                                             '/'+backup_path)
+            save_and_write(backup_path,original,m['changed'])
+            save_and_write(hook_dir+'/restore.sh',hook,m['changed'],0o755)
+            setup=dracut_setup(core.RELEASE,backup_path)
+            save_and_write(hook_dir+'/module-setup.sh',setup,m['changed'],0o755)
             if m['os_id']=='fedora':
                 core.run('restorecon','-RF','/lib/modules/'+core.RELEASE,boot/'dtbs'/core.RELEASE,
-                         '/usr/lib/asahi-kernel-update','/usr/lib/dracut/modules.d/92asahi-kernel-update')
+                         '/usr/lib/asahi-kernel-update','/'+hook_dir)
                 for change in m['changed']:core.run('restorecon','-F','/'+change['path'])
             core.run('depmod','-a',core.RELEASE)
             core.run('dracut','--force','--no-hostonly','--no-hostonly-cmdline',
-                     '--add','asahi-kernel-update','--add-drivers','uas usb_storage '+m['root_fstype'],
+                     '--omit','asahi-kernel-update','--add',module,'--add-drivers','uas usb_storage '+m['root_fstype'],
                      boot/('initrd.img-'+core.RELEASE),core.RELEASE)
             core.verify_initramfs(Path('/'),boot,extra_modules=(m['root_fstype'],))
             if m['os_id']=='fedora':core.run('restorecon','-F',boot/('initrd.img-'+core.RELEASE))
             m['files']={name:core.digest(boot/name) for name in
                         ('Image-'+core.RELEASE,'initrd.img-'+core.RELEASE,'config-'+core.RELEASE)}
-            generator='etc/grub.d/zz_asahi_kernel_update_'+m['root_uuid']
+            generator='etc/grub.d/zz_asahi_kernel_update_'+m['root_uuid']+'_'+str(time.time_ns())
             save_and_write(generator,'#!/bin/sh\nexec tail -n +3 "$0"\n'+core.grub_entry(m),m['changed'],0o755)
             core.run(*m['commands']['rebuild'])
             core.run(m['commands']['check'],grub)
@@ -281,7 +294,7 @@ install() {
         inhibitor.terminate();inhibitor.wait()
     os.sync()
     print('Prepared; original kernel remains default. No reboot performed.')
-    print('Later: sudo asahi-kernel-update --arm; then reboot manually.')
+    print('Later: sudo asahi-kernel-update --arm --release '+core.RELEASE+'; then reboot manually.')
 
 
 def arm(cancel=False):
@@ -296,7 +309,8 @@ def arm(cancel=False):
     core.require(core.digest(live) in (m['original_sha'],m['candidate_sha']),'Unexpected active boot bundle')
     env=core.output(cmd['edit'],cmd['env'],'list')
     next_entries=core.pending_grub_entries(env)
-    expected='next_entry=asahi-external-'+m['root_uuid']
+    entry=m.get('entry_id','asahi-external-'+m['root_uuid'])
+    expected='next_entry='+entry
     core.require(not next_entries or next_entries==[expected], 'Another boot selection is pending')
     if cancel:
         core.atomic(live,(STATE/'boot-original.bin').read_bytes())
@@ -310,7 +324,7 @@ def arm(cancel=False):
     core.require(shutil.disk_usage(live.parent).free>=2*live.stat().st_size+2*1024**2,'ESP too full for safe staging')
     core.atomic(live.parent/'boot-before-kernel-update.bin',(STATE/'boot-original.bin').read_bytes())
     try:
-        core.run(cmd['reboot'],'asahi-external-'+m['root_uuid'])
+        core.run(cmd['reboot'],entry)
         core.atomic(marker,m['candidate_sha']+'\n')
         core.atomic(live,(STATE/'boot-candidate.bin').read_bytes())
     except BaseException:
@@ -340,7 +354,27 @@ def verify_running():
     print('Kernel boot verified; default unchanged. Peripheral errors must be assessed separately.')
 
 
+def select_saved_state(release=None, running=False):
+    global STATE
+    if running:
+        current = platform.release()
+        core.require(release is None or release == current, '--release differs from running kernel')
+        release = current
+    if release is None:
+        candidates = sorted(STATE_ROOT.glob('*/manifest.json'))
+        core.require(len(candidates) == 1, 'Select the prepared kernel explicitly with --release VERSION')
+        release = candidates[0].parent.name
+    release = core.release_name(release)
+    state = STATE_ROOT / release
+    manifest = json.loads((state / 'manifest.json').read_text())
+    core.require(manifest.get('release') == release and manifest.get('target') == 'internal-update',
+                 'Saved update state does not match requested release')
+    STATE, core.RELEASE = state, release
+    # No network lookup here: boot/recovery always use the prepared version.
+
+
 def main():
+    global STATE
     p=argparse.ArgumentParser(description=__doc__)
     g=p.add_mutually_exclusive_group()
     g.add_argument('--plan',action='store_true')
@@ -349,10 +383,20 @@ def main():
     g.add_argument('--cancel-boot',action='store_true')
     g.add_argument('--verify-running',action='store_true')
     p.add_argument('--allow-older',action='store_true',help='Explicitly permit preparing an older upstream version alongside newer kernels')
+    p.add_argument('--kernel-tag', help='Pin a published build for --plan or --prepare')
+    p.add_argument('--release', help='Prepared local version for --arm, --cancel-boot or --verify-running')
     a=p.parse_args()
+    local_action = a.arm or a.cancel_boot or a.verify_running
+    core.require(not a.kernel_tag or not local_action, '--kernel-tag cannot change a prepared boot')
+    core.require(not a.release or local_action, '--release selects a saved update; use --kernel-tag for preparation')
+    if not local_action:
+        core.select_build(a.kernel_tag)
+        STATE = STATE_ROOT / core.RELEASE
     core.require(not a.allow_older or a.prepare, '--allow-older requires --prepare')
     if a.prepare or a.arm or a.cancel_boot or a.verify_running:
         with core.exclusive_operation():
+            if local_action:
+                select_saved_state(a.release, running=a.verify_running)
             if a.prepare:prepare(a.allow_older)
             elif a.verify_running:verify_running()
             else:arm(a.cancel_boot)

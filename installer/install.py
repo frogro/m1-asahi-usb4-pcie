@@ -20,6 +20,7 @@ import sys
 import tarfile
 import tempfile
 import urllib.request
+import urllib.parse
 import uuid
 import zipfile
 
@@ -31,6 +32,9 @@ KERNEL_URL = REPO + '/releases/download/kernel-build-41155087907-1/linux-' + REL
 KERNEL_SHA = '7b990cf7d8e975e9e65b196685a32ee012c4010fe5699c7ca3b382ceea69e17c'
 IMAGE_URL = 'https://files3.tobhe.de/ubuntu/os/ubuntu-desktop-26.04-20260528.zip'
 IMAGE_SHA = '00d2cc3f715df0c307f1e16cb09b8ea092f46a0d62ee89b33c551676ee4885e4'
+API = 'https://api.github.com/repos/frogro/m1-asahi-usb4-pcie'
+INSTALLER_CONTRACT = 'j274-egpu-v1'
+SELECTED_BUILD = None
 GIB = 1024 ** 3
 BASE = Path('/var/lib/asahi-external')
 OPTIONS = ('rootwait rw console=tty0 panic=20 rd.retry=90 rd.timeout=120 '
@@ -46,6 +50,107 @@ OPTIONS = ('rootwait rw console=tty0 panic=20 rd.retry=90 rd.timeout=120 '
 def require(ok, message):
     if not ok:
         raise RuntimeError(message)
+
+
+def release_name(value):
+    require(isinstance(value, str) and bool(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._+-]{0,99}', value)),
+            'Invalid kernel release')
+    return value
+
+
+def fetch_json(url):
+    request = urllib.request.Request(url, headers={'Accept': 'application/vnd.github+json',
+                                                   'User-Agent': 'm1-asahi-installer'})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        raw = response.read(1024 * 1024 + 1)
+    require(len(raw) <= 1024 * 1024, 'Oversized release metadata')
+    return json.loads(raw)
+
+
+def release_asset(release, name):
+    matches = [a for a in release.get('assets', []) if a.get('name') == name]
+    require(len(matches) == 1, 'Missing or duplicate release asset: ' + name)
+    asset = matches[0]
+    expected = REPO + '/releases/download/' + release['tag_name'] + '/' + name
+    require(asset.get('browser_download_url') == expected, 'Unexpected release download URL')
+    require(asset.get('state') == 'uploaded' and asset.get('size', 0) > 0, 'Incomplete asset: ' + name)
+    return asset
+
+
+def validate_build(release, manifest, run_info):
+    require(not release.get('draft'), 'Draft builds cannot be installed')
+    require(manifest.get('schema') == 1 and manifest.get('installer_contract') == INSTALLER_CONTRACT,
+            'Build needs a newer or different installer')
+    require(manifest.get('status') == 'build-verified' and manifest.get('architecture') == 'arm64'
+            and manifest.get('machine') == 'apple,j274' and manifest.get('profile') == 'egpu',
+            'Not a complete compatible M1 eGPU build')
+    name = release_name(manifest['release'])
+    require(re.fullmatch(r'7\.2\.12-usb4sd4-egpu[0-9]+', name), 'Kernel ABI outside validated installer contract')
+    run_id, attempt = manifest['run_id'], manifest['run_attempt']
+    require(type(run_id) is int and type(attempt) is int and run_id > 0 and attempt > 0,
+            'Invalid build identity')
+    require(release['tag_name'] == f'kernel-build-{run_id}-{attempt}', 'Release/run identity mismatch')
+    commit = manifest['build_commit']
+    require(bool(re.fullmatch('[0-9a-f]{40}', commit)), 'Invalid build commit')
+    require(manifest['kernel_base'] == 'f7734f4c91c0f47d9e762786968057bec99a0788',
+            'Kernel base needs renewed installer compatibility validation')
+    require(run_info.get('id') == run_id and run_info.get('run_attempt') == attempt
+            and run_info.get('status') == 'completed' and run_info.get('conclusion') == 'success'
+            and run_info.get('head_sha') == commit and run_info.get('head_branch') == 'main'
+            and run_info.get('event') == 'workflow_dispatch'
+            and run_info.get('path') == '.github/workflows/consolidated-kernel.yml'
+            and run_info.get('head_repository', {}).get('full_name') == 'frogro/m1-asahi-usb4-pcie',
+            'Build workflow has not completed successfully on the trusted main branch')
+    archive = manifest['archive']
+    require(archive['name'] == 'linux-' + name + '-arm64.tar.zst', 'Wrong kernel archive name')
+    require(bool(re.fullmatch('[0-9a-f]{64}', archive['sha256'])), 'Invalid kernel checksum')
+    asset = release_asset(release, archive['name'])
+    require(asset['size'] == archive['size'] and asset.get('digest') == 'sha256:' + archive['sha256'],
+            'Archive does not match verified build metadata')
+    return dict(manifest, tag=release['tag_name'], url=asset['browser_download_url'])
+
+
+def resolve_build(tag=None, fetch=fetch_json):
+    if tag:
+        require(bool(re.fullmatch(r'kernel-build-[0-9]+-[0-9]+', tag)), 'Invalid --kernel-tag')
+        candidates = [fetch(API + '/releases/tags/' + tag)]
+    else:
+        candidates = []
+        for page in range(1, 11):
+            batch = fetch(API + f'/releases?per_page=100&page={page}')
+            require(isinstance(batch, list), 'Invalid release listing')
+            candidates.extend(r for r in batch if not r.get('draft')
+                              and re.fullmatch(r'kernel-build-[0-9]+-[0-9]+', r.get('tag_name', ''))
+                              and any(a.get('name') == 'installer-manifest.json' for a in r.get('assets', [])))
+            if len(batch) < 100:
+                break
+        else:
+            raise RuntimeError('Release listing too large; select --kernel-tag explicitly')
+        # Build identity, not publication time: republishing an old build cannot promote it.
+        candidates.sort(key=lambda r: tuple(map(int, r['tag_name'].split('-')[-2:])), reverse=True)
+    for release in candidates:
+        if release.get('draft'):
+            continue
+        asset = release_asset(release, 'installer-manifest.json')
+        manifest = fetch(asset['browser_download_url'])
+        if not tag and manifest.get('installer_contract') != INSTALLER_CONTRACT:
+            continue
+        run_info = fetch(API + '/actions/runs/' + str(manifest['run_id']) +
+                         '/attempts/' + str(manifest['run_attempt']))
+        return validate_build(release, manifest, run_info)
+    raise RuntimeError('No published compatible verified kernel build found; nothing changed')
+
+
+def select_build(tag=None):
+    global RELEASE, BUILD_COMMIT, KERNEL_BASE, KERNEL_URL, KERNEL_SHA, SELECTED_BUILD
+    selected = resolve_build(tag)
+    RELEASE, BUILD_COMMIT, KERNEL_BASE = (selected[k] for k in ('release', 'build_commit', 'kernel_base'))
+    KERNEL_URL, KERNEL_SHA = selected['url'], selected['archive']['sha256']
+    SELECTED_BUILD = selected
+    print('Selected kernel:', RELEASE, 'from', selected['tag'])
+    print('Build commit:', BUILD_COMMIT, '| SHA-256:', KERNEL_SHA)
+    print('Build verified; hardware validation is separate. Existing kernels stay unchanged.')
+    return selected
 
 
 def run(*args, **kw):
@@ -186,9 +291,10 @@ def grub_entry(m):
     prefix=m.get('boot_prefix', '')
     require(prefix == '' or (bool(re.fullmatch(r'/[A-Za-z0-9_./+-]+', prefix))
                             and '..' not in Path(prefix).parts), 'Invalid GRUB boot directory')
-    entry = 'asahi-external-' + root
+    entry = m.get('entry_id', 'asahi-external-' + root)
+    require(bool(re.fullmatch(r'[A-Za-z0-9._+-]+', entry)), 'Invalid GRUB entry ID')
     os_name = 'Fedora Asahi Remix' if m.get('os_id') == 'fedora' else 'Ubuntu Asahi'
-    arm_command = 'sudo asahi-kernel-update --arm' if m.get('target') == 'internal-update' else 'sudo asahi-external-boot --arm ' + root
+    arm_command = ('sudo asahi-kernel-update --arm' + (' --release ' + rel if m.get('boot_manager_schema') == 2 else '')) if m.get('target') == 'internal-update' else 'sudo asahi-external-boot --arm ' + root
     name = f"{os_name} {rel} - {safe_label(m['model'])} ({root[:8]})"
     return f'''menuentry '{name}' --id {entry} {{
     insmod part_gpt
@@ -485,7 +591,7 @@ def install_unlocked(args):
         write_image(z, 'root.img', p3)
     run('udevadm', 'settle')
     m = dict(release=RELEASE, build_commit=BUILD_COMMIT, kernel_base=KERNEL_BASE,
-             image_url=IMAGE_URL, image_sha256=IMAGE_SHA, kernel_sha256=KERNEL_SHA, model=disk.get('model') or 'USB disk', disk=identity(disk),
+             selected_build=SELECTED_BUILD, image_url=IMAGE_URL, image_sha256=IMAGE_SHA, kernel_sha256=KERNEL_SHA, model=disk.get('model') or 'USB disk', disk=identity(disk),
              root_uuid=uuid_ok(output('blkid', '-s', 'UUID', '-o', 'value', p3)),
              boot_uuid=uuid_ok(output('blkid', '-s', 'UUID', '-o', 'value', p2)),
              esp_uuid=uuid_ok(output('blkid', '-s', 'UUID', '-o', 'value', p1)),
@@ -568,7 +674,7 @@ def boot_action(root_uuid, arm=False):
         with mounted('/dev/disk/by-uuid/' + m['boot_uuid'], td, '-o', 'ro,noload') as boot:
             for name, sha in m['files'].items():
                 require(digest(boot / name) == sha, 'External boot file changed: ' + name)
-            require(digest(boot / 'dtbs' / RELEASE / 'apple/t8103-j274.dtb') == m['dtb_sha'], 'DTB changed')
+            require(digest(boot / 'dtbs' / release_name(m['release']) / 'apple/t8103-j274.dtb') == m['dtb_sha'], 'DTB changed')
     require(Path('/dev/disk/by-uuid/' + root_uuid).exists(), 'External root filesystem missing')
     if not arm:
         print('Kernel, initramfs, UUIDs, DTB, GRUB options and original boot backup verified.')
@@ -631,7 +737,12 @@ def main():
     group.add_argument('--disarm', metavar='ROOT_UUID')
     p.add_argument('--device', help='Whole USB disk, e.g. /dev/disk/by-id/usb-...')
     p.add_argument('--cache', default='/var/cache/asahi-external')
+    p.add_argument('--kernel-tag', help='Pin a published compatible kernel-build-ID-ATTEMPT; default: newest verified build')
     args = p.parse_args()
+    require(not args.kernel_tag or not (args.check or args.arm or args.disarm or args.list_disks),
+            '--kernel-tag is only for --plan or --install; existing installations use their saved manifest')
+    if not (args.check or args.arm or args.disarm or args.list_disks):
+        select_build(args.kernel_tag)
     if args.check or args.arm or args.disarm or args.install:
         with exclusive_operation():
             if args.disarm:
@@ -644,7 +755,7 @@ def main():
         for d in disks():
             print(json.dumps(dict(identity(d), blocked=disk_reasons(d))))
     else:
-        print('READ-ONLY PLAN. No installation, partitioning, boot change or download.')
+        print('READ-ONLY PLAN. No installation, partitioning or boot change. Only release metadata fetched.')
         print('Ubuntu Asahi Desktop 26.04, fresh official image; kernel ' + RELEASE)
         print('Fedora Asahi Remix is not enabled in this first version.')
         print('USB-only target, >=32 GiB; EFI 512 MiB + boot 3 GiB + root remainder.')

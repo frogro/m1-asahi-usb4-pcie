@@ -1,0 +1,33 @@
+name: Publish verified installer kernel
+on:
+  workflow_run:
+    workflows: ['Consolidated M1 kernel (build only)']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Successful full eGPU kernel build run ID'
+        type: string
+        required: true
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-installer-kernel
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      # Use trusted publisher on main, never execute source from an artifact or PR.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: main
+      - run: sudo apt-get update && sudo apt-get install -y zstd
+      - name: Verify complete build and publish discovery manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+        run: python3 build/publish-installer.py --run "$BUILD_RUN_ID" --publish

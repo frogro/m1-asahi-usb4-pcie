@@ -58,7 +58,7 @@ class UpdateTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):core.boot_options(dict(root_subvolume='/root; reboot'))
 
     def test_plan_does_not_prepare(self):
-        with patch('sys.argv',['update.py']),patch.object(update,'plan') as plan,patch.object(update,'prepare') as prepare:
+        with patch('sys.argv',['update.py']),patch.object(core,'select_build'),patch.object(update,'plan') as plan,patch.object(update,'prepare') as prepare:
             update.main();plan.assert_called_once();prepare.assert_not_called()
 
     def test_existing_file_rollback_preserves_content(self):
