@@ -1,0 +1,79 @@
+{
+  "utc": "2026-10-31T18:02:50.960996+00:00",
+  "scope": "Expanded downstream source audit; source HEAD includes later native prefetch work and is not asserted byte-identical to saved egpu2. Raw live DT/config/journal remain in local research archive.",
+  "files": {
+    "drivers/usb/typec/tipd/core.c": {
+      "sha256": "cbf594be07edc6b2d7403852b268ff526e7b120ed168760d95d34c0df18a6696",
+      "lines": 1988
+    },
+    "drivers/phy/apple/atc.c": {
+      "sha256": "4c50dfc1aadce391a76afec36e07a0b7d48eb75b3faef49d9e49c2049c01e12b",
+      "lines": 2967
+    },
+    "drivers/thunderbolt/apple.c": {
+      "sha256": "be7644f444b3e0dfbb0b732d7b0fb8d377e18cfe118059c3db93378c8557c58b",
+      "lines": 1411
+    },
+    "drivers/thunderbolt/domain.c": {
+      "sha256": "e2407e33e5703ccfb8cdab2d0721c2a10ee0a222e88f7eddbbec2efac8f1d0c2",
+      "lines": 951
+    },
+    "drivers/thunderbolt/ctl.c": {
+      "sha256": "0e2418a76929546c21dd0d6b8f9505e642662d3da21d4fdc9eeef0dcaf13cb4b",
+      "lines": 1185
+    },
+    "drivers/thunderbolt/nhi.c": {
+      "sha256": "ac2c7e95366d30fde202bf5d39d7e528d3d321b3270eddb5ee1920f621c66879",
+      "lines": 1380
+    },
+    "drivers/thunderbolt/tb.c": {
+      "sha256": "163a94fb6ffbe0caec2ba6f9dba97c8b8245903944c457a442313cc1b5045bae",
+      "lines": 3627
+    },
+    "drivers/thunderbolt/switch.c": {
+      "sha256": "7b6eae484a1eb67f570b7044715528377f17877865640355895b16cea6939f56",
+      "lines": 4047
+    },
+    "drivers/thunderbolt/usb4.c": {
+      "sha256": "bd8b943a5ab4eeb59ad0f8151fd45a748657cd461d945509cef1a029320597e5",
+      "lines": 3176
+    },
+    "drivers/thunderbolt/tunnel.c": {
+      "sha256": "129454d35d7d4e77e987cea28da884905ecd763269b779809130e0c97ce86bdd",
+      "lines": 2717
+    },
+    "drivers/thunderbolt/path.c": {
+      "sha256": "06454cb34668f0d0de261de82e9ecd0e91fa04ce8ad24e7e4e0a99fbbf230aa0",
+      "lines": 631
+    },
+    "drivers/thunderbolt/eeprom.c": {
+      "sha256": "b49c326b51224d29421107d93e99ed574dd6dfd8b052d5bfd506ebd8d6b3c8bc",
+      "lines": 753
+    },
+    "drivers/thunderbolt/retimer.c": {
+      "sha256": "f6a47db9d03c21dc85621284f05a07edb83e2952596f41daa97de46eb7e9617a",
+      "lines": 600
+    },
+    "drivers/iommu/apple-dart.c": {
+      "sha256": "f66d932a35e79fdb6d4a2534b80cd6fbb2ba22cbd32a60a867b9dc60bbc1096f",
+      "lines": 1768
+    },
+    "drivers/pci/controller/pcie-apple-pciec.c": {
+      "sha256": "b0eda041026dd4fb387b2374f41c64cca37ebf8359d266b8ee3fe9df9455a45b",
+      "lines": 1971
+    },
+    "drivers/nvme/host/pci.c": {
+      "sha256": "d2fb0dbdcddc1b64993f832da6d6e953abaab9c87bfe0e4dba3192df2617cc2f",
+      "lines": 4336
+    }
+  },
+  "source_head": "517fe27a2ce7fa8d03aa6705a10ff4422197ff5d",
+  "live_artifacts": {
+    "live-egpu2.dtb": "59a60086b283644c9efafba0a650c1fce45f0b7b292f2a97af84ecf4bffd44e5",
+    "live-egpu2.config": "2be489a5b9fad852593fa192b8d711740bdd27f2cc1517d299ec08f68d6be4ab",
+    "retry-boot-journal.txt": "4135cf6751d0d60dcbdb42e7f17fd6b466e5ee660dabb378566dfca222449f03",
+    "live-platform-state.txt": "2fe6a4de7cb73c4c9ed13080c1afe8e7745540c5c305bf0322ec32f3186cd2fa"
+  },
+  "running_release": "7.2.12-usb4sd4-egpu2",
+  "source_binary_equivalence": "Not asserted: audited source HEAD includes later native prefetch work."
+}

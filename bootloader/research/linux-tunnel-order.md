@@ -88,3 +88,56 @@ The tested kernel reference enables USB4/Apple support, Apple RTKit/Type-C,
 Apple PCIe-C/hotplug and DART. Kconfig availability alone is not evidence of
 bootloader initialization or hardware support. The excluded Linux reset-ACK
 classification change is not part of this work.
+
+## Expanded Type-C-to-NVMe audit (31 October, Linux reference comparison)
+
+The sequence below is a dependency order, not a claim that Linux executes
+every callback on one thread. Probe, connection-manager events, authorization
+and PCI enumeration can overlap. In particular, a boot-time PCIe host probe
+can precede authorization. The saved `7.2.12-usb4sd4-egpu2` binary and the
+subsequently modified source tree must be distinguished: later source fixes
+are not evidence that they are present in this binary.
+The expanded source hashes and live-artifact hashes are recorded in
+`linux-full-chain-reference.json`; raw live device-tree, configuration and
+journal captures remain in the local research archive.
+
+| Stage | Linux source / operation | Bootloader consequence |
+| --- | --- | --- |
+| PD-controller readiness | `tipd/core.c`: `switch_power_state(...S0)` reads SYSTEM_POWER_STATE (0x20), conditionally sends `SSPS`, reads back; APP firmware check follows | Our status-only snapshot does not yet inspect this register. First measure it; do not assume `SSPS` is necessary. |
+| Connection snapshot | `cd321x_update_work`: plug, power/data role, orientation, identity, negotiated USB4 EUDO or TBT mode | Use current negotiated values. Linux derives orientation from STATUS bit 4; the diagnostic currently reports DATA_STATUS bit 1. Both indicated normal orientation in the observed case, so a mismatch is not established as its cause. |
+| Existing USB consumer | Quiesce DWC3 to USB_ROLE_NONE before PHY changes when connection/mode changes | Preserve the tested halted-controller/reset discipline; do not change active USB lanes underneath a consumer. |
+| PHY bootstrap | `atcphy_probe_finalize`: assert DWC3 reset, power down inherited PHY state, initialize PIPE handler | Firmware handoff state is not a replacement for explicit bootstrap. |
+| PHY connection | Orientation, mux USB4/TBT mode, wake small/big domains, unclamp/APB reset, mode tunables, clocks, lanes, PHY reset release | Source calibration and address ranges from the actual device tree and hardware variant. |
+| ACIO activation | `apple_cio_start`: PCIe-C reset before ACIO power, domain links, ACIO reset deassertion, M3 start, RTKit boot, ready poll, RC tunables | Each ready condition is separate; a live mailbox alone is insufficient. |
+| NHI dependency | Populate ACIO children; `apple_nhi_probe` defers without IOMMU attachment | NHI DMA must not begin before its DART stream and mappings are usable. |
+| NHI transport | 42-bit DMA mask, NHI tunables, PDF/IRQ setup, ring count validation, connection-manager domain/control transport | Boot polling replaces Linux IRQ/workqueue mechanics but must preserve DMA ownership and completion semantics. |
+| Host router | Root allocation/configuration, capabilities and DROM, enable/CM version/notification delay, domain registration | Already reached by RAM probes; preserve route-zero-specific behavior. |
+| Physical connection trigger | Unlock null ports, then write Apple cable information derived from negotiated Type-C state | Write order matters. Local readback is not proof of link training. |
+| Events and link | Acknowledge control events; scan primary lane; wait for connected port | Probe21 fixed repeated event acknowledgements; Probe22 still observed state 7 on both lanes for five seconds. |
+| Remote router | `tb_scan_port`: allocate/configure/add remote switch; configure link; downstream retimers; CLx/TMU; configuration-valid; upstream retimers | Derive topology and resources; do not substitute an OWC-specific fixed adapter table. |
+| Authorization | PCIe tunnel creation may be deferred until user-space authorization | A bootloader needs an explicit selected-device policy and must build the tunnel before expecting the PCIe endpoint. |
+| PCIe transport | Select PCIe-up/down adapters, allocate both paths/credits/HopIDs, LTSSM Detect prerequisites, activate paths and destination/source adapters | Host or remote router discovery does not yet expose a usable NVMe device. |
+| PCIe-C/DART prerequisite | Cold fabric/clock setup, ordered tunables, RID-to-SID initialization, READY, then instantiate the separate PCIe DART | Do not confuse the NHI DART with the 64-stream tunneled PCIe DART. |
+| Native host notification | `tb_native_pci_tunnel_changed` after tunnel activation; release/reset/link and topology handling | The saved binary can miss activation after an early host-probe failure. A later prepared retry fix is a separate change. |
+| PCI enumeration | Host bridge/MSI/ECAM setup, bus enumeration, address windows/BAR allocation, RID-to-SID mappings and device enable | These are required before endpoint DMA; a working configuration read alone is insufficient. |
+| NVMe | `nvme_probe`: PCI enable, controller/admin setup, identify/init completion, I/O queues, namespace discovery | Identify capacity, then bounded read-only verification; no filesystem writes for bring-up. |
+| Boot handover | Quiesce transport and endpoint DMA, maintain/remove mappings according to a defined handover, load boot files | Current RAM probes require full reset and do not yet implement this handover. |
+
+On the second saved-Linux boot, without a cable change, the journal again
+showed both lanes enter CL0 and recognized the OWC Express 1M2, followed by
+native-host reset-release timeout and later link errors. This proves Linux
+passes the earlier physical-link stage that U-Boot currently misses; it does
+not establish a stable complete Linux NVMe reference in this particular boot.
+The conditional S0 transition, initial PHY state, and RTKit endpoint handling
+remain comparisons to measure, not established fixes. In particular U-Boot's
+current diagnostic does not start the SYSLOG endpoint, so absence of Linux-like
+firmware log lines is not itself evidence of stalled firmware.
+
+The current Probe22 U-Boot configuration already enables `CONFIG_NVME_PCI=y`.
+The original baseline did not, so inspecting the baseline alone gives the
+wrong answer. This is not presently a missing generic NVMe configuration flag.
+The live Linux `/soc` contains 36 tunable/DROM properties. The input DTB given
+to the m1n1 probe contains none of these before runtime export; that difference
+must not be reported as missing runtime calibration, because earlier probes
+explicitly verified the runtime-exported tunables. A byte comparison requires
+capturing the final runtime DTB, not comparing only these two input files.
