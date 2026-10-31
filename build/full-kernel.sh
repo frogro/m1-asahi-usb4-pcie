@@ -41,6 +41,7 @@ if [[ "${INCLUDE_EGPU:-false}" == true ]]; then
  revision=usb4sd4-egpu1
  cp "$repo/consolidated/egpu179/README.md" "$repo/artifacts/EGPU-LIMITS.md"
  cp "$repo/consolidated/egpu179/replay.json" "$repo/artifacts/egpu-replay.json"
+ cp "$repo/consolidated/egpu179/tested-egpu-boot-parameters.txt" "$repo/artifacts/"
 fi
 cd "$work/linux"
 # Match the public certificate concatenation in debian/rules, including flavour overrides.

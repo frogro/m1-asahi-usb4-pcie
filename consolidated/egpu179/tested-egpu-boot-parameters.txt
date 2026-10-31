@@ -1,0 +1,19 @@
+Boot prerequisites used by the successful Test179 diagnostic setup:
+
+pci=hpbussize=16,hpmmiosize=32M,hpmmioprefsize=512M,realloc=on
+amdgpu.runpm=0
+amdgpu.aspm=0
+amdgpu.rebar=0
+
+Use this single pci= argument instead of the storage-only pci=hpbussize=16.
+It reserves hotplug bridge memory windows and permits PCI resource reallocation.
+These are diagnostic boot prerequisites, not new kernel defaults or a claim
+that this reservation policy is appropriate for every machine.
+
+Integration audit, 2026-10-31: the first Yotta boot of usb4sd4-egpu1 retained
+only hpbussize=16. Radeon BAR0, BAR2 and BAR5 allocation failed behind the
+Dynabook dock; AMDGPU probe returned -12. The omitted parameters are restored
+in the boot template. A fresh integrated hardware test is still required.
+The subsequent Thunderbolt link loss is not established to have this cause.
+See README.md for other diagnostic prerequisites, including the separately
+documented PREFMEM helper whose necessity remains unverified.

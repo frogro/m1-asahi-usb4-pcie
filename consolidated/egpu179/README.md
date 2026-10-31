@@ -14,6 +14,8 @@ This is a reproducible diagnostic source snapshot, not a completed upstream subm
 
 ## Evidence and limits
 
+The successful diagnostic boot also used `pci=hpbussize=16,hpmmiosize=32M,hpmmioprefsize=512M,realloc=on`. This replaces the storage-only `pci=hpbussize=16` argument; it is not automatically supplied by the driver patches. See [tested-egpu-boot-parameters.txt](tested-egpu-boot-parameters.txt), exported with eGPU build artifacts. The first integrated Yotta boot omitted the memory reservation/reallocation options and failed Radeon memory BAR allocation with probe error -12. Restoring the tested options requires a fresh hardware check; it does not yet explain the subsequent dock link loss.
+
 Matched diagnostic modules on M1 + RX 6900 XT have passed GPU compute, DP/HDMI/USB-C output, two-monitor combinations and audio tests. Test179 survived two complete Thunderbolt removals while USB-C output was active, with all four Radeon drivers bound. Reconnection rebound all drivers, GPU compute passed, and the user confirmed both Mac-HDMI and Radeon-USB-C pictures. Independent Yottamaster 1 GiB read checksums remained correct. During these physical removals the Radeon I2C controller was held awake, matching the earlier failing case.
 
 These observations do not certify the entire integrated kernel. Its full build and hardware boot must be reported separately. The transfer guard does not protect a transaction already in flight or accesses before the PCI-disconnected flag is set. USB-C display-cable reconnection has been inconsistent; a UCSI PPM initialization timeout occurred after the first eGPU reconnect, and one offline display teardown emitted a DMCUB diagnostic. These are not silently suppressed or declared fixed.
