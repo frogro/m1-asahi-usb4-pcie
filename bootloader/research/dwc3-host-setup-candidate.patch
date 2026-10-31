@@ -1,0 +1,75 @@
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -122,11 +122,72 @@
+ 	.verify_halted = hw_verify_halted,
+ };
+ 
++/* Linux dwc3-apple.c host/CIO sequence; selected, powered, halted port only.
++ * This diagnostic does not initialize xHCI rings or enable its RUN bit.
++ */
++static int dwc3_update_checked(struct atc_m1_hw *hw, u32 off,
++                              u32 mask, u32 value)
++{
++ u32 old = readl(hw->xhci + off), next, observed;
++
++ if (old == 0xffffffff || (value & ~mask))
++  return -EIO;
++ next = (old & ~mask) | value;
++ writel(next, hw->xhci + off);
++ observed = readl(hw->xhci + off);
++ if (observed == 0xffffffff || observed != next)
++  return -EIO;
++ return 0;
++}
++
++static int prepare_dwc3_host(struct atc_m1_hw *hw)
++{
++ u32 id, params, ctl;
++ int ret;
++
++ if (hw->stage != ATC_CORE_READY)
++  return -EPERM;
++ ret = hw_verify_halted(hw);
++ if (ret)
++  return ret;
++ id = readl(hw->xhci + 0xc120);
++ params = readl(hw->xhci + 0xc140);
++ ctl = readl(hw->xhci + 0xc110);
++ /* The measured M1 DWC3.1 core is DRD; reject an unexpected core/reset. */
++ if (id != 0x33313130 || params == 0xffffffff || (params & 3) != 2 ||
++     ctl == 0xffffffff || (ctl & BIT(11)))
++  return -ENODEV;
++#define DWC3_UPDATE(off, mask, val) do { \
++ ret = dwc3_update_checked(hw, off, mask, val); \
++ if (ret) return ret; \
++} while (0)
++ /* Apple CIO controls from dwc3_apple_setup_cio(), preserve upper timer bits. */
++ DWC3_UPDATE(0xcd38, 0xffffffff, 0x0f800f80);
++ DWC3_UPDATE(0xcd3c, 0xffffffff, 0x0fc00fc0);
++ DWC3_UPDATE(0xcd40, 0x00ffffff, 0x00140a10);
++ /* DRD role switching requires SUSPHY clear before selecting HOST. */
++ DWC3_UPDATE(0xc2c0, BIT(17), 0);
++ DWC3_UPDATE(0xc200, BIT(6), 0);
++ DWC3_UPDATE(0xc110, 3 << 12, 1 << 12);
++ /* Core USB2 LPM setup, followed by Apple-required SUSPHY before PIPE. */
++ DWC3_UPDATE(0xc200, BIT(8) | BIT(6), BIT(8) | BIT(6));
++ DWC3_UPDATE(0xc2c0, BIT(17), BIT(17));
++#undef DWC3_UPDATE
++ return hw_verify_halted(hw);
++}
++
+ static int start_late_pipe(void *context)
+ {
+  struct atc_m1_hw *hw = context;
+  int ret;
+ 
++ apple_boot_trace("dwc3-host-begin");
++ ret = prepare_dwc3_host(hw);
++ apple_boot_trace("dwc3-host-return");
++ printf("DWC3-HOST ret=%d; xHCI not started\n", ret);
++ if (ret)
++  return ret;
++ snapshot_dwc3(hw, "host-configured");
+  apple_boot_trace("late-pipe-begin");
+  ret = atc_m1_start_pipe(&hw->cfg, &hw_io, hw, &hw->stage);
+  apple_boot_trace("late-pipe-return");

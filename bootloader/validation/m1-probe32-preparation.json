@@ -1,0 +1,14 @@
+{
+  "probe": 32,
+  "base_probe": 31,
+  "m1_build": true,
+  "source_patch_reproduction": true,
+  "host_setup_cases": 26,
+  "fault_read_positions": 19,
+  "test_failures": 0,
+  "xHCI_started": false,
+  "external_ssd_writes": false,
+  "ram_only": true,
+  "hardware_pending": true,
+  "source_sha256": "1723c0b69bc08a7b3c0d1a7ce18eda168f790f2c7ae42a8b26cf57b48d493066"
+}

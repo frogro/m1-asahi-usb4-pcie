@@ -1,0 +1,174 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "4d29bfa9f22492dd396c44f4a8fb09874ac8373c7494fc5df2f6d1292a36c4cd",
+  "records": [
+    {
+      "ms": 22049,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 22051,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 22137,
+      "delta": 88,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 22160,
+      "delta": 111,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 22164,
+      "delta": 115,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 22167,
+      "delta": 118,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 22171,
+      "delta": 122,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 22180,
+      "delta": 131,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 22183,
+      "delta": 134,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 22196,
+      "delta": 147,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 22199,
+      "delta": 150,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 22260,
+      "delta": 211,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 22261,
+      "delta": 212,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 22264,
+      "delta": 215,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 22268,
+      "delta": 219,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 22271,
+      "delta": 222,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 22278,
+      "delta": 229,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22281,
+      "delta": 232,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22415,
+      "delta": 366,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 22418,
+      "delta": 369,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 22421,
+      "delta": 372,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22425,
+      "delta": 376,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22425,
+      "delta": 376,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 22428,
+      "delta": 379,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 22440,
+      "delta": 391,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 22473,
+      "delta": 424,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 27515,
+      "delta": 5466,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 27528,
+      "delta": 5479,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 27528,
+      "delta": 5479,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 116,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 88,
+    "rings_to_cable_submit": 147,
+    "cable_submit_to_link_return": 5097
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 31,
+  "internal_nvme_before_after": true,
+  "ubuntu_return_verified": true,
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "snapshot_phases": 3,
+  "host_mode_after_reset": false,
+  "usb3_susphy_already_set": true,
+  "usb2_susphy_missing": true,
+  "cio_timers_match_linux": false
+}
