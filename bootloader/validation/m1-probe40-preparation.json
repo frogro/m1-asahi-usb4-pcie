@@ -1,0 +1,19 @@
+{
+  "probe": 40,
+  "base_probe": 39,
+  "delta": "TBT-only with no native USB role: leave DWC3 reset/clamp asserted; omit late PIPE/xHCI activation and DWC3 MMIO after reset",
+  "m1_build": true,
+  "sandbox_build": true,
+  "sandbox_tests": 66,
+  "sandbox_failures": 0,
+  "tb_only_inherited_state_cases": 6,
+  "tb_only_fault_positions": 531,
+  "sanitizer_stderr_empty": true,
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "ram_only": true,
+  "usb_dma": false,
+  "nhi_control_dma": true,
+  "external_ssd_io": false,
+  "hardware_pending": true
+}

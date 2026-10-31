@@ -1,0 +1,6 @@
+{
+  "include/apple_atc_m1.h": "7ed88c37bd04aa8344bfa9566cf62ef33ffac83e2ef0a6cc2e6de05c98660435",
+  "lib/apple_atc_m1.c": "238dc654b409e13d1e4d9e6f117f7dc11d45ada0061aaaf243f399fb6903e883",
+  "cmd/apple_atc_m1.c": "69e8a51ca9a1fde04f0a9fa528a0e3bb76297971094b0a395aaab64cac0b5f62",
+  "test/dm/apple_atc_m1.c": "f20ef4dc01114285ec088fa266d4869a671ea708ff7cd7c42fb8520de498eb8d"
+}

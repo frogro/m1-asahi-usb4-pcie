@@ -1,0 +1,103 @@
+{
+  "linux_kernel": "7.2.0-1001-asahi-arm",
+  "router": {
+    "device_name": "Ash Creek",
+    "rx_lanes": "2",
+    "tx_lanes": "2",
+    "rx_speed": "20.0 Gb/s",
+    "tx_speed": "20.0 Gb/s",
+    "authorized": "1"
+  },
+  "comparison": {
+    "core:0x8": {
+      "linux": "0x11833fef",
+      "probe39": "0x11833fef",
+      "match": true
+    },
+    "core:0x48": {
+      "linux": "0x0",
+      "probe39": "0x0",
+      "match": true
+    },
+    "core:0x4c": {
+      "linux": "0x1",
+      "probe39": "0x1",
+      "match": true
+    },
+    "core:0x1b0": {
+      "linux": "0x15570cff",
+      "probe39": "0x15570cff",
+      "match": true
+    },
+    "core:0x2a00": {
+      "linux": "0x2022",
+      "probe39": "0x2022",
+      "match": true
+    },
+    "core:0x20000": {
+      "linux": "0x1b",
+      "probe39": "0x1b",
+      "match": true
+    },
+    "core:0x20004": {
+      "linux": "0x3",
+      "probe39": "0x3",
+      "match": true
+    },
+    "core:0x20008": {
+      "linux": "0x1",
+      "probe39": "0x1",
+      "match": true
+    },
+    "core:0x9010": {
+      "linux": "0x53600000",
+      "probe39": "0x53600000",
+      "match": true
+    },
+    "core:0x10010": {
+      "linux": "0x53600000",
+      "probe39": "0x53600000",
+      "match": true
+    },
+    "pipe:0x0": {
+      "linux": "0x0",
+      "probe39": "0x5",
+      "match": false
+    },
+    "pipe:0x4": {
+      "linux": "0x16",
+      "probe39": "0x10",
+      "match": false
+    },
+    "pipe:0xc": {
+      "linux": "0x22",
+      "probe39": "0x22",
+      "match": true
+    },
+    "pipe:0x10": {
+      "linux": "0x0",
+      "probe39": "0x0",
+      "match": true
+    },
+    "pipe:0x14": {
+      "linux": "0x0",
+      "probe39": "0x0",
+      "match": true
+    },
+    "pipe:0x1c": {
+      "linux": "0x10",
+      "probe39": "0x1",
+      "match": false
+    },
+    "pipe:0x20": {
+      "linux": "0x9332",
+      "probe39": "0x9332",
+      "match": true
+    }
+  },
+  "matches": 14,
+  "differences": 3,
+  "caveat": "Live Linux steady-state vs Probe39 after RTKit shutdown. Not an initialization trace or proof of causation.",
+  "cd321x_probe39_data_status": "0x06010003",
+  "native_usb_connection": false
+}

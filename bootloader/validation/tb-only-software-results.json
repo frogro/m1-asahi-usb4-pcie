@@ -1,0 +1,34 @@
+{
+  "atc_m1": {
+    "tests": 14,
+    "failures": 0
+  },
+  "apple_dart": {
+    "tests": 7,
+    "failures": 0
+  },
+  "iommu": {
+    "tests": 8,
+    "failures": 0
+  },
+  "pci": {
+    "tests": 14,
+    "failures": 0
+  },
+  "apple_mbox": {
+    "tests": 3,
+    "failures": 0
+  },
+  "usb4_cfg": {
+    "tests": 6,
+    "failures": 0
+  },
+  "apple_i2c": {
+    "tests": 6,
+    "failures": 0
+  },
+  "cd321x": {
+    "tests": 8,
+    "failures": 0
+  }
+}

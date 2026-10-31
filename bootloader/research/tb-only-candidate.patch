@@ -1,0 +1,189 @@
+--- a/include/apple_atc_m1.h
++++ b/include/apple_atc_m1.h
+@@ -16,6 +16,8 @@
+ 	bool swapped;
+ 	/* Diagnostic ACIO owner retains halted DWC3 until full reset. */
+ 	bool retain_dwc3;
++	/* TB-only diagnostic: keep DWC3 reset asserted throughout ACIO start. */
++	bool hold_dwc3_reset;
+ 	/* common-a, axi2af, common-b, lane0-cio, lane1-cio */
+ 	struct atc_m1_tunable tunable[5];
+ 	size_t size[ATC_REGIONS];
+--- a/lib/apple_atc_m1.c
++++ b/lib/apple_atc_m1.c
+@@ -29,6 +29,8 @@
+ 	size_t j, limit;
+ 
+ 	if (!cfg || (cfg->mode != ATC_USB4 && cfg->mode != ATC_TBT))
++		return -EINVAL;
++	if (cfg->hold_dwc3_reset && cfg->mode != ATC_TBT)
+ 		return -EINVAL;
+ 	for (i = 0; i < ATC_REGIONS; i++)
+ 		if (cfg->size[i] < minimum[i])
+@@ -145,7 +147,8 @@
+ 	 * while USB2 is still off, before releasing resets and enabling RUN.
+ 	 * This diagnostic supports only host USB4/TBT operation.
+ 	 */
+-	UP(ATC_USB2, 8, 0, 7 << 12);
++	if (!cfg->hold_dwc3_reset)
++		UP(ATC_USB2, 8, 0, 7 << 12);
+ 	UP(ATC_USB2, 8, 0, 0xf); DELAY();
+ 	UP(ATC_USB2, 4, BIT(3), 0); DELAY();
+ 	UP(ATC_USB2, 4, BIT(0), 0); DELAY();
+@@ -216,6 +219,12 @@
+ 	UP(ATC_CORE, 0x10010, BIT(0), 0); DELAY();
+ 	UP(ATC_CORE, POWER_CTRL, 0, PHY_RESET_N);
+ 
++	/* With no native USB role, Linux leaves DWC3 isolated while TB trains. */
++	if (cfg->hold_dwc3_reset) {
++		*stage = ATC_CORE_READY;
++		return 0;
++	}
++
+ 	/* Linux deasserts DWC3 reset before its PHY set_mode/PIPE handshake.
+ 	 * Do not start xHCI: verify it remains halted before proceeding.
+ 	 */
+@@ -236,6 +245,8 @@
+ 	if (!stage || *stage != ATC_CORE_READY)
+ 		return -EINVAL;
+ 	DO(atc_m1_validate(cfg));
++	if (cfg->hold_dwc3_reset)
++		return -EPERM;
+ 	if (!io || !io->read || !io->write || !io->delay || !io->verify_halted)
+ 		return -EINVAL;
+ 
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -376,15 +376,16 @@
+ 	u32 cap, halted;
+ 	int ret, i;
+ 	unsigned int stage;
+-	bool acio, fresh;
++	bool acio, fresh, tb_only;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly")))
+ 		return CMD_RET_USAGE;
+ 	fresh = !strcmp(argv[2], "fresh");
++	tb_only = !strcmp(argv[2], "tbonly");
+ 	hw.hostrun = !strcmp(argv[2], "hostrun");
+-	stage = (!strcmp(argv[2], "host") || hw.hostrun || fresh) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
++	stage = (!strcmp(argv[2], "host") || hw.hostrun || fresh || tb_only) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+ 	acio = !strcmp(argv[2], "acio") || stage;
+ 	if (stage >= 4) {
+ 		ret = apple_nhi_m1_control_check();
+@@ -409,6 +410,12 @@
+ 		goto fail;
+ 	printf("ATC-M1 port=1 mode=%s swapped=%u validated=5 groups\n",
+ 	       hw.cfg.mode == ATC_USB4 ? "USB4" : "TBT", hw.cfg.swapped);
++	/* TIPD leaves USB_ROLE_NONE when neither native USB connection bit is set. */
++	if (tb_only && (hw.cfg.mode != ATC_TBT ||
++		       (before.data_status & (BIT(4) | BIT(5))))) {
++		ret = -EPROTONOSUPPORT;
++		goto fail;
++	}
+ 	if (!strcmp(argv[2], "check"))
+ 		return CMD_RET_SUCCESS;
+ 
+@@ -476,6 +483,7 @@
+ 		hw.base[i] = map_sysmem(res.start, resource_size(&res));
+ 	}
+ 	hw.cfg.retain_dwc3 = acio;
++	hw.cfg.hold_dwc3_reset = tb_only;
+ 	hw.xhci = xhci;
+ 	hw.cap = cap;
+ 	hw.printed_stage = ATC_DONE;
+@@ -494,8 +502,11 @@
+ 	if (acio) {
+ 		puts("ATC-M1 PHY retained for ACIO; xHCI remains halted\n");
+ 		snapshot_phy(&hw, "before-acio");
+-		snapshot_dwc3(&hw, "before-acio");
+-		if (stage >= 4)
++		if (!tb_only)
++			snapshot_dwc3(&hw, "before-acio");
++		else
++			puts("TBT-ONLY DWC3 remains reset; no late PIPE, xHCI or USB DMA\n");
++		if (stage >= 4 && !tb_only)
+ 			apple_nhi_m1_set_post_cable(start_late_pipe, &hw);
+ 		ret = apple_acio_m1_start(stage);
+ 		apple_nhi_m1_set_post_cable(NULL, NULL);
+@@ -510,7 +521,8 @@
+         }
+ #endif
+ 		snapshot_phy(&hw, "after-acio");
+-		snapshot_dwc3(&hw, "after-acio");
++		if (!tb_only)
++			snapshot_dwc3(&hw, "after-acio");
+ 		if (ret) goto fail;
+ 	} else {
+ 		puts("ATC-M1 PHY SEQUENCE PASS; DWC3 held reset, no ACIO/NHI/tunnel/DMA\n");
+@@ -526,4 +538,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh - bounded diagnostic; hostrun also enables xHCI DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly - bounded diagnostic; hostrun also enables xHCI DMA");
+--- a/test/dm/apple_atc_m1.c
++++ b/test/dm/apple_atc_m1.c
+@@ -434,3 +434,59 @@
+  return 0;
+ }
+ DM_TEST(dm_test_atc_m1_usb2_host_role, 0);
++
++/* TB-only keeps the native USB controller isolated for the whole sequence. */
++static int dm_test_atc_m1_tb_only(struct unit_test_state *uts)
++{
++ struct atc_m1_config c;
++ u32 initial[] = { 0, 0xffffffff, 0xa5a5a5a5 };
++ int swap, pattern, i, calls;
++ for (swap = 0; swap < 2; swap++) {
++  for (pattern = 0; pattern < ARRAY_SIZE(initial); pattern++) {
++   c = setup(); c.mode = ATC_TBT; c.swapped = swap;
++   c.hold_dwc3_reset = true;
++   fake.reg[ATC_PIPE][0x1c / 4] = initial[pattern];
++   fake.reg[ATC_USB2][8 / 4] = initial[pattern];
++   ut_assertok(atc_m1_start_core(&c, &fake_io, &fake, true, &fake.stage));
++   ut_asserteq(ATC_CORE_READY, fake.stage);
++   ut_asserteq(0x10, fake.reg[ATC_PIPE][0x1c / 4] & 0x11);
++   ut_asserteq(initial[pattern] & 0x7000, fake.reg[ATC_USB2][8 / 4] & 0x7000);
++   ut_asserteq(0x1b, fake.reg[ATC_CORE][0x20000 / 4] & 0x1f);
++   for (i = 0; i < fake.writes; i++) {
++    struct atc_trace *w = &fake.trace[i];
++    if (w->region != ATC_PIPE) continue;
++    if (w->offset == 0x1c) ut_asserteq(0, w->value & 1);
++    ut_assert(w->offset == 0x1c || w->offset == 0xc);
++   }
++   calls = fake.calls;
++   ut_asserteq(-EPERM, atc_m1_start_pipe(&c, &fake_io, &fake, &fake.stage));
++   ut_asserteq(calls, fake.calls);
++  }
++ }
++ c = setup(); c.hold_dwc3_reset = true;
++ ut_asserteq(-EINVAL, atc_m1_start_core(&c, &fake_io, &fake, true, &fake.stage));
++ ut_asserteq(0, fake.calls);
++ return 0;
++}
++DM_TEST(dm_test_atc_m1_tb_only, 0);
++
++static int dm_test_atc_m1_tb_only_faults(struct unit_test_state *uts)
++{
++ struct atc_m1_config c = setup();
++ int calls, fault, i;
++ c.mode = ATC_TBT; c.hold_dwc3_reset = true;
++ ut_assertok(atc_m1_start_core(&c, &fake_io, &fake, true, &fake.stage));
++ calls = fake.calls;
++ for (fault = 1; fault <= calls; fault++) {
++  c = setup(); c.mode = ATC_TBT; c.hold_dwc3_reset = true;
++  fake.fault_call = fault;
++  ut_asserteq(-EIO, atc_m1_start_core(&c, &fake_io, &fake, true, &fake.stage));
++  ut_asserteq(fault, fake.calls);
++  for (i = 0; i < fake.writes; i++)
++   if (fake.trace[i].region == ATC_PIPE && fake.trace[i].offset == 0x1c)
++    ut_asserteq(0, fake.trace[i].value & 1);
++ }
++ printf("TB-only fault injection: %d IO failure positions checked\n", calls);
++ return 0;
++}
++DM_TEST(dm_test_atc_m1_tb_only_faults, 0);
