@@ -1,0 +1,56 @@
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -99,6 +99,22 @@
+   printf("ATC-SNAPSHOT %s core[%#x]=%#x\n", phase, core[i], readl(hw->base[ATC_CORE] + core[i]));
+  for (i = 0; i < ARRAY_SIZE(pipe); i++)
+   printf("ATC-SNAPSHOT %s pipe[%#x]=%#x\n", phase, pipe[i], readl(hw->base[ATC_PIPE] + pipe[i]));
++}
++
++/* Read-only allowlist: no FIFO, event ring, W1C writes or device registers. */
++static void snapshot_dwc3(struct atc_m1_hw *hw, const char *phase)
++{
++ static const u32 offsets[] = {
++  0xc110, 0xc11c, 0xc120, 0xc12c, 0xc140, 0xc144, 0xc14c,
++  0xc200, 0xc2c0, 0xc630, 0xcd38, 0xcd3c, 0xcd40,
++ };
++ unsigned int i;
++
++ for (i = 0; i < ARRAY_SIZE(offsets); i++)
++  printf("DWC3-SNAPSHOT %s reg[%#x]=%#x\n", phase, offsets[i],
++         readl(hw->xhci + offsets[i]));
++ printf("DWC3-SNAPSHOT %s command=%#x status=%#x\n", phase,
++        readl(hw->xhci + hw->cap), readl(hw->xhci + hw->cap + 4));
+ }
+ 
+ static const struct atc_m1_io hw_io = {
+@@ -281,12 +297,15 @@
+ 	ret = dev_power_domain_on(reset);
+ 	if (ret)
+ 		goto fail;
+-	xhci = map_sysmem(0x502280000ULL, 0x200);
++	xhci = map_sysmem(0x502280000ULL, 0x10000);
+ 	cap = readl(xhci) & 0xff;
+ 	if (cap < 0x20 || cap > 0x100 || cap % 4) {
+ 		ret = -EPROTO;
+ 		goto fail;
+ 	}
++	hw.xhci = xhci;
++	hw.cap = cap;
++	snapshot_dwc3(&hw, "before-remove");
+ 	ret = device_remove(usb, DM_REMOVE_NORMAL | DM_REMOVE_NO_PD);
+ 	if (ret)
+ 		goto fail;
+@@ -340,11 +359,13 @@
+ 	if (acio) {
+ 		puts("ATC-M1 PHY retained for ACIO; xHCI remains halted\n");
+ 		snapshot_phy(&hw, "before-acio");
++		snapshot_dwc3(&hw, "before-acio");
+ 		if (stage >= 4)
+ 			apple_nhi_m1_set_post_cable(start_late_pipe, &hw);
+ 		ret = apple_acio_m1_start(stage);
+ 		apple_nhi_m1_set_post_cable(NULL, NULL);
+ 		snapshot_phy(&hw, "after-acio");
++		snapshot_dwc3(&hw, "after-acio");
+ 		if (ret) goto fail;
+ 	} else {
+ 		puts("ATC-M1 PHY SEQUENCE PASS; DWC3 held reset, no ACIO/NHI/tunnel/DMA\n");

@@ -1,0 +1,31 @@
+{
+  "kernel": "7.2.12-usb4sd4-egpu2",
+  "unix_time": 1793480147.9954906,
+  "registers": {
+    "0xc110": "0x30c11006",
+    "0xc11c": "0x81001908",
+    "0xc120": "0x33313130",
+    "0xc12c": "0xa416802",
+    "0xc140": "0x4020800a",
+    "0xc144": "0x2092486",
+    "0xc14c": "0x10420086",
+    "0xc200": "0x102540",
+    "0xc2c0": "0x1021102",
+    "0xc630": "0xa87f020",
+    "0xcd38": "0xf800f80",
+    "0xcd3c": "0xfc00fc0",
+    "0xcd40": "0x3c140a10"
+  },
+  "routers": [
+    {
+      "device_name": "Express 1M2",
+      "rx_lanes": "2",
+      "tx_lanes": "2",
+      "rx_speed": "20.0 Gb/s",
+      "tx_speed": "20.0 Gb/s",
+      "authorized": "1"
+    }
+  ],
+  "command": "0x5",
+  "status": "0x10"
+}

@@ -1,0 +1,43 @@
+DWC3-SNAPSHOT before-remove reg[0xc110]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc11c]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc120]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc12c]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc140]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc144]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc14c]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc200]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc2c0]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xc630]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xcd38]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xcd3c]=0x12345678
+DWC3-SNAPSHOT before-remove reg[0xcd40]=0x12345678
+DWC3-SNAPSHOT before-remove command=0x12345678 status=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc110]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc11c]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc120]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc12c]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc140]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc144]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc14c]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc200]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc2c0]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xc630]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xcd38]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xcd3c]=0x12345678
+DWC3-SNAPSHOT before-acio reg[0xcd40]=0x12345678
+DWC3-SNAPSHOT before-acio command=0x12345678 status=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc110]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc11c]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc120]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc12c]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc140]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc144]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc14c]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc200]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc2c0]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xc630]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xcd38]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xcd3c]=0x12345678
+DWC3-SNAPSHOT after-acio reg[0xcd40]=0x12345678
+DWC3-SNAPSHOT after-acio command=0x12345678 status=0x12345678
+3 phases, 45 allowlisted reads, no writes

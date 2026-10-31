@@ -1,0 +1,15 @@
+{
+  "probe": 31,
+  "base_probe": 30,
+  "m1_build": true,
+  "source_patch_reproduction": true,
+  "snapshot_fixture_phases": 3,
+  "snapshot_fixture_reads": 45,
+  "snapshot_fixture_failures": 0,
+  "new_mmio_writes": 0,
+  "xHCI_started": false,
+  "external_ssd_writes": false,
+  "ram_only": true,
+  "hardware_pending": true,
+  "source_sha256": "446782e3ce1a66c1fa1d2af6d2909a9d3669c85e1cec479f99d42a9c55503757"
+}

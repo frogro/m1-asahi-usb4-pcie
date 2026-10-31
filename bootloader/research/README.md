@@ -484,3 +484,12 @@ were answered. Stock Ubuntu returned, internal NVMe hashes matched and the
 installed boot bundle is unchanged. See [Probe30](../validation/m1-probe30-result.json).
 Next compare DWC3 core/PHY suspend state with working Linux; do not infer a
 working TB boot path from these partial initialization results.
+
+### Probe31: DWC3 register comparison
+
+A fresh 7.2.12-usb4sd4-egpu2 Linux capture with the OWC linked over USB4
+(two lanes, 20 Gb/s each) supplies the DWC3 reference. Probe31 adds read-only
+controller snapshots to Probe30. M1 build, patch reconstruction and the
+45-read snapshot fixture passed; hardware remains pending. See
+[DWC3 comparison](dwc3-core-comparison-20261031.md). This is diagnostic
+instrumentation, not a link fix or an enabled xHCI DMA path.
