@@ -275,7 +275,7 @@ The disconnect cause remains undetermined. The five-second Probe22 observation
 is a bounded timing comparison, not an assumed repair.
 
 
-### Prepared Probe22: bounded five-second link observation
+### Probe22: bounded five-second link observation
 
 Apply `nhi-link-window-candidate.patch` after Probe21. It changes only the
 interval between the ten both-lane observations from100ms to500ms. No reset,
@@ -284,4 +284,15 @@ transport deadline still bounds slow responses. Software coverage adds a link
 that becomes ready after three seconds, verifies a permanently-unplugged lane
 is observed for five seconds and preserves all previous injected failure cases.
 95 production-code cases, 57 sandbox cases and the M1 build passed.
-Hardware status is recorded separately in `nhi-link-window-result.json`.
+Hardware again showed both lanes in state7 for the full window. Type-C still
+reported USB4 afterwards; a longer observation did not restore the link.
+Internal hashes passed and Ubuntu returned automatically. See
+`nhi-link-window-result.json` and the Probe22 UART log.
+
+The user requested the saved working Linux path as the next live reference.
+The installed 7.2.12-usb4sd4-egpu2 image, initramfs and config hashes were
+checked against its manifest before arming its existing one-shot GRUB entry.
+The initramfs restores the original boot bundle; a temporary seven-minute
+return service bounds the live comparison. This release predates the native
+prefetch/authorization-retry patches44/45; successful Test191 runtime evidence
+is retained separately and must not be equated with a fully integrated boot.
