@@ -1,0 +1,53 @@
+{
+  "probe": 27,
+  "hardware_tested": false,
+  "m1_build": true,
+  "sandbox": {
+    "atc_m1": {
+      "tests": 8,
+      "failures": 0
+    },
+    "apple_dart": {
+      "tests": 7,
+      "failures": 0
+    },
+    "iommu": {
+      "tests": 8,
+      "failures": 0
+    },
+    "pci": {
+      "tests": 14,
+      "failures": 0
+    },
+    "apple_mbox": {
+      "tests": 3,
+      "failures": 0
+    },
+    "usb4_cfg": {
+      "tests": 6,
+      "failures": 0
+    },
+    "apple_i2c": {
+      "tests": 6,
+      "failures": 0
+    },
+    "cd321x": {
+      "tests": 5,
+      "failures": 0
+    }
+  },
+  "control_channel_production_mock_cases": 95,
+  "control_channel_failures": 0,
+  "trace_buffer_cases": 3,
+  "trace_buffer_failures": 0,
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "incremental_patch_reproduces_all_changed_files": true,
+  "functional_register_sequence_changed": false,
+  "trace_buffer_records": 64,
+  "extra_trace_printing_during_measured_path": false,
+  "existing_console_prints_remain": true,
+  "note": "Milliseconds measure host execution and RTKit message consumption, not firmware event generation. Probe27 uses host command like Probe25; no fresh physical reconnect."
+}

@@ -402,3 +402,27 @@ The next useful diagnostic compares the timing/order around ACIO readiness,
 RC/NHI initialization and cable-info submission. Any extra register capture
 must first establish that reads are safe and meaningful. No blind PHY writes
 or PD resets are justified by the current evidence.
+
+
+### Probe27 prepared: buffered initialization timing
+
+`nhi-init-timing-candidate.patch` follows Probe26. A fixed 64-entry RAM buffer
+records millisecond timestamps around PHY setup, ACIO power/reset and RTKit
+readiness, RC/NHI tunables, DART probe, control-ring start, lane unlock and cable
+information submission. It records at most the first eight consumed RTKit
+messages. No allocation or added console output occurs while collecting the
+trace; it is printed after the observation and shutdown return. Existing console
+logging remains, so the experiment is not a measurement without observer effects.
+A full buffer drops further records and reports their number without extra timer
+reads. No PHY/reset/tunnel writes, timeouts or transport limits change.
+
+This run uses the existing `host` command as in Probe25, without another physical
+reconnect. It measures host execution and message-consumption times, not the time
+a firmware event was generated. The successful Linux packet capture provides
+a comparable NHI-control-to-cable interval and cable-to-first-remote-request
+interval; it does not provide all earlier PHY transition timestamps.
+
+M1 build, 57 sandbox checks, 95 production transport mock cases and three
+trace-buffer checks (empty, timer wrap/order and 10,000 overflowing records)
+passed. Buffer and transport checks used ASan/UBSan. The incremental patch
+reproduces all five changed files. Hardware result is pending.
