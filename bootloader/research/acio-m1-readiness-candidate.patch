@@ -1,0 +1,444 @@
+--- /dev/null
++++ b/cmd/apple_acio_m1.c
+@@ -0,0 +1,228 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* RAM-only J274 port1 ACIO readiness diagnostic. No NHI, DART or DMA.
++ * Sequence derived from Asahi Linux thunderbolt/apple.c and reset-apple-cio.c.
++ * Copyright The Asahi Linux Contributors
++ * Copyright (c) Sven Peter <sven@kernel.org>
++ * Power/reset operations use U-Boot's existing Apple PMGR provider.
++ */
++#include <apple_acio_m1.h>
++#include <linux/errno.h>
++#ifdef CONFIG_ARCH_APPLE
++#include <apple_acio_prereq.h>
++#include <asm/io.h>
++#include <asm/global_data.h>
++#include <mailbox.h>
++#include <asm/arch/rtkit.h>
++#include <dm.h>
++#include <dm/device-internal.h>
++#include <dm/ofnode.h>
++#include <dm/read.h>
++#include <dm/lists.h>
++#include <dm/uclass-internal.h>
++#include <linux/delay.h>
++#include <linux/ioport.h>
++#include <linux/iopoll.h>
++#include <mailbox.h>
++#include <mapmem.h>
++#include <power-domain.h>
++#include <reset.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++#define PMGR_NODE "/soc/power-management@23b700000"
++#define ACIO_NODE "/soc/cio@501ac0000"
++#define MBOX_NODE "/soc/mailbox@501100000"
++#define RESET_NODE "/soc/reset-controller@23b784000"
++static const u32 domains[] = { 0x458, 0x460, 0x468, 0x450 };
++static bool used;
++
++static ofnode pdnode(u32 off)
++{
++ char path[112];
++ snprintf(path, sizeof(path), PMGR_NODE "/power-controller@%x", off);
++ return ofnode_path(path);
++}
++
++static int resource(ofnode node, const char *name, u64 addr, u64 size)
++{
++ struct resource r;
++ int ret = name ? ofnode_read_resource_byname(node, name, &r) :
++                  ofnode_read_resource(node, 0, &r);
++ if (ret) return ret;
++ return r.start == addr && resource_size(&r) == size ? 0 : -ERANGE;
++}
++
++static u32 pdstate(u32 off)
++{
++ return readl(map_sysmem(0x23b700000ULL + off, 4));
++}
++
++int apple_acio_m1_check(void)
++{
++ ofnode acio = ofnode_path(ACIO_NODE), mbox = ofnode_path(MBOX_NODE);
++ struct ofnode_phandle_args args;
++ int i, ret;
++ u32 off, state;
++
++ if (used) return -EALREADY;
++ if (!ofnode_device_is_compatible(ofnode_root(), "apple,j274") ||
++     !ofnode_device_is_compatible(acio, "apple,t8103-usb4-acio") ||
++     !ofnode_device_is_compatible(mbox, "apple,m3-mailbox-v2") ||
++     !ofnode_device_is_compatible(ofnode_path(RESET_NODE), "apple,t8103-cio-reset"))
++  return -ENODEV;
++ if (ofnode_is_enabled(acio) || ofnode_is_enabled(mbox)) return -EBUSY;
++ if ((ret = resource(acio, "rc", 0x501ac0000, 0xc000)) ||
++     (ret = resource(acio, "sram", 0x501080000, 0x20000)) ||
++     (ret = resource(mbox, NULL, 0x501100000, 0x4000)) ||
++     (ret = resource(ofnode_path(RESET_NODE), NULL, 0x23b784000, 0x8000)) ||
++     (ret = resource(ofnode_path(PMGR_NODE), NULL, 0x23b700000, 0x14000)))
++  return ret;
++ ret = ofnode_parse_phandle_with_args(acio, "mboxes", "#mbox-cells", 0, 0, &args);
++ if (ret || args.args_count || !ofnode_equal(args.node, mbox)) return -EINVAL;
++ for (i = 0; i < ARRAY_SIZE(domains); i++) {
++  ofnode node = pdnode(domains[i]);
++  if (!ofnode_device_is_compatible(node, "apple,pmgr-pwrstate") ||
++      ofnode_read_u32(node, "reg", &off) || off != domains[i]) return -EINVAL;
++  ret = ofnode_parse_phandle_with_args(node, "power-domains", "#power-domain-cells", 0, 0, &args);
++  if (ret || args.args_count ||
++      !ofnode_equal(args.node, pdnode(i == 1 || i == 2 ? 0x458 : 0x448)))
++   return -EINVAL;
++ }
++ if (!ofnode_device_is_compatible(pdnode(0x448), "apple,pmgr-pwrstate") ||
++     ofnode_read_u32(pdnode(0x448), "reg", &off) || off != 0x448) return -EINVAL;
++ /* Only always-on PMGR registers are read during preflight. */
++ for (i = 0; i < ARRAY_SIZE(domains); i++) {
++  state = pdstate(domains[i]);
++  printf("ACIO preflight PD %#x=%#x\n", domains[i], state);
++  if (state == 0xffffffff || (state & (BIT(31) | BIT(10)))) return -EBUSY;
++  /* ACIO must be cold. PCIe-C may have an inherited idle clock vote. */
++  if (i < 3 && (state & 0xff)) return -EBUSY;
++  if (i == 3 && (state & 0xff) != 0 && (state & 0xff) != 0xff) return -EBUSY;
++ }
++ return 0;
++}
++
++static int domain_on(u32 off)
++{
++ struct power_domain pd = {};
++ int ret;
++ u32 state;
++ /* Every parent is activated and checked before its child is probed. */
++ ret = uclass_get_device_by_ofnode(UCLASS_POWER_DOMAIN, pdnode(off), &pd.dev);
++ if (ret) return ret;
++ ret = power_domain_on(&pd);
++ if (ret) return ret;
++ state = pdstate(off);
++ printf("ACIO power PD %#x=%#x\n", off, state);
++ return (state & 0xff) == 0xff && !(state & (BIT(31) | BIT(10))) ? 0 : -EIO;
++}
++
++static int reset_write(void *ctx, u32 off, u32 value)
++{
++ writel(value, ctx + off);
++ return 0;
++}
++static int reset_read(void *ctx, u32 off, u32 *value)
++{
++ *value = readl(ctx + off);
++ return 0;
++}
++static void delay(void *ctx, unsigned int us) { udelay(us); }
++static const struct acio_reset_io reset_io = { reset_write, reset_read, delay };
++
++static int shmem_setup(void *cookie, struct apple_rtkit_buffer *buf)
++{
++ u64 physical;
++ int ret = acio_sram_translate(0x501080000, 0x20000, buf->dva, buf->size, &physical);
++ printf("ACIO SRAM ep=%d iova=%llx size=%zx ret=%d\n", buf->endpoint,
++        buf->dva, buf->size, ret);
++ if (ret) return ret;
++ buf->buffer = map_sysmem(physical, buf->size);
++ return 0;
++}
++static void shmem_destroy(void *cookie, struct apple_rtkit_buffer *buf)
++{
++ /* Reserved device SRAM is not heap memory. No access while shutting down. */
++ buf->buffer = NULL;
++}
++
++/* Bound explicitly by the diagnostic; never matched or auto-probed from DT. */
++U_BOOT_DRIVER(apple_acio_diagnostic) = {
++ .name = "apple-acio-diagnostic", .id = UCLASS_MISC,
++ .flags = DM_FLAG_DEFAULT_PD_CTRL_OFF,
++};
++
++int apple_acio_m1_start(void)
++{
++ struct udevice *pd, *rstdev, *owner, *mbox;
++ struct reset_ctl rst = {};
++ struct mbox_chan chan = {};
++ struct apple_rtkit *rtk = NULL;
++ void *rc = map_sysmem(0x501ac0000ULL, 0xc000);
++ u32 state = 0;
++ int i, ret, shutdown;
++
++ ret = apple_acio_m1_check();
++ if (ret) return ret;
++ used = true; /* Any partial start requires a whole-machine reset, no retry. */
++ ret = domain_on(0x448);
++ if (ret) goto out;
++ ret = uclass_get_device_by_ofnode(UCLASS_POWER_DOMAIN, pdnode(0x450), &pd);
++ if (ret) goto out;
++ ret = uclass_get_device_by_ofnode(UCLASS_RESET, pdnode(0x450), &rstdev);
++ if (ret) goto out;
++ rst.dev = rstdev;
++ ret = reset_request(&rst);
++ if (!ret) ret = reset_assert(&rst);
++ if (ret) goto out;
++ state = pdstate(0x450);
++ if ((state & (BIT(31) | BIT(10))) != (BIT(31) | BIT(10))) { ret = -EIO; goto out; }
++ udelay(2);
++ ret = reset_deassert(&rst);
++ if (ret) goto out;
++ state = pdstate(0x450);
++ if (state & (BIT(31) | BIT(10))) { ret = -EIO; goto out; }
++ puts("ACIO PCIe-C reset-before-power PASS\n");
++ for (i = 0; i < ARRAY_SIZE(domains); i++) {
++  ret = domain_on(domains[i]);
++  if (ret) goto out;
++ }
++ ret = acio_m1_deassert(&reset_io, map_sysmem(0x23b784000ULL, 0x8000),
++                       1, 0x8000, &state);
++ printf("ACIO reset status=%#x ret=%d\n", state, ret);
++ if (ret) goto out;
++ ret = device_bind_driver_to_node(gd->dm_root, "apple-acio-diagnostic",
++                                  "acio-port1-diagnostic", ofnode_path(ACIO_NODE), &owner);
++ if (ret) goto out;
++ ret = lists_bind_fdt(gd->dm_root, ofnode_path(MBOX_NODE), &mbox,
++                      lists_driver_lookup_name("apple-mbox"), false);
++ if (!ret && !mbox) ret = -ENODEV;
++ if (ret) goto out;
++ /* Explicit binding must set the same compatible match-data as normal scan. */
++ ret = mbox_get_by_index(owner, 0, &chan);
++ if (ret) goto out;
++ puts("ACIO M3 start\n");
++ writel(BIT(1), rc + 0xc);
++ rtk = apple_rtkit_init(&chan, NULL, shmem_setup, shmem_destroy);
++ if (!rtk) { ret = -ENOMEM; goto out; }
++ ret = apple_rtkit_boot(rtk);
++ printf("ACIO RTKit boot ret=%d\n", ret);
++ if (ret) goto out;
++ ret = apple_rtkit_set_ap_power(rtk, APPLE_RTKIT_PWR_STATE_ON);
++ printf("ACIO RTKit AP-on ret=%d\n", ret);
++ if (ret) goto out;
++ ret = readl_poll_sleep_timeout(rc + 0xa8, state, state != 0xffffffff && (state & GENMASK(30,24)), 100, 500000);
++ printf("ACIO firmware state=%#x ret=%d\n", state, ret);
++ if (!ret) puts("ACIO M3 READY PASS; no NHI/tunnel/DMA\n");
++ shutdown = apple_rtkit_shutdown(rtk, APPLE_RTKIT_PWR_STATE_SLEEP);
++ printf("ACIO RTKit shutdown ret=%d\n", shutdown);
++ if (!ret) ret = shutdown;
++out:
++ if (rtk) apple_rtkit_free(rtk);
++ printf("ACIO diagnostic ret=%d; power held until mandatory full reset\n", ret);
++ return ret;
++}
++
++#else
++int apple_acio_m1_check(void) { return -ENOSYS; }
++int apple_acio_m1_start(void) { return -ENOSYS; }
++#endif
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /* Explicit J274 port1 PHY diagnostic. Never used by boot_targets. */
+ #include <apple_atc_m1.h>
++#include <apple_acio_m1.h>
+ #include <apple_cd321x.h>
+ #include <asm/io.h>
+ #include <command.h>
+@@ -163,10 +164,17 @@
+ 	void *xhci;
+ 	u32 cap, halted;
+ 	int ret, i;
++	bool acio;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+-	    (strcmp(argv[2], "check") && strcmp(argv[2], "start")))
++	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
++	     strcmp(argv[2], "acio")))
+ 		return CMD_RET_USAGE;
++	acio = !strcmp(argv[2], "acio");
++	if (acio) {
++		ret = apple_acio_m1_check();
++		if (ret) goto fail;
++	}
+ 	node = ofnode_path("/soc/phy@503000000");
+ 	usbnode = ofnode_path("/soc/usb@502280000");
+ 	ret = load_config(node, &hw, &before);
+@@ -226,6 +234,7 @@
+ 			goto fail;
+ 		hw.base[i] = map_sysmem(res.start, resource_size(&res));
+ 	}
++	hw.cfg.retain_dwc3 = acio;
+ 	hw.xhci = xhci;
+ 	hw.cap = cap;
+ 	hw.printed_stage = ATC_DONE;
+@@ -236,7 +245,13 @@
+ 		       hw.last_region, hw.last_offset, hw.last_value);
+ 		goto fail;
+ 	}
+-	puts("ATC-M1 PHY SEQUENCE PASS; DWC3 held reset, no ACIO/NHI/tunnel/DMA\n");
++	if (acio) {
++		puts("ATC-M1 PHY retained for ACIO; xHCI remains halted\n");
++		ret = apple_acio_m1_start();
++		if (ret) goto fail;
++	} else {
++		puts("ATC-M1 PHY SEQUENCE PASS; DWC3 held reset, no ACIO/NHI/tunnel/DMA\n");
++	}
+ 	puts("Diagnostic state only: reset before any OS handover\n");
+ 	return CMD_RET_SUCCESS;
+ fail:
+@@ -246,4 +261,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start - no ACIO/NHI/tunnel or disk access");
++	   "1 check|start|acio - acio boots M3 only; no NHI/tunnel or disk access");
+--- /dev/null
++++ b/include/apple_acio_m1.h
+@@ -0,0 +1,6 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef APPLE_ACIO_M1_H
++#define APPLE_ACIO_M1_H
++int apple_acio_m1_check(void);
++int apple_acio_m1_start(void);
++#endif
+--- a/include/apple_atc_m1.h
++++ b/include/apple_atc_m1.h
+@@ -14,6 +14,8 @@
+ struct atc_m1_config {
+ 	enum atc_m1_mode mode;
+ 	bool swapped;
++	/* Diagnostic ACIO owner retains halted DWC3 until full reset. */
++	bool retain_dwc3;
+ 	/* common-a, axi2af, common-b, lane0-cio, lane1-cio */
+ 	struct atc_m1_tunable tunable[5];
+ 	size_t size[ATC_REGIONS];
+--- /dev/null
++++ b/include/apple_acio_prereq.h
+@@ -0,0 +1,18 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef APPLE_ACIO_PREREQ_H
++#define APPLE_ACIO_PREREQ_H
++#include <linux/types.h>
++struct acio_reset_io {
++ int (*write)(void *ctx, u32 offset, u32 value);
++ int (*read)(void *ctx, u32 offset, u32 *value);
++ void (*delay)(void *ctx, unsigned int us);
++};
++/* Caller owns/holds all required power domains; this does not acquire them.
++ * M1 deassert has no inverse register write: recovery needs a power cycle.
++ */
++int acio_m1_deassert(const struct acio_reset_io *io, void *ctx,
++                    unsigned int port, u64 resource_size, u32 *last_status);
++/* Firmware-supplied addresses only. No allocation and no MMIO access. */
++int acio_sram_translate(u64 physical_base, u64 window_size, u64 iova,
++                       u64 bytes, u64 *physical_address);
++#endif
+--- a/lib/apple_atc_m1.c
++++ b/lib/apple_atc_m1.c
+@@ -234,9 +234,11 @@
+ 		UP(ATC_PIPE, 0x20, 0xf, 2);
+ 		UP(ATC_PIPE, 0x20, 0, BIT(12));
+ 	}
+-	*stage = ATC_USB_REISOLATE;
+-	UP(ATC_PIPE, 0x1c, BIT(0), 0);
+-	UP(ATC_PIPE, 0x1c, 0, BIT(4));
++	if (!cfg->retain_dwc3) {
++		*stage = ATC_USB_REISOLATE;
++		UP(ATC_PIPE, 0x1c, BIT(0), 0);
++		UP(ATC_PIPE, 0x1c, 0, BIT(4));
++	}
+ 	*stage = ATC_DONE;
+ 	return 0;
+ }
+--- /dev/null
++++ b/lib/apple_acio_prereq.c
+@@ -0,0 +1,55 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Derived from Asahi Linux reset-apple-cio.c and thunderbolt/apple.c.
++ * Copyright The Asahi Linux Contributors
++ * Copyright (c) Sven Peter <sven@kernel.org>
++ * Original reset driver author: Sven Peter <sven@kernel.org>
++ * Research helpers only; no device binding, power management or firmware boot.
++ */
++#include "apple_acio_prereq.h"
++#include <linux/errno.h>
++
++int acio_m1_deassert(const struct acio_reset_io *io, void *ctx,
++                    unsigned int port, u64 resource_size, u32 *last_status)
++{
++ u32 offset, value;
++ unsigned int elapsed;
++ int ret;
++
++ if (!io || !io->write || !io->read || !io->delay || !last_status || port > 1)
++  return -EINVAL;
++ offset = port * 0x4000;
++ if (resource_size < 4 || offset > resource_size - 4)
++  return -ERANGE;
++ ret = io->write(ctx, offset, 1);
++ if (ret)
++  return ret;
++ for (elapsed = 0; elapsed <= 100000; elapsed += 100) {
++  ret = io->read(ctx, offset, &value);
++  if (ret)
++   return ret;
++  *last_status = value;
++  /* Exact INIT_DONE, not merely a set bit alongside a pending request. */
++  if (value == 4)
++   return 0;
++  if (elapsed < 100000)
++   io->delay(ctx, 100);
++ }
++ return -ETIMEDOUT;
++}
++
++int acio_sram_translate(u64 physical_base, u64 window_size, u64 iova,
++                       u64 bytes, u64 *physical_address)
++{
++ u64 offset;
++
++ if (!physical_address || !bytes || !window_size || iova < 0x10000000ULL)
++  return -EINVAL;
++ offset = iova - 0x10000000ULL;
++ if (offset >= window_size || bytes > window_size - offset)
++  return -ERANGE;
++ if (physical_base > (~(u64)0) - offset ||
++     bytes - 1 > (~(u64)0) - (physical_base + offset))
++  return -EOVERFLOW;
++ *physical_address = physical_base + offset;
++ return 0;
++}
+--- a/test/dm/apple_atc_m1.c
++++ b/test/dm/apple_atc_m1.c
+@@ -300,3 +300,20 @@
+ }
+ 
+ DM_TEST(dm_test_atc_m1_halted_guard, 0);
++
++static int dm_test_atc_m1_retained_dwc3(struct unit_test_state *uts)
++{
++ struct atc_m1_config c;
++ int mode, swap;
++ for (mode = 0; mode < 2; mode++) {
++  for (swap = 0; swap < 2; swap++) {
++   c = setup(); c.mode = mode; c.swapped = swap; c.retain_dwc3 = true;
++   ut_assertok(atc_m1_start(&c, &fake_io, &fake, true, &fake.stage));
++   ut_asserteq(ATC_DONE, fake.stage);
++   ut_asserteq(1, fake.reg[ATC_PIPE][0x1c / 4] & 0x11);
++   ut_asserteq(0, fake.reg[ATC_PIPE][0x10 / 4] & 1);
++  }
++ }
++ return 0;
++}
++DM_TEST(dm_test_atc_m1_retained_dwc3, 0);
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -304,3 +304,5 @@
+ obj-$(CONFIG_CMD_APPLE_CD321X) += apple_cd321x.o
+ 
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_atc_m1.o
++
++obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_acio_m1.o
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -186,3 +186,5 @@
+ obj-$(CONFIG_APPLE_CD321X_STATUS) += apple_cd321x.o
+ 
+ obj-$(CONFIG_APPLE_ATC_M1) += apple_atc_m1.o
++
++obj-$(CONFIG_APPLE_ATC_M1) += apple_acio_prereq.o

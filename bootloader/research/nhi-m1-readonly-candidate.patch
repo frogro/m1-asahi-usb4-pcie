@@ -1,0 +1,94 @@
+--- a/cmd/apple_acio_m1.c
++++ b/cmd/apple_acio_m1.c
+@@ -30,6 +30,7 @@
+ DECLARE_GLOBAL_DATA_PTR;
+ #define PMGR_NODE "/soc/power-management@23b700000"
+ #define ACIO_NODE "/soc/cio@501ac0000"
++#define NHI_NODE ACIO_NODE "/nhi@f00000"
+ #define MBOX_NODE "/soc/mailbox@501100000"
+ #define RESET_NODE "/soc/reset-controller@23b784000"
+ static const u32 domains[] = { 0x458, 0x460, 0x468, 0x450 };
+@@ -70,6 +71,11 @@
+      !ofnode_device_is_compatible(ofnode_path(RESET_NODE), "apple,t8103-cio-reset"))
+   return -ENODEV;
+  if (ofnode_is_enabled(acio) || ofnode_is_enabled(mbox)) return -EBUSY;
++ if (ofnode_is_enabled(ofnode_path(NHI_NODE)) ||
++     !ofnode_device_is_compatible(ofnode_path(NHI_NODE), "apple,t8103-usb4-nhi"))
++  return -ENODEV;
++ ret = resource(ofnode_path(NHI_NODE), "nhi", 0x501f00000, 0x100000);
++ if (ret) return ret;
+  if ((ret = resource(acio, "rc", 0x501ac0000, 0xc000)) ||
+      (ret = resource(acio, "sram", 0x501080000, 0x20000)) ||
+      (ret = resource(mbox, NULL, 0x501100000, 0x4000)) ||
+@@ -151,7 +157,7 @@
+  .flags = DM_FLAG_DEFAULT_PD_CTRL_OFF,
+ };
+ 
+-int apple_acio_m1_start(void)
++int apple_acio_m1_start(bool read_nhi)
+ {
+  struct udevice *pd, *rstdev, *owner, *mbox;
+  struct reset_ctl rst = {};
+@@ -213,6 +219,15 @@
+  ret = readl_poll_sleep_timeout(rc + 0xa8, state, state != 0xffffffff && (state & GENMASK(30,24)), 100, 500000);
+  printf("ACIO firmware state=%#x ret=%d\n", state, ret);
+  if (!ret) puts("ACIO M3 READY PASS; no NHI/tunnel/DMA\n");
++ if (!ret && read_nhi) {
++  u32 cap = readl(map_sysmem(0x501f00000ULL, 4));
++  printf("ACIO NHI HOP_COUNT raw=%#x count=%u\n", cap, cap & 0x3ff);
++  /* J274 NHI has 12 TX/RX ring pairs in the tested Linux DT. No writes. */
++  if (cap == 0xffffffff || (cap & 0x3ff) != 12)
++   ret = -EPROTO;
++  else
++   puts("NHI-READONLY PASS; no configuration, rings or DMA\n");
++ }
+  shutdown = apple_rtkit_shutdown(rtk, APPLE_RTKIT_PWR_STATE_SLEEP);
+  printf("ACIO RTKit shutdown ret=%d\n", shutdown);
+  if (!ret) ret = shutdown;
+@@ -224,5 +239,5 @@
+ 
+ #else
+ int apple_acio_m1_check(void) { return -ENOSYS; }
+-int apple_acio_m1_start(void) { return -ENOSYS; }
++int apple_acio_m1_start(bool read_nhi) { return -ENOSYS; }
+ #endif
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -168,9 +168,9 @@
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi")))
+ 		return CMD_RET_USAGE;
+-	acio = !strcmp(argv[2], "acio");
++	acio = !strcmp(argv[2], "acio") || !strcmp(argv[2], "nhi");
+ 	if (acio) {
+ 		ret = apple_acio_m1_check();
+ 		if (ret) goto fail;
+@@ -247,7 +247,7 @@
+ 	}
+ 	if (acio) {
+ 		puts("ATC-M1 PHY retained for ACIO; xHCI remains halted\n");
+-		ret = apple_acio_m1_start();
++		ret = apple_acio_m1_start(!strcmp(argv[2], "nhi"));
+ 		if (ret) goto fail;
+ 	} else {
+ 		puts("ATC-M1 PHY SEQUENCE PASS; DWC3 held reset, no ACIO/NHI/tunnel/DMA\n");
+@@ -261,4 +261,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio - acio boots M3 only; no NHI/tunnel or disk access");
++	   "1 check|start|acio|nhi - M3 readiness and optional NHI read; no DMA");
+--- a/include/apple_acio_m1.h
++++ b/include/apple_acio_m1.h
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+ #ifndef APPLE_ACIO_M1_H
+ #define APPLE_ACIO_M1_H
++#include <linux/types.h>
+ int apple_acio_m1_check(void);
+-int apple_acio_m1_start(void);
++int apple_acio_m1_start(bool read_nhi);
+ #endif

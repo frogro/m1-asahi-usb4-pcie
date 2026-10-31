@@ -1,0 +1,13 @@
+boot_ack: PASS ret=0 receives=4 elapsed_ms=4000
+boot_noise_deadline: PASS ret=-110 receives=12 elapsed_ms=12000
+ap_noise_deadline: PASS ret=-110 receives=10 elapsed_ms=10000
+shutdown_noise_deadline: PASS ret=-110 receives=10 elapsed_ms=10000
+duplicate_map_deduplicated: PASS ret=0 receives=4 elapsed_ms=4000
+map_noise_deadline: PASS ret=-110 receives=11 elapsed_ms=11000
+full_256_endpoint_map: PASS ret=0 receives=10 elapsed_ms=10000
+endpoint_start_deadline: PASS ret=-110 receives=2 elapsed_ms=12000
+receive_error_preserved: PASS ret=-5 receives=1 elapsed_ms=0
+send_error_preserved: PASS ret=-5 receives=0 elapsed_ms=0
+ap_ack: PASS ret=0 receives=1 elapsed_ms=1000
+shutdown_ack_order: PASS ret=0 receives=2 elapsed_ms=2000
+cases=12 failures=0

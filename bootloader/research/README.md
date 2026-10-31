@@ -73,11 +73,12 @@ submission. Hardware coverage is USB4 orientation 0 on one M1 port only.
 
 See the adjacent `atc-m1-result.json` and the numbered logs under `validation/`.
 
-## M3 mailbox prerequisite (software only)
+## M3 mailbox prerequisite (initial software stage)
 
 `m3-mailbox-candidate.patch` adds `apple,m3-mailbox-v2` alongside the existing
 ASC mailbox layout. It applies after the PHY research candidate above.
-It remains outside the prototype manifest and every hardware payload.
+It remains outside the prototype manifest. Initially software-only, it was
+subsequently exercised by the Probe9/Probe10 diagnostics described below.
 The M1 build and 56 sandbox cases pass. Sandbox MMIO truncates 64-bit TX
 writes, so eight additional cases exercise the exact production send/receive
 functions with full-width mocked MMIO under ASan/UBSan. These are software
@@ -85,5 +86,60 @@ checks, not proof of ACIO firmware communication. The selected register layout
 is derived from Asahi Linux commit a7c69b66c79296a8b51e1555ac887fa6de2d07be,
 `drivers/soc/apple/mailbox.c`, with attribution retained in the candidate.
 
-Before hardware use, checked power-domain ownership, PCIe-C/reset ordering,
-ACIO SRAM translation and bounded RTKit startup still need integration.
+Those initial prerequisites were integrated for the bounded Probe9 diagnostic
+below: checked power-domain ownership, PCIe-C/reset ordering, ACIO SRAM
+translation and bounded RTKit startup.
+
+## ACIO M3 readiness diagnostic (Probe9)
+
+Apply `rtkit-bounded-phases-candidate.patch` and then
+`acio-m1-readiness-candidate.patch` after the PHY and M3 mailbox candidates.
+The changes are research only and are not in `prototype.json` or an installer.
+The 18 changed files were reconstructed from the recorded patch sequence and
+compared byte-for-byte with the build source.
+
+`atcm1 1 acio` validates J274 port1 resources and cold ACIO power domains,
+retains the halted DWC3/PHY state, pulses PCIe-C reset before activating ACIO,
+checks every power-domain transition, deasserts the ACIO reset, and boots RTKit
+through the M3 mailbox. Firmware buffers must lie completely within reserved
+ACIO SRAM; the diagnostic never allocates host DMA buffers for firmware.
+It requests AP-on, checks M3 readiness, and requests firmware sleep. Power is
+held until a mandatory whole-machine reset. There is no OS handover here.
+
+Both identical RAM-only Probe9 runs reported reset status `0x4`, successful
+RTKit boot/AP-on, firmware state `0x01000000`, and successful firmware shutdown.
+The internal-NVMe reference file matched before and after each run. NHI, DART,
+PCIe tunnel initialization and external disk access were not performed.
+The Linux PCIe-C reset-ACK classification patch remains excluded; these are
+separate boot-time reset and firmware handshakes.
+
+The build passed 57 sandbox tests. Separate sanitizer-enabled mocks cover
+22 reset/SRAM cases, 12 RTKit phase cases and 21 production-sequence cases.
+The RTKit change bounds whole transitions under unrelated incoming messages
+and deduplicates endpoint-map entries, matching Linux's endpoint bitmap.
+A ten-second phase budget is a diagnostic policy, not a timing guarantee for
+all Apple coprocessors. Only M1 internal NVMe and ACIO were exercised here.
+
+The standalone `acio-m1-sequence-test.c` and `rtkit-bounded-phases-test.c`
+can be built with a host C compiler and `-fsanitize=address,undefined`.
+They contain extracted production functions with mocked dependencies; they
+do not emulate hardware or replace the numbered physical test results.
+
+## NHI capacity read (Probe10)
+
+`nhi-m1-readonly-candidate.patch` applies after the Probe9 research sequence.
+`atcm1 1 nhi` also requires a disabled NHI node with the exact J274 port1
+resource and reads HOP_COUNT once after M3 readiness. It accepts twelve rings,
+matching the Linux device-tree IRQ pairs; it rejects zero, all-ones, and any
+other count. It does not configure NHI, allocate DMA buffers or build a tunnel.
+
+Both identical RAM-only runs returned `0xc` (12), completed firmware sleep,
+matched the internal-NVMe reference hash before/after, and performed the planned
+reset. The M1 and sandbox builds pass, with 57 sandbox cases and 25 extracted
+production-sequence mock cases. All 18 changed source files reproduce exactly
+from the patch chain. See `nhi-m1-patch-reproduction.json` and the Probe10 logs.
+The boot-script footer `NO-NHI-OR-TUNNEL` means no NHI transport initialization;
+the explicit `NHI-READONLY PASS` line records the capacity-register read.
+
+The next hardware gate is bounded DART error handling before NHI ring DMA.
+See `nhi-dma-next-steps.md`; no new DMA implementation is claimed here.

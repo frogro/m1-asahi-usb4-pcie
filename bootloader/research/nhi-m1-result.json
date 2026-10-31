@@ -1,0 +1,16 @@
+{
+  "in_prototype": false,
+  "installed": false,
+  "aarch64_full_build": true,
+  "sandbox_full_build": true,
+  "sandbox_tests": 57,
+  "sandbox_failures": 0,
+  "sequence_mock_cases": 25,
+  "hardware_runs": 2,
+  "identical_payload": true,
+  "nhi_hop_count": 12,
+  "stock_ubuntu_return_confirmed_after_both": true,
+  "external_disk_accessed": false,
+  "nhi_dma_started": false,
+  "tunnel_started": false
+}

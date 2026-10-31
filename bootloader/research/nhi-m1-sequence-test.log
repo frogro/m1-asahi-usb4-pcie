@@ -1,0 +1,144 @@
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=0; power held until mandatory full reset
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=-5
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO diagnostic ret=-12; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=-5
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=-5
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=-5
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+
+ACIO RTKit shutdown ret=-5
+ACIO diagnostic ret=-5; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+
+ACIO NHI HOP_COUNT raw=0xc count=12
+NHI-READONLY PASS; no configuration, rings or DMA
+
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=0; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+
+ACIO NHI HOP_COUNT raw=0 count=0
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=-71; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+
+ACIO NHI HOP_COUNT raw=0xffffffff count=1023
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=-71; power held until mandatory full reset
+ACIO PCIe-C reset-before-power PASS
+
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+
+ACIO RTKit boot ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+
+ACIO NHI HOP_COUNT raw=0x10 count=16
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=-71; power held until mandatory full reset
+ACIO production-sequence mock: 25 cases, zero failures; no hardware access

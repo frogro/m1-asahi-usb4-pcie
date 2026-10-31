@@ -1,0 +1,7 @@
+{
+  "drivers/iommu/apple-dart.c": "f66d932a35e79fdb6d4a2534b80cd6fbb2ba22cbd32a60a867b9dc60bbc1096f",
+  "drivers/thunderbolt/apple.c": "f9871f5b2cda6e9a76f17e0162626c926f179b2bb8d69fc396774d0105b4f3ff",
+  "drivers/thunderbolt/nhi.c": "ac2c7e95366d30fde202bf5d39d7e528d3d321b3270eddb5ee1920f621c66879",
+  "drivers/thunderbolt/nhi_regs.h": "9cea99e2a9d6881bdec51e9bf8d8eb554bf8bdb2c14d6e2b5c4d4057606745db",
+  "arch/arm64/boot/dts/apple/t8103.dtsi": "5c5fa1f2404bc56a9c983d2f2feb8219cd73d6f27f18c34f4fd49898ebcce2c7"
+}

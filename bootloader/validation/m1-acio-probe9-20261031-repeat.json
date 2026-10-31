@@ -1,0 +1,44 @@
+{
+  "probe": 9,
+  "ram_only": true,
+  "installed": false,
+  "port": 1,
+  "mode": "USB4",
+  "orientation": 0,
+  "phy_retained": true,
+  "pcie_reset_before_power": true,
+  "acio_reset_status": "0x4",
+  "rtkit_boot": 0,
+  "rtkit_ap_on": 0,
+  "m3_state": "0x01000000",
+  "rtkit_shutdown": 0,
+  "sram_buffer": {
+    "endpoint": 1,
+    "iova": "0x1000ae00",
+    "size": "0x4000"
+  },
+  "internal_nvme_before_after": "pass",
+  "nhi_started": false,
+  "tunnel_started": false,
+  "external_disk_accessed": false,
+  "planned_reset_observed": true,
+  "ubuntu_return_confirmed": true,
+  "artifact_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "9c978d5315e3e2449a01d673d4ecc319d0f6fcba8870926b2ef2b2e6906f8dfc",
+    "m1n1-uboot-probe-hv.bin": "672ccfcfac79d84fde65ba444be0023a9ec6c8db224312afc4479e5cc5f78385",
+    "u-boot-nodtb.bin": "89f1979482b027eea519176fdae7800c2538d9c98c367f21ef0e3536effda722",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "82cf9d2bf47ccb89689012e9b964a67ff9e97a08e01b0e3f64b75cb4e0735874"
+  },
+  "software": {
+    "sandbox_cases": 57,
+    "reset_sram_cases": 22,
+    "rtkit_cases": 12,
+    "sequence_cases": 21,
+    "failures": 0
+  },
+  "repeat": true,
+  "same_payload": true,
+  "ubuntu_return_utc": "2026-10-31T16:04:04Z"
+}

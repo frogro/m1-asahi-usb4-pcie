@@ -1,0 +1,7 @@
+{
+  "baseline": "Probe9 reproduced source",
+  "incremental_patch": "nhi-m1-readonly-candidate.patch",
+  "patch_sha256": "4f496a743c7238413ce66245488b0ad7c48ebc23c051febbdd531c0dd31eb99d",
+  "changed_files_compared": 18,
+  "all_match_tested_source": true
+}

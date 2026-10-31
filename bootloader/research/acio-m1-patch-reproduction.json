@@ -1,0 +1,23 @@
+{
+  "baseline": "eight prototype patches plus RTKit OSLOG candidate",
+  "changed_files_compared": 18,
+  "all_match_tested_source": true,
+  "patches": [
+    {
+      "file": "atc-m1-diagnostic-candidate.patch",
+      "sha256": "9ef88584c0814401a653a4dc132ebe29df0d0e0d612616833a9cac21f287e760"
+    },
+    {
+      "file": "m3-mailbox-candidate.patch",
+      "sha256": "2e6b7b1b2ecfa4693ecb4119e4fcfcc131b2ef0e2280ad3b60d68964c93fa02d"
+    },
+    {
+      "file": "rtkit-bounded-phases-candidate.patch",
+      "sha256": "3dbdc550a7e4cc9c981f38aa537163e82285cde8be1294cfab8727f63aabd364"
+    },
+    {
+      "file": "acio-m1-readiness-candidate.patch",
+      "sha256": "1a5f75130b4ff9d586473289b113c0a3a34ef95c1dd9a85d61d64625332c247f"
+    }
+  ]
+}

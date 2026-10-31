@@ -1,0 +1,137 @@
+--- a/arch/arm/mach-apple/rtkit.c
++++ b/arch/arm/mach-apple/rtkit.c
+@@ -6,6 +6,7 @@
+ 
+ #include <mailbox.h>
+ #include <malloc.h>
++#include <time.h>
+ 
+ #include <asm/arch/rtkit.h>
+ #include <linux/apple-mailbox.h>
+@@ -64,6 +65,7 @@
+ #define APPLE_RTKIT_BUFFER_REQUEST_IOVA GENMASK(41, 0)
+ 
+ #define TIMEOUT_1SEC_US 1000000
++#define RTKIT_PHASE_TIMEOUT_MS 10000
+ 
+ struct apple_rtkit {
+ 	struct mbox_chan *chan;
+@@ -282,11 +284,33 @@
+ 	}
+ }
+ 
++/* Bound the whole transition even if unrelated messages keep arriving. */
++static int rtkit_wait_power(struct apple_rtkit *rtk, const int *state, int wanted)
++{
++	ulong start = get_timer(0);
++	int ret;
++
++	while (*state != wanted) {
++		ulong elapsed = get_timer(start);
++		ulong remaining;
++
++		if (elapsed >= RTKIT_PHASE_TIMEOUT_MS)
++			return -ETIMEDOUT;
++		remaining = (RTKIT_PHASE_TIMEOUT_MS - elapsed) * 1000;
++		ret = apple_rtkit_poll(rtk, min(remaining, (ulong)TIMEOUT_1SEC_US));
++		if (ret < 0)
++			return ret;
++	}
++	return 0;
++}
++
+ int apple_rtkit_boot(struct apple_rtkit *rtk)
+ {
+ 	struct apple_mbox_msg msg;
+ 	int endpoints[256];
+ 	int nendpoints = 0;
++	bool seen_endpoints[256] = {};
++	ulong map_start, elapsed, remaining;
+ 	int endpoint;
+ 	int min_ver, max_ver, want_ver;
+ 	int msgtype;
+@@ -343,9 +367,15 @@
+ 	if (ret < 0)
+ 		return ret;
+ 
++	map_start = get_timer(0);
++
+ wait_epmap:
+-	/* Wait for endpoint map message. */
+-	ret = mbox_recv(rtk->chan, &msg, TIMEOUT_1SEC_US);
++	elapsed = get_timer(map_start);
++	if (elapsed >= RTKIT_PHASE_TIMEOUT_MS)
++		return -ETIMEDOUT;
++	/* Wait only within the remaining phase budget. */
++	remaining = (RTKIT_PHASE_TIMEOUT_MS - elapsed) * 1000;
++	ret = mbox_recv(rtk->chan, &msg, min(remaining, (ulong)TIMEOUT_1SEC_US));
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -363,8 +393,12 @@
+ 	bitmap = FIELD_GET(APPLE_RTKIT_MGMT_EPMAP_BITMAP, msg.msg0);
+ 	base = FIELD_GET(APPLE_RTKIT_MGMT_EPMAP_BASE, msg.msg0);
+ 	for (i = 0; i < 32; i++) {
+-		if (bitmap & (1U << i))
++		if ((bitmap & (1U << i)) && !seen_endpoints[base * 32 + i]) {
++			if (nendpoints >= ARRAY_SIZE(endpoints))
++				return -EOVERFLOW;
++			seen_endpoints[base * 32 + i] = true;
+ 			endpoints[nendpoints++] = base * 32 + i;
++		}
+ 	}
+ 
+ 	/* Ack endpoint map. */
+@@ -384,6 +418,8 @@
+ 		goto wait_epmap;
+ 
+ 	for (i = 0; i < nendpoints; i++) {
++		if (get_timer(map_start) >= RTKIT_PHASE_TIMEOUT_MS)
++			return -ETIMEDOUT;
+ 		/* Start only necessary endpoints. The syslog endpoint is
+ 		 * particularly noisy and its message can't easily be handled
+ 		 * within U-Boot.
+@@ -411,13 +447,7 @@
+ 	rtk->iop_pwr = APPLE_RTKIT_PWR_STATE_SLEEP;
+ 	rtk->ap_pwr = APPLE_RTKIT_PWR_STATE_QUIESCED;
+ 
+-	while (rtk->iop_pwr != APPLE_RTKIT_PWR_STATE_ON) {
+-		ret = apple_rtkit_poll(rtk, TIMEOUT_1SEC_US);
+-		if (ret < 0)
+-			return ret;
+-	}
+-
+-	return 0;
++	return rtkit_wait_power(rtk, &rtk->iop_pwr, APPLE_RTKIT_PWR_STATE_ON);
+ }
+ 
+ int apple_rtkit_set_ap_power(struct apple_rtkit *rtk, int pwrstate)
+@@ -435,13 +465,7 @@
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	while (rtk->ap_pwr != pwrstate) {
+-		ret = apple_rtkit_poll(rtk, TIMEOUT_1SEC_US);
+-		if (ret < 0)
+-			return ret;
+-	}
+-
+-	return 0;
++	return rtkit_wait_power(rtk, &rtk->ap_pwr, pwrstate);
+ }
+ 
+ int apple_rtkit_shutdown(struct apple_rtkit *rtk, int pwrstate)
+@@ -462,11 +486,5 @@
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	while (rtk->iop_pwr != pwrstate) {
+-		ret = apple_rtkit_poll(rtk, TIMEOUT_1SEC_US);
+-		if (ret < 0)
+-			return ret;
+-	}
+-
+-	return 0;
+-}
++	return rtkit_wait_power(rtk, &rtk->iop_pwr, pwrstate);
++}

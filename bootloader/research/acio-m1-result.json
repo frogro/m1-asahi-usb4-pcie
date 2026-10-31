@@ -1,0 +1,16 @@
+{
+  "in_prototype": false,
+  "installed": false,
+  "aarch64_full_build": true,
+  "sandbox_tests": 57,
+  "sandbox_failures": 0,
+  "prerequisite_cases": 22,
+  "sequence_mock_cases": 21,
+  "rtkit_mock_cases": 12,
+  "hardware_status": "Probe9 passed twice; stock Ubuntu return confirmed after both",
+  "scope": "J274 port1 ACIO M3 readiness only; no NHI/DART/tunnel/external disk access",
+  "patches": {
+    "rtkit-bounded-phases-candidate.patch": "3dbdc550a7e4cc9c981f38aa537163e82285cde8be1294cfab8727f63aabd364",
+    "acio-m1-readiness-candidate.patch": "1a5f75130b4ff9d586473289b113c0a3a34ef95c1dd9a85d61d64625332c247f"
+  }
+}
