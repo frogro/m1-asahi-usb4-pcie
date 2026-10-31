@@ -19,7 +19,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential gcc-aarch64-linux-gnu bison flex bc pkg-config libssl-dev libgnutls28-dev libsdl2-dev uuid-dev libelf-dev liblzma-dev libzstd-dev liblz4-dev swig python3-dev python3-setuptools python3-pyelftools python3-yaml python3-jsonschema device-tree-compiler
+          sudo apt-get install -y --no-install-recommends build-essential gcc-aarch64-linux-gnu bison flex bc pkg-config libssl-dev libgnutls28-dev libsdl2-dev uuid-dev libelf-dev liblzma-dev libzstd-dev liblz4-dev swig python3-dev python3-setuptools python3-pyelftools python3-yaml python3-jsonschema device-tree-compiler efitools
       - name: Fetch pinned upstream source
         shell: bash
         run: |
