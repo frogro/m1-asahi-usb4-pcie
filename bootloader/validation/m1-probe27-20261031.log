@@ -1,0 +1,222 @@
+INTERNAL-NVME-BEFORE PASS
+ATC-M1 port=1 mode=USB4 swapped=0 validated=5 groups
+ATC-M1 port=1 mode=USB4 swapped=0 validated=5 groups
+ATC-M1 selected DWC3 halted; other USB hosts untouched
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+ATC-M1 stage=1
+ATC-M1 stage=2
+ATC-M1 stage=3
+ATC-M1 stage=13
+ATC-M1 stage=4
+ATC-M1 stage=5
+ATC-M1 stage=6
+ATC-M1 stage=7
+ATC-M1 stage=14
+ATC-M1 released DWC3: command=0x0 status=0x801
+ATC-M1 stage=8
+ATC-M1 stage=9
+ATC-M1 stage=10
+ATC-M1 stage=11
+ATC-M1 PHY retained for ACIO; xHCI remains halted
+ATC-SNAPSHOT before-acio core[0x8]=0x11833fef
+ATC-SNAPSHOT before-acio core[0x48]=0x0
+ATC-SNAPSHOT before-acio core[0x4c]=0x0
+ATC-SNAPSHOT before-acio core[0x1b0]=0x15570cff
+ATC-SNAPSHOT before-acio core[0x2a00]=0x2022
+ATC-SNAPSHOT before-acio core[0x20000]=0x1b
+ATC-SNAPSHOT before-acio core[0x20004]=0x3
+ATC-SNAPSHOT before-acio core[0x20008]=0x1
+ATC-SNAPSHOT before-acio core[0x9010]=0x53600000
+ATC-SNAPSHOT before-acio core[0x10010]=0x53600000
+ATC-SNAPSHOT before-acio pipe[0x0]=0x0
+ATC-SNAPSHOT before-acio pipe[0x4]=0x10
+ATC-SNAPSHOT before-acio pipe[0xc]=0x11
+ATC-SNAPSHOT before-acio pipe[0x10]=0x0
+ATC-SNAPSHOT before-acio pipe[0x14]=0x0
+ATC-SNAPSHOT before-acio pipe[0x1c]=0x1
+ATC-SNAPSHOT before-acio pipe[0x20]=0x9332
+ACIO-SYSLOG INIT entries=8 size=80
+NHI-READONLY PASS; no configuration, rings or DMA
+ACIO-MBOX before-nhi tx=0x28801 rx=0x8a01
+NHI DART config=0x10000 params2=0x10033
+NHI DART initial TCR[0]=0x80080
+NHI DART initial TCR[1]=0x80080
+NHI DART initial TCR[2]=0x80080
+NHI DART initial TCR[3]=0x80080
+NHI DART initial TCR[4]=0x80080
+NHI DART initial TCR[5]=0x80080
+NHI DART initial TCR[6]=0x80080
+NHI DART initial TCR[7]=0x80080
+NHI DART initial TCR[8]=0x80080
+NHI DART initial TCR[9]=0x80080
+NHI DART initial TCR[10]=0x80080
+NHI DART initial TCR[11]=0x80080
+NHI DART initial TCR[12]=0x80080
+NHI DART initial TCR[13]=0x80080
+NHI DART initial TCR[14]=0x80080
+NHI DART initial TCR[15]=0x80080
+NHI DART initial tables empty; no inherited mapping
+NHI DART stream1 translation enabled; all other streams disabled
+NHI-TUNABLES PASS; all rings remain disabled
+ACIO-SYSLOG main.c:60: #ACIO FW IS READY# FW_VERSION_STRING=AppleCIOFirmware-480~10483__2026-10-07-21:
+ACIO-SYSLOG main.c:61: FW state=1
+NHI xfer type=1 port=0 space=2 offset=0x0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x3 vsec=0x20 length=1 next=0x35 raw=43200335 c5fb0000
+NHI xfer type=1 port=0 space=2 offset=0x35 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x35 id=0x5 vsec=0x0 length=202 next=0xff raw=ca0005ff 00000000
+NHI xfer type=1 port=0 space=2 offset=0xff words=2 response-port=7 tx=4 rx=4
+NHI capability offset=0xff id=0x5 vsec=0x1 length=49 next=0x130 raw=00010500 00310130
+NHI xfer type=1 port=0 space=2 offset=0x130 words=2 response-port=7 tx=5 rx=5
+NHI capability offset=0x130 id=0x5 vsec=0x2 length=66 next=0x172 raw=00020500 00420172
+NHI xfer type=1 port=0 space=2 offset=0x172 words=2 response-port=7 tx=6 rx=6
+NHI capability offset=0x172 id=0x5 vsec=0x3 length=4 next=0x176 raw=00030500 00040176
+NHI xfer type=1 port=0 space=2 offset=0x176 words=2 response-port=7 tx=7 rx=7
+NHI capability offset=0x176 id=0x5 vsec=0x4 length=74 next=0x1c0 raw=00040500 004a01c0
+NHI xfer type=1 port=0 space=2 offset=0x1c0 words=2 response-port=7 tx=8 rx=8
+NHI capability offset=0x1c0 id=0x5 vsec=0x5 length=49 next=0x0 raw=00050500 00310000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=0 tx=9 rx=9
+NHI unsolicited rx=10 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000005 d7df61d9
+NHI-EVENT-ACK SENT port=5 unplug=0 count=1
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=11 rx=11
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+NHI unsolicited rx=12 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000006 c48f922d
+NHI-EVENT-ACK SENT port=6 unplug=0 count=2
+NHI xfer type=1 port=1 space=1 offset=0x0 words=8 response-port=1 tx=13 rx=13
+NHI adapter port=1 type=000001 header=200005ac 00080709 01000001 80100000 8ae00000 0000b016 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0x0 words=8 response-port=2 tx=14 rx=14
+NHI adapter port=2 type=000001 header=200005ac 00080709 01000001 00200000 8ae00000 0000b016 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0x0 words=8 response-port=3 tx=15 rx=15
+NHI adapter port=3 type=100101 header=200005ac 00080109 01100101 80300000 0ae00000 00004008 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0x0 words=8 response-port=4 tx=16 rx=16
+NHI adapter port=4 type=200101 header=200005ac 00080109 01200101 80400000 0ae00000 00004008 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0x0 words=8 response-port=5 tx=17 rx=17
+NHI adapter port=5 type=0e0101 header=200005ac 00080209 010e0101 80500000 0ae00000 00004809 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0x0 words=8 response-port=6 tx=18 rx=18
+NHI adapter port=6 type=0e0101 header=200005ac 00080209 010e0101 80600000 0ae00000 00004809 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0x0 words=8 response-port=7 tx=19 rx=19
+NHI adapter port=7 type=000002 header=200005ac 00080809 01000002 80700000 0ae00000 0000580b 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=7 apple=0x35 null-ports=0x6; ports read-only
+NHI xfer type=1 port=0 space=2 offset=0x1b words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=0 space=2 offset=0x1e words=1 response-port=7 tx=21 rx=21
+NHI-TMU before cap=0x1b control=43200335 interval=00000000
+NHI xfer type=2 port=0 space=2 offset=0x1b words=1 response-port=0 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1b words=1 response-port=7 tx=23 rx=23
+NHI xfer type=2 port=0 space=2 offset=0x1e words=1 response-port=0 tx=24 rx=24
+NHI xfer type=1 port=0 space=2 offset=0x1e words=1 response-port=7 tx=25 rx=25
+NHI xfer type=1 port=0 space=2 offset=0x1b words=1 response-port=7 tx=26 rx=26
+NHI xfer type=2 port=0 space=2 offset=0x1b words=1 response-port=0 tx=27 rx=27
+NHI xfer type=1 port=0 space=2 offset=0x1b words=1 response-port=7 tx=28 rx=28
+NHI-TMU PASS LOWRES interval=1000 TD=0
+NHI xfer type=1 port=1 space=1 offset=0x9 words=2 response-port=1 tx=29 rx=29
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=30 rx=30
+NHI xfer type=1 port=2 space=1 offset=0x0 words=8 response-port=2 tx=31 rx=31
+NHI xfer type=1 port=2 space=1 offset=0x9 words=2 response-port=2 tx=32 rx=32
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=33 rx=33
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=1 tx=34 rx=34
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=1 tx=35 rx=35
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=1 tx=36 rx=36
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=2 tx=37 rx=37
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=2 tx=38 rx=38
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=2 tx=39 rx=39
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+ACIO-SYSLOG lane_init.c:181: Entering Phase 1. action=0
+ACIO-SYSLOG lane_init.c:78: Lane init parmas = 0x00000011
+NHI xfer type=2 port=0 space=2 offset=0x36 words=1 response-port=0 tx=40 rx=40
+NHI xfer type=1 port=0 space=2 offset=0x36 words=1 response-port=7 tx=41 rx=41
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=42 rx=42
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=296
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=43 rx=43
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=303
+ACIO-SYSLOG lane_init.c:343: Entering Phase 2
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=44 rx=44
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=813
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=45 rx=45
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=820
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=46 rx=46
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1327
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=47 rx=47
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1334
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=48 rx=48
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1841
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=49 rx=49
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1848
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=50 rx=50
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2354
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=51 rx=51
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2361
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=52 rx=52
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2868
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=53 rx=53
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2875
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=54 rx=54
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3382
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=55 rx=55
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3389
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=56 rx=56
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3896
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=57 rx=57
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3903
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=58 rx=58
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4410
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=59 rx=59
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4416
+NHI xfer type=1 port=1 space=1 offset=0x11 words=2 response-port=1 tx=60 rx=60
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4923
+NHI xfer type=1 port=2 space=1 offset=0x11 words=2 response-port=2 tx=61 rx=61
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4930
+NHI inventory transport ret=-110 sent=61 received=61 DART-error=0x4020000
+NHI control buffers and DART retained until mandatory reset
+ACIO-SYSLOG service messages=5 ret=-110
+ACIO-MBOX after-nhi tx=0x2dd01 rx=0x2dd01
+ATC-SNAPSHOT after-acio core[0x8]=0x11833fef
+ATC-SNAPSHOT after-acio core[0x48]=0x0
+ATC-SNAPSHOT after-acio core[0x4c]=0x0
+ATC-SNAPSHOT after-acio core[0x1b0]=0x15570cff
+ATC-SNAPSHOT after-acio core[0x2a00]=0x2022
+ATC-SNAPSHOT after-acio core[0x20000]=0x1b
+ATC-SNAPSHOT after-acio core[0x20004]=0x3
+ATC-SNAPSHOT after-acio core[0x20008]=0x1
+ATC-SNAPSHOT after-acio core[0x9010]=0x53600000
+ATC-SNAPSHOT after-acio core[0x10010]=0x53600000
+ATC-SNAPSHOT after-acio pipe[0x0]=0x0
+ATC-SNAPSHOT after-acio pipe[0x4]=0x10
+ATC-SNAPSHOT after-acio pipe[0xc]=0x11
+ATC-SNAPSHOT after-acio pipe[0x10]=0x0
+ATC-SNAPSHOT after-acio pipe[0x14]=0x0
+ATC-SNAPSHOT after-acio pipe[0x1c]=0x1
+ATC-SNAPSHOT after-acio pipe[0x20]=0x9332
+BOOT-TIMING ms=20278 delta=0 event=phy-sequence-begin
+BOOT-TIMING ms=20280 delta=2 event=phy-sequence-return
+BOOT-TIMING ms=20290 delta=12 event=acio-preflight-complete
+BOOT-TIMING ms=20314 delta=36 event=acio-domains-on
+BOOT-TIMING ms=20319 delta=41 event=acio-reset-ready
+BOOT-TIMING ms=20322 delta=44 event=m3-start-write
+BOOT-TIMING ms=20325 delta=47 event=rtkit-boot-return
+BOOT-TIMING ms=20334 delta=56 event=rtkit-ap-on-return
+BOOT-TIMING ms=20338 delta=60 event=firmware-state-poll-return
+BOOT-TIMING ms=20350 delta=72 event=rc-tunables-begin
+BOOT-TIMING ms=20353 delta=75 event=rc-tunables-return
+BOOT-TIMING ms=20414 delta=136 event=nhi-dart-probe-begin
+BOOT-TIMING ms=20414 delta=136 event=nhi-dart-probe-return
+BOOT-TIMING ms=20418 delta=140 event=nhi-tunables-begin
+BOOT-TIMING ms=20421 delta=143 event=nhi-tunables-return
+BOOT-TIMING ms=20424 delta=146 event=nhi-control-rings-started
+BOOT-TIMING ms=20431 delta=153 event=rtkit-message-consumed
+BOOT-TIMING ms=20434 delta=156 event=rtkit-message-consumed
+BOOT-TIMING ms=20696 delta=418 event=lane-unlock-verified
+BOOT-TIMING ms=20700 delta=422 event=cable-info-submit
+BOOT-TIMING ms=20703 delta=425 event=rtkit-message-consumed
+BOOT-TIMING ms=20706 delta=428 event=rtkit-message-consumed
+BOOT-TIMING ms=20713 delta=435 event=cable-info-readback-verified
+BOOT-TIMING ms=20754 delta=476 event=rtkit-message-consumed
+BOOT-TIMING ms=25858 delta=5580 event=link-observation-return
+BOOT-TIMING ms=25871 delta=5593 event=rtkit-shutdown-begin
+BOOT-TIMING ms=25871 delta=5593 event=rtkit-shutdown-return
+BOOT-TIMING count=27 dropped=0
+ATC-M1 diagnostic error=-110; no automatic retry
+ACIO-START FAIL
+INTERNAL-NVME-AFTER PASS
+resetting ...

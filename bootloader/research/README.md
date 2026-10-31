@@ -404,7 +404,7 @@ must first establish that reads are safe and meaningful. No blind PHY writes
 or PD resets are justified by the current evidence.
 
 
-### Probe27 prepared: buffered initialization timing
+### Probe27: buffered initialization timing
 
 `nhi-init-timing-candidate.patch` follows Probe26. A fixed 64-entry RAM buffer
 records millisecond timestamps around PHY setup, ACIO power/reset and RTKit
@@ -426,3 +426,17 @@ M1 build, 57 sandbox checks, 95 production transport mock cases and three
 trace-buffer checks (empty, timer wrap/order and 10,000 overflowing records)
 passed. Buffer and transport checks used ASan/UBSan. The incremental patch
 reproduces all five changed files. Hardware result is pending.
+
+Probe27 hardware recorded 27 timestamps with no overflow. PHY setup took 2 ms;
+PHY return to M3 start took 42 ms, M3 start to firmware-ready poll return 16 ms,
+and firmware-ready to NHI rings 86 ms. Ring start to cable submission took
+276 ms. The saved Linux capture spans 6.477 ms from its first control request
+to cable submission; these starting points are not precisely identical.
+U-Boot remained in Phase2 throughout the following 5.158 seconds, with no
+remote-router response. Internal NVMe hashes and reset passed. See
+[Probe27 timing](../validation/m1-probe27-result.json).
+
+The bounded next counterprobe removes only successful per-packet console
+printing from the NHI transport. The buffered timestamps, error reports, event
+ACKs, register writes, waits and limits remain. This tests diagnostic overhead
+as a cause; it is not yet a demonstrated fix.

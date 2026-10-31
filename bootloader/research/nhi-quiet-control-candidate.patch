@@ -1,0 +1,12 @@
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -195,8 +195,7 @@
+    if (ret) return ret;
+   }
+   if (got_reply && (tx_flags & DESC_DONE)) {
+-   printf("NHI xfer type=%u port=%u space=%u offset=%#x words=%u response-port=%u tx=%u rx=%u\n",
+-          type, port, space, offset, words, response_port, r->sent, r->received);
++   /* Timing counterprobe: keep successful per-packet output off the critical path. */
+    return 0;
+   }
+   udelay(50);

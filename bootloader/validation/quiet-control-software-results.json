@@ -1,0 +1,11 @@
+{
+  "probe": 28,
+  "m1_build": true,
+  "transport_mock_cases": 95,
+  "failures": 0,
+  "asan_ubsan": true,
+  "incremental_patch_reproduction": true,
+  "functional_protocol_changes": false,
+  "change": "Remove successful per-packet console print only; buffered timing retained",
+  "hardware_tested": false
+}

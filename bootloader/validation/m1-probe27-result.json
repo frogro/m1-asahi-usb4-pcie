@@ -1,0 +1,160 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "2432d67cf3d7b75581f569307aa3d0670a208d605081d05450c11ba09f428112",
+  "records": [
+    {
+      "ms": 20278,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 20280,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 20290,
+      "delta": 12,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 20314,
+      "delta": 36,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 20319,
+      "delta": 41,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 20322,
+      "delta": 44,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 20325,
+      "delta": 47,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 20334,
+      "delta": 56,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 20338,
+      "delta": 60,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 20350,
+      "delta": 72,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 20353,
+      "delta": 75,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 20414,
+      "delta": 136,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 20414,
+      "delta": 136,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 20418,
+      "delta": 140,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 20421,
+      "delta": 143,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 20424,
+      "delta": 146,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 20431,
+      "delta": 153,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20434,
+      "delta": 156,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20696,
+      "delta": 418,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 20700,
+      "delta": 422,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 20703,
+      "delta": 425,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20706,
+      "delta": 428,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20713,
+      "delta": 435,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 20754,
+      "delta": 476,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 25858,
+      "delta": 5580,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 25871,
+      "delta": 5593,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 25871,
+      "delta": 5593,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 42,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 86,
+    "rings_to_cable_submit": 276,
+    "cable_submit_to_link_return": 5158
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "linux_seconds_first_control_request_to_cable_write": 0.006477,
+  "comparison_caveat": "U-Boot starts at control-ring enable; Linux starts at first captured control request. Different builds/environments and existing diagnostics remain.",
+  "internal_nvme_before_after": true,
+  "ubuntu_return_verified": true,
+  "returned_kernel": "7.2.0-1001-asahi-arm"
+}
