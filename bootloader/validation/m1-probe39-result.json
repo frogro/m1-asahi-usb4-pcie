@@ -219,10 +219,11 @@
   "usb2_signal_host": "0x1c1700f",
   "usb2_signal_final": "0x41700f",
   "internal_nvme_before_after": true,
-  "ubuntu_return_verified": false,
+  "ubuntu_return_verified": true,
   "ram_only": true,
   "external_ssd_io": false,
   "conclusion": "Omitting the redundant late core/PHY soft reset alone did not advance the firmware beyond Phase2",
-  "fallback_status": "No SSH after planned reset; user reports black HDMI; manual power cycle to stock Ubuntu requested",
-  "installed_boot_changes": false
+  "fallback_status": "Ubuntu recovered after user intervention; SSH verified, stock kernel and original boot.bin hash confirmed, next_entry empty. Previous persisted boot reached graphical.target at 17.12 seconds and recorded forced power-button shutdown at 17.66 seconds. Cause of black HDMI remains unresolved.",
+  "installed_boot_changes": false,
+  "automatic_return_verified": false
 }

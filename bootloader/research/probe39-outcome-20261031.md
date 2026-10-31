@@ -13,3 +13,7 @@ U-Boot launch: the complete guest trace proves execution. The cause of the
 subsequent missing Ubuntu return is not yet established. A previous boot
 journal is needed if recovery permits. No installed boot files were modified.
 Further hardware probes are paused pending recovery; no Probe40 is armed.
+
+## Recovery follow-up
+
+Ubuntu is reachable again after user intervention. The stock kernel and original boot.bin hash were verified; GRUB next_entry is empty. The previous persisted Linux boot reached graphical.target after 17.12 seconds and recorded a forced power-button shutdown at 17.66 seconds. Thus that boot reached userspace despite black HDMI. This does not establish successful automatic recovery from Probe39 or explain the black display. No new hardware probe is armed. Raw journals remain local.
