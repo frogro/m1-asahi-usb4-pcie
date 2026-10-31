@@ -1,0 +1,10 @@
+OSLOG mapped 0 expected=123456000 actual=123456000 PASS
+OSLOG mapped 1 expected=abcdef000000 actual=abcdef000000 PASS
+OSLOG mapped 2 expected=1000 actual=1000 PASS
+OSLOG mapped 3 expected=fffffff000 actual=fffffff000 PASS
+host allocation oslog=0 PASS
+host allocation oslog=1 PASS
+normal mapped PASS
+rtkit_handle_buf_req: unexpected request for buffer without size
+zero size PASS
+8 cases, failures=0

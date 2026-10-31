@@ -1,0 +1,19 @@
+--- a/arch/arm/mach-apple/rtkit.c
++++ b/arch/arm/mach-apple/rtkit.c
+@@ -148,7 +148,7 @@
+ 	switch (endpoint) {
+ 	case APPLE_RTKIT_EP_OSLOG:
+ 		buf->size = FIELD_GET(APPLE_RTKIT_OSLOG_SIZE, msg->msg0);
+-		buf->dva = FIELD_GET(APPLE_RTKIT_OSLOG_IOVA, msg->msg0 << 12);
++		buf->dva = FIELD_GET(APPLE_RTKIT_OSLOG_IOVA, msg->msg0) << 12;
+ 		break;
+ 	default:
+ 		buf->size = FIELD_GET(APPLE_RTKIT_BUFFER_REQUEST_SIZE, msg->msg0) << 12;
+@@ -161,7 +161,6 @@
+ 		return -1;
+ 	}
+ 
+-	buf->dva = FIELD_GET(APPLE_RTKIT_BUFFER_REQUEST_IOVA, msg->msg0);
+ 	buf->is_mapped = !!buf->dva;
+ 	buf->endpoint = endpoint;
+ 
