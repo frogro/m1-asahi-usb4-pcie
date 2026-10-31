@@ -1,10 +1,24 @@
 {
-  "prepared": true,
-  "hardware_tested": false,
+  "hardware_tested": true,
   "software_mock_cases": 94,
   "sandbox_cases": 57,
   "m1_build": "passed",
-  "scope": "At most eight Linux-format root plug/unplug acknowledgments, no external writes or disk I/O",
-  "distinction": "Not the excluded Linux PCIe reset-ACK classification change",
-  "hardware_runner": "waiting for m1n1 connection"
+  "root_event_ack": "ports 5 and 6 acknowledged; repeated port5 events stopped",
+  "sent": 52,
+  "received": 52,
+  "lane_states": [
+    7,
+    7
+  ],
+  "remote_router_read": false,
+  "pcie_tunnel": false,
+  "external_disk_access": false,
+  "transport_result": -110,
+  "dart_error_raw": "0x04020000",
+  "dart_fault_valid_bit31": false,
+  "internal_nvme_before_after": "SHA256 passed",
+  "rtkit_shutdown": 0,
+  "ubuntu_ssh_return_utc": "2026-10-31T17:42:29Z",
+  "installed_changes": false,
+  "distinction": "Root hotplug event ACK; not excluded Linux PCIe reset-ACK classification patch"
 }

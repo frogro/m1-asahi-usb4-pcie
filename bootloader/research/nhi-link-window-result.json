@@ -1,0 +1,10 @@
+{
+  "prepared": true,
+  "hardware_tested": false,
+  "software_mock_cases": 95,
+  "sandbox_cases": 57,
+  "m1_build": "passed",
+  "change": "Ten 500ms link observation intervals instead of ten 100ms; same request/descriptor limits",
+  "hardware_runner": "waiting for m1n1",
+  "installed": false
+}

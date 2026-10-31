@@ -245,7 +245,7 @@ separate from the excluded Linux PCIe reset-ACK classification patch.
 No claim is made yet that missing event acknowledgments cause the link failure.
 
 
-### Prepared Probe21: bounded root event acknowledgement
+### Probe21: bounded root event acknowledgement
 
 `nhi-event-ack-candidate.patch` follows Probe20. It adds the Linux
 `tb_cfg_ack_plug` wire format to the codec and serializes one-way ACK packets
@@ -257,5 +257,31 @@ stop the diagnostic. No external router register write or disk access is added.
 
 The 94 extracted-production host cases include exact plug/unplug wire values,
 CRC/reserved-bit failures, wrong routes/ports, uncompleted ACK TX, DART faults
-and notification floods. Sandbox57 and M1 build pass. Hardware result is tracked
-in `nhi-event-ack-result.json`; prepared does not mean hardware verified.
+and notification floods. Sandbox57 and M1 build pass. On hardware, the ACKs for
+root ports5/6 completed and the repeated port5 notifications stopped. Both
+physical lanes nevertheless remained state7; the external router was not read.
+Internal NVMe hashes and firmware shutdown passed, and Ubuntu returned by itself.
+See `nhi-event-ack-result.json` and the Probe21 UART log. Event acknowledgment
+is now hardware-tested, but it is not a demonstrated external-link fix.
+
+The subsequent Linux comparison boot used unmodified Ubuntu package modules
+for kernel7.2.0-1001-asahi-arm: the loaded srcversions matched the files, and
+the files matched the package MD5 manifest. It was NOT the consolidated project
+kernel. It reached CL0 on both lanes and discovered the OWC at4.888seconds,
+then lost the link at15.583seconds with unchanged cables (user-confirmed).
+A CD321x/ATC mux warning followed; the OWC subsequently appeared over USB.
+This demonstrates initial link training, not a stable consolidated-kernel result.
+The disconnect cause remains undetermined. The five-second Probe22 observation
+is a bounded timing comparison, not an assumed repair.
+
+
+### Prepared Probe22: bounded five-second link observation
+
+Apply `nhi-link-window-candidate.patch` after Probe21. It changes only the
+interval between the ten both-lane observations from100ms to500ms. No reset,
+PHY values, cable data, ACK policy or descriptor limits change. The ten-second
+transport deadline still bounds slow responses. Software coverage adds a link
+that becomes ready after three seconds, verifies a permanently-unplugged lane
+is observed for five seconds and preserves all previous injected failure cases.
+95 production-code cases, 57 sandbox cases and the M1 build passed.
+Hardware status is recorded separately in `nhi-link-window-result.json`.

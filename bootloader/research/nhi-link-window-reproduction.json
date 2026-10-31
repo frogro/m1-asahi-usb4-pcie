@@ -1,0 +1,7 @@
+{
+  "base": "frozen Probe21",
+  "files_identical": [
+    "cmd/apple_nhi_m1_ring.c"
+  ],
+  "patch_output": "patching file cmd/apple_nhi_m1_ring.c\n"
+}

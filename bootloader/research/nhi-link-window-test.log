@@ -1,0 +1,1138 @@
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=24
+NHI lane1 state=2 raw=00000100 08000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane2 state=2 raw=00000100 08000000 time-ms=102
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=26 rx=26
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=26 received=26 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI read timeout port=0 space=2 offset=0 TX=0x411010 RX=0x400000
+NHI inventory transport ret=-110 sent=1 received=0 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI inventory transport ret=-74 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=1 bytes=36 words= 80000000 00000001 0438a000 200005ac 0001c71b 00000000 00000000 20000000
+NHI read timeout port=0 space=2 offset=0 TX=0x200000 RX=0x400000
+NHI inventory transport ret=-110 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI inventory transport ret=-5 sent=1 received=0 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI inventory transport ret=-14 sent=1 received=0 DART-error=0x80000000
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=24
+NHI lane1 state=2 raw=00000100 08000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane2 state=2 raw=00000100 08000000 time-ms=102
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=26 rx=26
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=-16 sent=26 received=26 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI read timeout port=0 space=2 offset=0 TX=0x411010 RX=0x201024
+NHI inventory transport ret=-110 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=2
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI unsolicited rx=3 sof=0 eof=3 bytes=24 words= 80000000 00000000 0c38401b 00000000 00000000 8a5c3600
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=4
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI unsolicited rx=5 sof=0 eof=3 bytes=24 words= 80000000 00000000 14384020 00000000 00000000 23d773bd
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=6
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI unsolicited rx=7 sof=0 eof=3 bytes=32 words= 80000000 00000000 1c388001 00000000 00000000 00000000 00000000 3b8e69de
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=8
+NHI unsolicited rx=9 sof=0 eof=3 bytes=32 words= 80000000 00000000 04388001 00000000 00000000 00000000 00000000 fe764204
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=10
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI unsolicited rx=11 sof=0 eof=3 bytes=48 words= 80000000 00000000 0a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=12
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=13 sof=0 eof=3 bytes=48 words= 80000000 00000000 12390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=14
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=15 sof=0 eof=3 bytes=48 words= 80000000 00000000 1a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=16
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=17 sof=0 eof=3 bytes=48 words= 80000000 00000000 02390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=18
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=19 sof=0 eof=3 bytes=48 words= 80000000 00000000 0a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=20
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=21 sof=0 eof=3 bytes=48 words= 80000000 00000000 12390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=22
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=23 sof=0 eof=3 bytes=48 words= 80000000 00000000 1a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=24
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI unsolicited rx=25 sof=0 eof=3 bytes=24 words= 80000000 00000000 02384008 00000000 00000000 cfbe8627
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=26
+NHI unsolicited rx=27 sof=0 eof=3 bytes=48 words= 80000000 00000000 0a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=28
+NHI unsolicited rx=29 sof=0 eof=3 bytes=24 words= 80000000 00000000 12384008 00000000 00000000 d6975e34
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=30
+NHI unsolicited rx=31 sof=0 eof=3 bytes=20 words= 80000000 00000000 1a382004 00000000 2de80447
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=32
+NHI unsolicited rx=33 sof=0 eof=3 bytes=20 words= 80000000 00000000 02382004 00000000 eba50929
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=34
+NHI unsolicited rx=35 sof=0 eof=3 bytes=20 words= 80000000 00000000 0a382004 00000000 a99e0df3
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=36
+NHI unsolicited rx=37 sof=0 eof=3 bytes=20 words= 80000000 00000000 12382004 00000000 6fd3009d
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=38
+NHI unsolicited rx=39 sof=0 eof=3 bytes=20 words= 80000000 00000000 1a382004 00000000 2de80447
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=40
+NHI unsolicited rx=41 sof=0 eof=3 bytes=20 words= 80000000 00000000 02382004 00000000 eba50929
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=42
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI unsolicited rx=43 sof=0 eof=3 bytes=20 words= 80000000 00000000 0c38201c 00000000 50be1f92
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=44
+NHI unsolicited rx=45 sof=0 eof=3 bytes=20 words= 80000000 00000000 1438201c 00000000 96f312fc
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=46
+NHI-CABLE-INFO PASS value=0x11
+NHI unsolicited rx=47 sof=0 eof=3 bytes=24 words= 80000000 00000000 1a384008 00000000 00000000 58f58945
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=48
+NHI lane1 state=2 raw=00000100 08000000 time-ms=97
+NHI unsolicited rx=49 sof=0 eof=3 bytes=24 words= 80000000 00000000 02384008 00000000 00000000 cfbe8627
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=50
+NHI lane2 state=2 raw=00000100 08000000 time-ms=102
+NHI unsolicited rx=51 sof=0 eof=3 bytes=36 words= 80000000 00000001 0c38a000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=26 rx=52
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=26 received=52 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x1b raw=0200051b 00000000
+NHI inventory transport ret=-40 sent=2 received=2 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x2000 raw=00000500 00022000
+NHI inventory transport ret=-34 sent=2 received=2 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0x1 length=2 next=0x20 raw=02010520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI inventory transport ret=-2 sent=3 received=3 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=1 next=0x20 raw=01000520 00000000
+NHI inventory transport ret=-71 sent=2 received=2 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI inventory transport ret=-71 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00000000 00000000 00000000 00000000 00000000
+NHI inventory transport ret=-71 sent=6 received=6 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI inventory transport ret=-71 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=00000500 00020020
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=24
+NHI lane1 state=2 raw=00000100 08000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane2 state=2 raw=00000100 08000000 time-ms=102
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=26 rx=26
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=26 received=26 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI inventory transport ret=-71 sent=2 received=2 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI inventory transport ret=-71 sent=2 received=2 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x5 vsec=0 length=2 next=0 raw=02000500 00000000
+NHI inventory transport ret=-71 sent=3 received=3 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI read timeout port=0 space=2 offset=0x1b TX=0x411010 RX=0x400000
+NHI inventory transport ret=-110 sent=2 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=2
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI unsolicited rx=3 sof=0 eof=3 bytes=24 words= 80000000 00000000 0c38401b 00000000 00000000 8a5c3600
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=4
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI unsolicited rx=5 sof=0 eof=3 bytes=24 words= 80000000 00000000 14384020 00000000 00000000 23d773bd
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=6
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI unsolicited rx=7 sof=0 eof=3 bytes=32 words= 80000000 00000000 1c388001 00000000 00000000 00000000 00000000 3b8e69de
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=8
+NHI unsolicited rx=9 sof=0 eof=3 bytes=32 words= 80000000 00000000 04388001 00000000 00000000 00000000 00000000 fe764204
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=10
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI unsolicited rx=11 sof=0 eof=3 bytes=48 words= 80000000 00000000 0a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=12
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=13 sof=0 eof=3 bytes=48 words= 80000000 00000000 12390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=14
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=15 sof=0 eof=3 bytes=48 words= 80000000 00000000 1a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=16
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=17 sof=0 eof=3 bytes=48 words= 80000000 00000000 02390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=18
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=19 sof=0 eof=3 bytes=48 words= 80000000 00000000 0a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=20
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=21 sof=0 eof=3 bytes=48 words= 80000000 00000000 12390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=22
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=23 sof=0 eof=3 bytes=48 words= 80000000 00000000 1a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=24
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI unsolicited rx=25 sof=0 eof=3 bytes=24 words= 80000000 00000000 02384008 00000000 00000000 cfbe8627
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=26
+NHI unsolicited rx=27 sof=0 eof=3 bytes=48 words= 80000000 00000000 0a390000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=28
+NHI unsolicited rx=29 sof=0 eof=3 bytes=24 words= 80000000 00000000 12384008 00000000 00000000 d6975e34
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=30
+NHI unsolicited rx=31 sof=0 eof=3 bytes=20 words= 80000000 00000000 1a382004 00000000 2de80447
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=32
+NHI unsolicited rx=33 sof=0 eof=3 bytes=20 words= 80000000 00000000 02382004 00000000 eba50929
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=34
+NHI unsolicited rx=35 sof=0 eof=3 bytes=20 words= 80000000 00000000 0a382004 00000000 a99e0df3
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=36
+NHI unsolicited rx=37 sof=0 eof=3 bytes=20 words= 80000000 00000000 12382004 00000000 6fd3009d
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=38
+NHI unsolicited rx=39 sof=0 eof=3 bytes=20 words= 80000000 00000000 1a382004 00000000 2de80447
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=40
+NHI unsolicited rx=41 sof=0 eof=3 bytes=20 words= 80000000 00000000 02382004 00000000 eba50929
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=42
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI unsolicited rx=43 sof=0 eof=3 bytes=20 words= 80000000 00000000 0c38201c 00000000 50be1f92
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=44
+NHI unsolicited rx=45 sof=0 eof=3 bytes=20 words= 80000000 00000000 1438201c 00000000 96f312fc
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=46
+NHI-CABLE-INFO PASS value=0x11
+NHI unsolicited rx=47 sof=0 eof=3 bytes=24 words= 80000000 00000000 1a384008 00000000 00000000 58f58945
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=48
+NHI lane1 state=2 raw=00000100 08000000 time-ms=97
+NHI unsolicited rx=49 sof=0 eof=3 bytes=24 words= 80000000 00000000 02384008 00000000 00000000 cfbe8627
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=50
+NHI lane2 state=2 raw=00000100 08000000 time-ms=102
+NHI unsolicited rx=51 sof=0 eof=3 bytes=36 words= 80000000 00000001 0c38a000 00000000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=26 rx=52
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=26 received=52 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=2 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=3 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=4 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=5 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=6 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=7 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=8 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=9 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=10 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=11 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=12 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=13 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=14 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=15 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=16 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=17 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=18 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=19 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=20 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=21 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=22 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=23 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=24 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=25 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=26 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=27 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=28 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=29 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=30 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=31 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=32 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=33 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=34 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=35 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=36 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=37 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=38 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=39 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=40 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=41 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=42 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=43 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=44 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=45 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=46 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=47 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=48 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=49 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=50 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=51 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=52 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=53 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=54 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=55 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=56 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=57 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=58 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=59 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=60 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=61 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=62 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=63 sof=0 eof=3 bytes=36 words= 80000000 00000000 0438a000 00000000 00000000 00000000 00000000 00000000
+NHI read timeout port=0 space=2 offset=0 TX=0x200000 RX=0x203024
+NHI inventory transport ret=-110 sent=1 received=63 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI read timeout port=5 space=1 offset=0 TX=0 RX=0
+NHI inventory transport ret=-110 sent=10 received=9 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI read timeout port=0 space=2 offset=0x1 TX=0x422020 RX=0x400000
+NHI inventory transport ret=-110 sent=4 received=3 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI inventory transport ret=-74 sent=4 received=4 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI inventory transport ret=-5 sent=5 received=5 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI inventory transport ret=-5 sent=18 received=18 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=24
+NHI lane1 state=0 raw=00000100 00000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane2 state=0 raw=00000100 00000000 time-ms=102
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=26 rx=26
+NHI lane1 state=0 raw=00000100 00000000 time-ms=607
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=27 rx=27
+NHI lane2 state=0 raw=00000100 00000000 time-ms=612
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=28 rx=28
+NHI lane1 state=0 raw=00000100 00000000 time-ms=1117
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=29 rx=29
+NHI lane2 state=0 raw=00000100 00000000 time-ms=1122
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=30 rx=30
+NHI lane1 state=0 raw=00000100 00000000 time-ms=1627
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=31 rx=31
+NHI lane2 state=0 raw=00000100 00000000 time-ms=1632
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=32 rx=32
+NHI lane1 state=0 raw=00000100 00000000 time-ms=2137
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=33 rx=33
+NHI lane2 state=0 raw=00000100 00000000 time-ms=2142
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=34 rx=34
+NHI lane1 state=0 raw=00000100 00000000 time-ms=2647
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=35 rx=35
+NHI lane2 state=0 raw=00000100 00000000 time-ms=2652
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=36 rx=36
+NHI lane1 state=0 raw=00000100 00000000 time-ms=3157
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=37 rx=37
+NHI lane2 state=0 raw=00000100 00000000 time-ms=3162
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=38 rx=38
+NHI lane1 state=0 raw=00000100 00000000 time-ms=3667
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=39 rx=39
+NHI lane2 state=0 raw=00000100 00000000 time-ms=3672
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=40 rx=40
+NHI lane1 state=0 raw=00000100 00000000 time-ms=4177
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=41 rx=41
+NHI lane2 state=0 raw=00000100 00000000 time-ms=4182
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=42 rx=42
+NHI lane1 state=0 raw=00000100 00000000 time-ms=4687
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=43 rx=43
+NHI lane2 state=0 raw=00000100 00000000 time-ms=4692
+NHI inventory transport ret=-110 sent=43 received=43 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=24
+NHI lane1 state=2 raw=00000100 08000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane2 state=2 raw=00000100 08000000 time-ms=102
+NHI read timeout port=0 space=2 offset=0 TX=0x411010 RX=0x400000
+NHI inventory transport ret=-110 sent=26 received=25 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000001 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI inventory transport ret=-34 sent=14 received=14 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI read timeout port=2 space=1 offset=0 TX=0x411010 RX=0x400000
+NHI inventory transport ret=-110 sent=7 received=6 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=24
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=102
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=26 rx=26
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=607
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=27 rx=27
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=612
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=28 rx=28
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=1117
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=29 rx=29
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=1122
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=30 rx=30
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=1627
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=31 rx=31
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=1632
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=32 rx=32
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=2137
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=33 rx=33
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=2142
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=34 rx=34
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=2647
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=35 rx=35
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=2652
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=36 rx=36
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=3157
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=37 rx=37
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=3162
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=38 rx=38
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=3667
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=39 rx=39
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=3672
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=40 rx=40
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=4177
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=41 rx=41
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=4182
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=42 rx=42
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=4687
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=43 rx=43
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=4692
+NHI inventory transport ret=-110 sent=43 received=43 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=1
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=2 rx=2
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=4 rx=4
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=6 rx=6
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=13 rx=13
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=16 rx=16
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=22 rx=22
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=24 rx=24
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane1 state=2 raw=00000100 08000000 time-ms=99
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=26 rx=26
+NHI lane2 state=2 raw=00000100 08000000 time-ms=104
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=27 rx=27
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=27 received=27 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=3 bytes=16 words= 80000000 00000000 00000101 03e76eb1
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=2
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=3
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=4
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=5
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=6
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=7
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=8
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=9
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=10
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=11
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=12
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=13
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=14
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=15
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=16
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=17
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=18
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=19
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=20
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=21
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=22
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=23
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=24
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=25
+NHI lane1 state=2 raw=00000100 08000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=26
+NHI lane2 state=2 raw=00000100 08000000 time-ms=102
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=26 rx=27
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=26 received=27 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000000 80000001 42e53ff9
+NHI-EVENT-ACK SENT port=1 unplug=1 count=1
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=2 rx=2
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=4 rx=4
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=6 rx=6
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=13 rx=13
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=16 rx=16
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=22 rx=22
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=24 rx=24
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane1 state=2 raw=00000100 08000000 time-ms=99
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=26 rx=26
+NHI lane2 state=2 raw=00000100 08000000 time-ms=104
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=27 rx=27
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=27 received=27 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI inventory transport ret=-74 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000201 3700c628
+NHI inventory transport ret=-71 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000001 00000001 2854996a
+NHI inventory transport ret=-71 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI inventory transport ret=-110 sent=2 received=2 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI inventory transport ret=-14 sent=2 received=2 DART-error=0x80000000
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000008 68f72d0a
+NHI inventory transport ret=-71 sent=1 received=1 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI unsolicited rx=1 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=1
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=2 rx=2
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI unsolicited rx=3 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=2
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=4 rx=4
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI unsolicited rx=5 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=3
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=6 rx=6
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI unsolicited rx=7 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=4
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=8 rx=8
+NHI unsolicited rx=9 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=5
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=10 rx=10
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI unsolicited rx=11 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=6
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=13 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=7
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=15 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT port=1 unplug=0 count=8
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=16 rx=16
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI unsolicited rx=17 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI inventory transport ret=-28 sent=17 received=18 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=1 rx=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI xfer type=1 port=0 space=2 offset=0x1b words=2 response-port=7 tx=2 rx=2
+NHI capability offset=0x1b id=0x5 vsec=0 length=2 next=0x20 raw=02000520 00000000
+NHI xfer type=1 port=0 space=2 offset=0x20 words=2 response-port=7 tx=3 rx=3
+NHI capability offset=0x20 id=0x3 vsec=0 length=1 next=0 raw=00000300 00000000
+NHI xfer type=2 port=0 space=2 offset=0x1 words=4 response-port=7 tx=4 rx=4
+NHI xfer type=1 port=0 space=2 offset=0x1 words=4 response-port=7 tx=5 rx=5
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+
+NHI xfer type=1 port=1 space=1 offset=0 words=8 response-port=7 tx=6 rx=6
+NHI adapter port=1 type=000001 header=200005ac 00000008 00000001 00100000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=7 rx=7
+NHI adapter port=2 type=000001 header=200005ac 00000008 00000001 00200000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=3 space=1 offset=0 words=8 response-port=7 tx=8 rx=8
+NHI adapter port=3 type=000002 header=200005ac 00000008 00000002 00300000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=4 space=1 offset=0 words=8 response-port=7 tx=9 rx=9
+NHI adapter port=4 type=000002 header=200005ac 00000008 00000002 00400000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=5 space=1 offset=0 words=8 response-port=7 tx=10 rx=10
+NHI adapter port=5 type=000002 header=200005ac 00000008 00000002 00500000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=6 space=1 offset=0 words=8 response-port=7 tx=11 rx=11
+NHI adapter port=6 type=000002 header=200005ac 00000008 00000002 00600000 00000000 00000000 00000000 00000000
+NHI xfer type=1 port=7 space=1 offset=0 words=8 response-port=7 tx=12 rx=12
+NHI adapter port=7 type=000002 header=200005ac 00000008 00000002 00700000 00000000 00000000 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=2 apple=0x1b null-ports=0x6; ports read-only
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=13 rx=13
+NHI xfer type=1 port=2 space=1 offset=0 words=8 response-port=7 tx=14 rx=14
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=15 rx=15
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=16 rx=16
+NHI xfer type=2 port=1 space=1 offset=0x4 words=1 response-port=7 tx=17 rx=17
+NHI xfer type=1 port=1 space=1 offset=0x4 words=1 response-port=7 tx=18 rx=18
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=19 rx=19
+NHI xfer type=2 port=2 space=1 offset=0x4 words=1 response-port=7 tx=20 rx=20
+NHI xfer type=1 port=2 space=1 offset=0x4 words=1 response-port=7 tx=21 rx=21
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+
+NHI xfer type=2 port=0 space=2 offset=0x1c words=1 response-port=7 tx=22 rx=22
+NHI xfer type=1 port=0 space=2 offset=0x1c words=1 response-port=7 tx=23 rx=23
+NHI-CABLE-INFO PASS value=0x11
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=24 rx=24
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=97
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=25 rx=25
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=102
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=26 rx=26
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=607
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=27 rx=27
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=612
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=28 rx=28
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=1117
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=29 rx=29
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=1122
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=30 rx=30
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=1627
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=31 rx=31
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=1632
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=32 rx=32
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=2137
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=33 rx=33
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=2142
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=34 rx=34
+NHI lane1 state=7 raw=00000100 1c000000 time-ms=2647
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=35 rx=35
+NHI lane2 state=7 raw=00000100 1c000000 time-ms=2652
+NHI xfer type=1 port=1 space=1 offset=0x8 words=2 response-port=7 tx=36 rx=36
+NHI lane1 state=2 raw=00000100 08000000 time-ms=3157
+NHI xfer type=1 port=2 space=1 offset=0x8 words=2 response-port=7 tx=37 rx=37
+NHI lane2 state=2 raw=00000100 08000000 time-ms=3162
+NHI xfer type=1 port=0 space=2 offset=0 words=5 response-port=7 tx=38 rx=38
+NHI-REMOTE-READ PASS route=1 header=24641b21 0001011b 00000000 00000000 20000000; no external writes
+NHI inventory transport ret=0 sent=38 received=38 DART-error=0
+NHI control buffers and DART retained until mandatory reset
+
+NHI combined-link production/codec mock: 95 cases, zero failures; no hardware DMA

@@ -1,0 +1,12 @@
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -274,7 +274,8 @@
+   printf("NHI lane2 state=%u raw=%08x %08x time-ms=%lu\n",
+          (data[1] >> 26) & 15, data[0], data[1], get_timer(ring->started));
+   if (state >= 2 && state <= 6) break;
+-  udelay(100000);
++  /* Diagnostic only: bounded five-second observation, same slot budget. */
++  udelay(500000);
+  }
+  if (i == 10) return -ETIMEDOUT;
+  ret = diagnostic_xfer(ring, 0, 2, 0, 5, data, USB4_CFG_READ, 1);
