@@ -43,10 +43,20 @@ The prepared configuration retains all 12,501 previously enabled options; only r
 
 A previous recording captured removal of the entire dock while Radeon initialization was still running. Error unwinding reached VCN software cleanup after hardware resources had been released, causing an Oops. The established surprise-removal guards cover the tested initialized-device removal paths; they do not establish safety for every failed-probe cleanup path. Patch43 addresses the demonstrated initialization prerequisite, not this separate concurrency defect.
 
+### Additional controlled observations
+
+A connected AMDGPU unbind completed in 0.203 seconds; rebind completed in 23.622 seconds and compute passed. Native Asahi remains loaded and Vulkan enumerates Apple M1 through Honeykrisp. No failed systemd units were present at the end of these checks.
+
+A UCSI child-driver rebind after GPU initialization completed without a command timeout, but did not activate the USB-C partner's DP alternate mode; all Radeon display connectors remained disconnected. No visual output is claimed for this unattended audit. The operation emitted one DART fault (`0x83000402`, stream3, address0). The identical fault is present immediately after UCSI/I2C unbind in historical Test179 and Test190 logs. GPU compute and Yotta reads still passed afterwards. This remains an unresolved teardown observation, not a newly proven regression or a reason to install a blanket USB reset.
+
+The historical overlay helper only applied the diagnostic DT; native static DT patches replace it. The historical TTM scope helper operated on synthetic structures and did not touch hardware. Neither is an omitted runtime initialization like the Test55 prefetch strobe.
+
+The installed internal boot-arm helper had a stale initramfs hash. Its expected metadata was updated from the verified booted Yotta files, with a backup, and it gained a check-only option. It still requires the SanDisk and checks its actual file hashes before arming. The SanDisk was absent, so its current contents were not reverified. The original m1n1 boot blob hash and empty GRUB next_entry were unchanged. No kernel was copied internally and no reboot was armed.
+
 ### Deliberately excluded
 
 No ACK-timeout suppression/classification patch, speculative USB-C reset policy, global TTM override, or unvalidated UART change is added. Native-host integration is scoped to M1 kernel-initialized tunnels and uses the driver's mapped registers. Existing build artifacts and kernels remain available.
 
 ## Recovery during unattended checks
 
-An Apple hardware watchdog with a renewable lease protects the running test, with panic reboot enabled. The verified original internal Ubuntu boot selection remains the fallback. The Yotta root controller is never unbound. No system sleep or physical-disconnect test is performed while the operator is away.
+During active tests, an Apple hardware watchdog with a renewable lease protected the system. Afterwards ownership was handed to systemd PID1 and verified, with 30-second runtime/reboot watchdog settings for this boot and panic reboot enabled; no expiring test lease remains active. The verified original internal Ubuntu boot selection remains the fallback. The Yotta root controller is never unbound. No system sleep or physical-disconnect test is performed while the operator is away.

@@ -30,5 +30,13 @@
     "prefwindow-enabled-result.txt": "a684ba10bde2859800518fc33c5c101a404dda43f4a992b744e43f278c892d48",
     "prefwindow-reauthorize-final.txt": "50ab6fc734eec3f9a63bc401010f418628f66965b575ec4ebef7b04ae65fbf41",
     "post-cycle-ring-msi.txt": "129839664e50b7cc1dc66dae00f41c3355c5ba990748fe0cb1cbe9aba236606c"
-  }
+  },
+  "connected_unbind_seconds": 0.203,
+  "connected_rebind_seconds": 23.622,
+  "connected_rebind_compute": "passed",
+  "native_asahi_vulkan": "Apple M1, Honeykrisp enumerated",
+  "ucsi_rebind": "completed; alternate mode remained inactive; no visual validation",
+  "ucsi_rebind_dart_fault": "0x83000402 stream3 address0; also present in historical Test179/190",
+  "watchdog": "systemd PID1 verified, timeout30, runtime-only",
+  "internal_boot_arm_metadata": "updated with backup; no reboot armed; SanDisk absent"
 }
