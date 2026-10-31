@@ -13,7 +13,12 @@ that this reservation policy is appropriate for every machine.
 Integration audit, 2026-10-31: the first Yotta boot of usb4sd4-egpu1 retained
 only hpbussize=16. Radeon BAR0, BAR2 and BAR5 allocation failed behind the
 Dynabook dock; AMDGPU probe returned -12. The omitted parameters are restored
-in the boot template. A fresh integrated hardware test is still required.
-The subsequent Thunderbolt link loss is not established to have this cause.
-See README.md for other diagnostic prerequisites, including the separately
-documented PREFMEM helper whose necessity remains unverified.
+in the boot template and were confirmed active in the next integrated boot;
+all Radeon memory BARs were assigned successfully.
+
+The separate Test55 PREFMEM_ENABLE action was subsequently reproduced against
+the exact integrated build: VRAM changed from all ones to readable data, then
+PSP initialization and GPU computation passed after tunnel reauthorization.
+Patch 43 puts this action in the native T8103 PCIe-C port initialization and
+restart paths. The new build usb4sd4-egpu2 requires a fresh hardware boot.
+The earlier unplug-during-probe Oops remains a separate uncorrected case.

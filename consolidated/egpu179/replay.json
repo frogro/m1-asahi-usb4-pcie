@@ -1,12 +1,12 @@
 {
   "base": "f7734f4c91c0f47d9e762786968057bec99a0788",
   "prior_patches": 29,
-  "egpu_patches": 13,
-  "total_patches": 42,
-  "replay": "passed against exact pinned-source subset after all 29 prior patches",
-  "full_kernel_compile": "pending",
-  "combined_hardware_boot": "not tested",
-  "independent_extension_replay": "passed",
+  "egpu_patches": 14,
+  "total_patches": 43,
+  "replay": "passed against full pinned UbuntuAsahi source tree after 29 base patches",
+  "full_kernel_compile": "43-patch build pending; preceding 42-patch GitHub build 41112204683 passed",
+  "combined_hardware_boot": "42-patch kernel plus explicitly loaded exact-build prefetch helper passed GPU compute; native patch 43 fresh boot pending",
+  "independent_extension_replay": "passed on second fresh full-source checkout",
   "source_diff_whitespace_check": "passed",
   "imported_patch_ids": "match original PR188 patches 4,5,7",
   "direct_tested_source_hash_matches": 25,
@@ -21,5 +21,8 @@
     "DMCUB diagnostic during first offline display teardown"
   ],
   "i2c_runtime_policy_during_physical_removal": "on",
-  "soak": "passed; see soak-result.json"
+  "soak": "passed; see soak-result.json",
+  "native_host_source_hash_checks": 1,
+  "native_host_object_compile": "passed with exact running-kernel configuration",
+  "audit": "integration-audit-20261031.md"
 }

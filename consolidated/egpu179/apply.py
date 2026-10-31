@@ -27,4 +27,4 @@ for patch in patches:
         raise SystemExit('Patch hash mismatch: ' + patch.name)
 subprocess.run(['git', '-C', str(tree), 'am', *map(str, patches)], check=True)
 verify('postimage-sha256.json')
-print('Verified 13 eGPU patches and all 25 resulting source files. No installation.')
+print('Verified', len(patches), 'eGPU integration patches and all resulting source hashes. No installation.')

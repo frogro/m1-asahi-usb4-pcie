@@ -11,3 +11,4 @@
 0040-drm-amdgpu-skip-HIQ-hardware-unmap-during-offline-te.patch
 0041-drm-amd-display-retire-offline-flips-and-release-HDC.patch
 0042-i2c-designware-pci-reject-UCSI-transfers-after-AMD-P.patch
+0043-PCI-apple-enable-M1-tunneled-prefetch-aperture.patch

@@ -16,6 +16,7 @@
   "drivers/gpu/drm/ttm/ttm_nonposted_test64.h": null,
   "drivers/gpu/drm/ttm/ttm_resource.c": "8d2a303845ff5d1fb750f2550c915bbc40d0db810b850d2e071c506ff66a91e5",
   "drivers/i2c/busses/i2c-designware-pcidrv.c": "6b918bd1fb8a290e47e9a8745b4564d0c76a496d5f8908c1ec1c00b32b19b052",
+  "drivers/pci/controller/pcie-apple-pciec.c": "f1f0ac2e91a75c66958637db0806111c2fb13e22ad354abea7b0255d73c57452",
   "drivers/usb/host/xhci-dbgcap.c": "ce57a4f67ff0943411bafc70e3281078e1597b7def963b9d3d3a1bda5d660cb2",
   "drivers/usb/host/xhci-hub.c": "d2e589a55e3c3cd5b824b6eba93eac2863abe795cc27d78f49935fad52cb8c69",
   "drivers/usb/host/xhci-mem.c": "99d502a80df77e7c9a7b45405e606519c86dbb8af3b591dd66cf02639589d371",

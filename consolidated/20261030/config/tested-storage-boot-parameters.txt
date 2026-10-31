@@ -11,5 +11,6 @@ claim that the ACK meaning is resolved. The source A/B parameter remains.
 No Test49 diagnostic module, live DT overlay or staged insmod helper is needed
 by the intended source integration. The static J274 DT references native NHI
 nodes. Combined boot with this translation still needs the planned later test.
-Suspend guard retained. No suspend workaround. Existing panic/fallback setup is
-not changed or installed by this source-only preparation.
+Patches 27-29 implement automatic retained-power s2idle for active links.
+Full controller power-loss recovery remains unsupported. Existing panic/fallback
+setup is not changed or installed by this source-only preparation.
