@@ -31,3 +31,13 @@ observer-order/cleanup checks, unchanged M1 configuration and exact patch
 reconstruction are required before arming. Internal NVMe hashes and planned
 reset remain; the existing 60-second watchdog is not a recovery guarantee.
 No installed bootloader change, external SSD write or new kernel installation.
+
+## Complete source checkpoint
+
+[The cumulative development patch](probe43-cumulative-source.patch) includes
+all 46 modified/new source files over the pinned U-Boot base
+b33034a515a068381c4aa28831fb709e91300cd1. It was applied to pristine copies of
+the affected base files and every resulting file compared byte-for-byte with
+the candidate checkout. The [manifest](../validation/probe43-cumulative-source-manifest.json)
+records their hashes. This preserves the preceding probe work as well as the
+new measurement; it remains an experimental diagnostic, not an installer release.
