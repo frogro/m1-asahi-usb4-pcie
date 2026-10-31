@@ -1,0 +1,43 @@
+{
+  "status": "structured-read-only-hardware-probe-passed",
+  "run": "hv-run-20261031T143335Z",
+  "board": "Apple Mac mini M1 (J274)",
+  "execution": "RAM-only m1n1 hypervisor guest",
+  "firmware": "14.7",
+  "artifacts": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "e05fa36c3f42919e6385a872da8bac15e0fd97769d7f2884ba2e25e90cb0e0c0",
+    "m1n1-uboot-probe-hv.bin": "079e920a5db3aa6272b7828e4fa9c8259ff231a0a43ee3be4c55ab8cddf95cef",
+    "u-boot-nodtb.bin": "9392820fd3f5c5da33d73fdbe045225c8fb2d976721c450ba62e52ce443a1034",
+    "uboot.config": "73f815bb7c966cc0117a0da54ffb8be03956cf1dc37c8404e9178154a2afe094",
+    "bootcommand.txt": "dbc72544f14afe0b587fba1868016c9afa55c23650fb9fb4a2cb1af76c2e319b"
+  },
+  "patch_count": 8,
+  "cd321x": {
+    "bus": 0,
+    "address": "0x3f",
+    "snapshots_passed": 2,
+    "data_status": "0x16c00011",
+    "usb4": true,
+    "eudo": "0x2667e000"
+  },
+  "phy_tunables": {
+    "node": "/soc/phy@503000000",
+    "lengths_bytes": {
+      "apple,tunable-axi2af": 120,
+      "apple,tunable-common-b": 1092,
+      "apple,tunable-lane0-cio": 852,
+      "apple,tunable-lane1-cio": 852
+    },
+    "note": "fdt get size prints hexadecimal; lengths prove presence only, not validated offsets or hardware application"
+  },
+  "internal_nvme_sha256_passed": true,
+  "installed": false,
+  "thunderbolt_disk_read": false,
+  "reset_marker_seen": true,
+  "limitations": [
+    "No PHY configuration, ACIO/NHI startup or tunnel activation",
+    "No native GRUB/Linux handover test",
+    "Sequential CD321x snapshot is not atomic"
+  ]
+}

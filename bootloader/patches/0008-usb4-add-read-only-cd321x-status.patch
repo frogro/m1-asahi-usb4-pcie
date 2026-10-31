@@ -1,0 +1,400 @@
+diff --git a/cmd/Kconfig b/cmd/Kconfig
+index c71c682..21324ab 100644
+--- a/cmd/Kconfig
++++ b/cmd/Kconfig
+@@ -3230,3 +3230,10 @@ config CMD_SPAWN_NUM_JOBS
+ 	  spawn command.
+ 
+ endif
++
++config CMD_APPLE_CD321X
++	bool "cd321x read-only status command"
++	depends on CMDLINE && DM_I2C && APPLE_I2C
++	select APPLE_CD321X_STATUS
++	help
++	  Read status from an explicitly selected M1 Type-C controller.
+diff --git a/cmd/Makefile b/cmd/Makefile
+index bbbdfcc..4610242 100644
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -300,3 +300,5 @@ $(obj)/license_data_size.h: $(srctree)/Licenses/gpl-2.0.txt FORCE
+ 	$(call filechk,data_size)
+ 
+ CFLAGS_ethsw.o := -Wno-enum-conversion
++
++obj-$(CONFIG_CMD_APPLE_CD321X) += apple_cd321x.o
+diff --git a/cmd/apple_cd321x.c b/cmd/apple_cd321x.c
+new file mode 100644
+index 0000000..41c6515
+--- /dev/null
++++ b/cmd/apple_cd321x.c
+@@ -0,0 +1,51 @@
++// SPDX-License-Identifier: GPL-2.0-only
++#include <apple_cd321x.h>
++#include <command.h>
++#include <dm.h>
++#include <i2c.h>
++#include <linux/bitops.h>
++
++static int cd321x_read(void *ctx, u8 reg, u8 *buf, size_t size)
++{
++	return dm_i2c_read(ctx, reg, buf, size);
++}
++
++static int do_cd321x(struct cmd_tbl *cmdtp, int flag, int argc,
++		     char *const argv[])
++{
++	struct apple_cd321x_status s;
++	struct udevice *bus, *chip;
++	unsigned long busnum, addr;
++	int ret;
++
++	if (argc != 3 || strict_strtoul(argv[1], 10, &busnum) ||
++	    strict_strtoul(argv[2], 16, &addr) || busnum > 255 ||
++	    (addr != 0x38 && addr != 0x3f))
++		return CMD_RET_USAGE;
++	/* Explicit J274 controller selection; never scan unrelated I2C devices. */
++	ret = uclass_get_device_by_seq(UCLASS_I2C, busnum, &bus);
++	if (!ret)
++		ret = i2c_get_chip(bus, addr, 1, &chip);
++	if (!ret)
++		ret = i2c_set_chip_offset_len(chip, 1);
++	if (!ret)
++		ret = apple_cd321x_snapshot(cd321x_read, chip, &s);
++	if (ret) {
++		printf("CD321x status unavailable: %d\n", ret);
++		return CMD_RET_FAILURE;
++	}
++	printf("CD321x bus=%lu addr=%02lx status=%08x data=%08x\n",
++	       busnum, addr, s.status, s.data_status);
++	printf("USB4=%u TBT=%u USB3=%u orientation=%u active_cable=%u\n",
++	       !!(s.data_status & BIT(23)), !!(s.data_status & BIT(16)),
++	       !!(s.data_status & BIT(5)), !!(s.data_status & BIT(1)),
++	       !!(s.data_status & BIT(22)));
++	if (s.data_status & BIT(23))
++		printf("USB4 mode=%02x EUDO=%08x\n", s.usb4_mode, s.eudo);
++	puts("Status only: no PHY setup, tunnel or disk access performed.\n");
++	return CMD_RET_SUCCESS;
++}
++
++U_BOOT_CMD(cd321x, 3, 0, do_cd321x,
++	   "read selected M1 CD321x status without changing its mode",
++	   "<bus decimal> <chip hex: 38 or 3f>");
+diff --git a/include/apple_cd321x.h b/include/apple_cd321x.h
+new file mode 100644
+index 0000000..9c39bdb
+--- /dev/null
++++ b/include/apple_cd321x.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef __APPLE_CD321X_H
++#define __APPLE_CD321X_H
++#include <linux/types.h>
++
++struct apple_cd321x_status {
++	u32 status, data_status, eudo;
++	u8 usb4_mode;
++};
++
++/* Callback performs one complete register read, including its length byte. */
++typedef int (*apple_cd321x_read)(void *ctx, u8 reg, u8 *buf, size_t size);
++/* Read-only snapshot. Output is unchanged on any error; no automatic retries. */
++int apple_cd321x_snapshot(apple_cd321x_read read, void *ctx,
++			  struct apple_cd321x_status *status);
++#endif
+diff --git a/lib/Kconfig b/lib/Kconfig
+index 638710e..46cb7b1 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -1342,6 +1342,13 @@ config USB4_CFG_CODEC
+ 	  Thunderbolt boot support by itself. Intended for development only.
+ 	  Sandbox builds include independent wire-format and corruption tests.
+ 
++config APPLE_CD321X_STATUS
++	bool "Read-only Apple CD321x status decoder"
++	depends on ARCH_APPLE || SANDBOX
++	help
++	  Validate known M1 status register lengths and snapshot Type-C state.
++	  Does not change mode, initialize a PHY or create a USB4 tunnel.
++
+ endmenu
+ 
+ source "lib/fwu_updates/Kconfig"
+diff --git a/lib/Makefile b/lib/Makefile
+index 551312b..5481b00 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -182,3 +182,5 @@ clean-files     += oid_registry_data.c
+ subdir-ccflags-$(CONFIG_CC_OPTIMIZE_LIBS_FOR_SPEED) += -O2
+ 
+ obj-$(CONFIG_USB4_CFG_CODEC) += usb4_cfg.o
++
++obj-$(CONFIG_APPLE_CD321X_STATUS) += apple_cd321x.o
+diff --git a/lib/apple_cd321x.c b/lib/apple_cd321x.c
+new file mode 100644
+index 0000000..d69760a
+--- /dev/null
++++ b/lib/apple_cd321x.c
+@@ -0,0 +1,74 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Read-only CD321x status for boot-time Apple USB4 bring-up.
++ * Register definitions follow Linux drivers/usb/typec/tipd/tps6598x.h
++ * and core.c (TI and The Asahi Linux Contributors). No mode commands.
++ */
++#include <apple_cd321x.h>
++#include <linux/bitops.h>
++#include <linux/errno.h>
++#include <linux/string.h>
++#include <asm/unaligned.h>
++
++static int read_block(apple_cd321x_read read, void *ctx, u8 reg,
++		      u8 *data, size_t size)
++{
++	u8 buf[10];
++	int ret;
++
++	if (size + 1 > sizeof(buf))
++		return -EINVAL;
++	ret = read(ctx, reg, buf, size + 1);
++	if (ret)
++		return ret;
++	/* Unknown layouts must not become lane or cable configuration. */
++	if (buf[0] != size)
++		return -EPROTO;
++	memcpy(data, buf + 1, size);
++	return 0;
++}
++
++int apple_cd321x_snapshot(apple_cd321x_read read, void *ctx,
++			  struct apple_cd321x_status *status)
++{
++	struct apple_cd321x_status result = {};
++	u8 buf[9];
++	u8 first_data[5];
++	int ret;
++
++	if (!read || !status)
++		return -EINVAL;
++	ret = read_block(read, ctx, 0x00, buf, 4);
++	if (ret)
++		return ret;
++	if (get_unaligned_le32(buf) != 0x28)
++		return -ENODEV;
++	ret = read_block(read, ctx, 0x03, buf, 4);
++	if (ret)
++		return ret;
++	if (memcmp(buf, "APP ", 4))
++		return -EAGAIN;
++	ret = read_block(read, ctx, 0x1a, buf, 4);
++	if (ret)
++		return ret;
++	result.status = get_unaligned_le32(buf);
++	ret = read_block(read, ctx, 0x5f, first_data, 5);
++	if (ret)
++		return ret;
++	result.data_status = get_unaligned_le32(first_data);
++	if (result.data_status & BIT(23)) {
++		ret = read_block(read, ctx, 0x24, buf, 9);
++		if (ret)
++			return ret;
++		result.usb4_mode = buf[0];
++		result.eudo = get_unaligned_le32(buf + 1);
++	}
++	ret = read_block(read, ctx, 0x5f, buf, 5);
++	if (ret)
++		return ret;
++	if (memcmp(first_data, buf, 5))
++		return -EAGAIN;
++	/* Sequential samples, not an atomic guarantee against cable changes. */
++	*status = result;
++	return 0;
++}
+diff --git a/test/dm/Makefile b/test/dm/Makefile
+index ca8f1d1..f689ca3 100644
+--- a/test/dm/Makefile
++++ b/test/dm/Makefile
+@@ -142,4 +142,5 @@ endif
+ endif
+ obj-$(CONFIG_APPLE_MBOX) += apple_mbox.o
+ obj-$(CONFIG_USB4_CFG_CODEC) += usb4_cfg.o
++obj-$(CONFIG_APPLE_CD321X_STATUS) += apple_cd321x.o
+ endif # !SPL
+diff --git a/test/dm/apple_cd321x.c b/test/dm/apple_cd321x.c
+new file mode 100644
+index 0000000..50dfe86
+--- /dev/null
++++ b/test/dm/apple_cd321x.c
+@@ -0,0 +1,172 @@
++// SPDX-License-Identifier: GPL-2.0-only
++#include <apple_cd321x.h>
++#include <command.h>
++#include <dm.h>
++#include <dm/test.h>
++#include <test/test.h>
++#include <test/ut.h>
++
++struct status_fake {
++	bool usb4, wrong_vendor, wrong_mode, changed;
++	int calls, fault_call, transport;
++	u8 bad_length;
++};
++
++/* Independent byte vectors from the two real M1 UART recordings. */
++static int status_read(void *ctx, u8 reg, u8 *buf, size_t size)
++{
++	struct status_fake *f = ctx;
++	static const u8 vid[] = { 4, 0x28, 0, 0, 0 };
++	static const u8 mode[] = { 4, 'A', 'P', 'P', ' ' };
++	static const u8 usb_status[] = { 4, 0xfd, 0x48, 2, 0x10 };
++	static const u8 owc_status[] = { 4, 0xef, 0x80, 0x82, 0x10 };
++	static const u8 usb_data[] = { 5, 0x73, 0, 0, 0, 0 };
++	static const u8 owc_data[] = { 5, 0x11, 0, 0xc0, 0x16, 0 };
++	static const u8 usb4[] = { 9, 7, 0, 0xe0, 0x67, 0x26, 0, 0, 0, 0 };
++	const u8 *data;
++	size_t len;
++
++	f->calls++;
++	if (f->calls == f->fault_call && f->transport)
++		return f->transport;
++	switch (reg) {
++	case 0:
++		data = vid;
++		len = sizeof(vid);
++		break;
++	case 3:
++		data = mode;
++		len = sizeof(mode);
++		break;
++	case 0x1a:
++		data = f->usb4 ? owc_status : usb_status;
++		len = sizeof(usb_status);
++		break;
++	case 0x5f:
++		data = f->usb4 ? owc_data : usb_data;
++		len = sizeof(usb_data);
++		break;
++	case 0x24:
++		data = usb4;
++		len = sizeof(usb4);
++		break;
++	default:
++		return -EINVAL;
++	}
++	if (size != len)
++		return -EINVAL;
++	memcpy(buf, data, size);
++	if (f->wrong_vendor && !reg)
++		buf[1] = 0;
++	if (f->wrong_mode && reg == 3)
++		buf[1] = 'B';
++	if (f->changed && reg == 0x5f && f->calls > 4)
++		buf[1] ^= 2;
++	if (f->calls == f->fault_call)
++		buf[0] = f->bad_length;
++	return 0;
++}
++
++static int dm_test_cd321x_vectors(struct unit_test_state *uts)
++{
++	struct status_fake f = {};
++	struct apple_cd321x_status s;
++
++	ut_assertok(apple_cd321x_snapshot(status_read, &f, &s));
++	ut_asserteq(5, f.calls);
++	ut_asserteq(0x100248fd, s.status);
++	ut_asserteq(0x73, s.data_status);
++	ut_asserteq(0, s.eudo);
++	ut_asserteq(0, s.usb4_mode);
++	f = (struct status_fake){ .usb4 = true };
++	ut_assertok(apple_cd321x_snapshot(status_read, &f, &s));
++	ut_asserteq(6, f.calls);
++	ut_asserteq(0x108280ef, s.status);
++	ut_asserteq(0x16c00011, s.data_status);
++	ut_asserteq(0x2667e000, s.eudo);
++	ut_asserteq(7, s.usb4_mode);
++	return 0;
++}
++
++DM_TEST(dm_test_cd321x_vectors, 0);
++
++static int dm_test_cd321x_lengths(struct unit_test_state *uts)
++{
++	struct apple_cd321x_status s, expected;
++	struct status_fake f;
++	int call, i;
++	u8 lengths[] = { 0, 1, 63, 255 };
++
++	memset(&expected, 0xa5, sizeof(expected));
++	for (call = 1; call <= 6; call++) {
++		for (i = 0; i < ARRAY_SIZE(lengths); i++) {
++			f = (struct status_fake){ .usb4 = true,
++				.fault_call = call, .bad_length = lengths[i] };
++			s = expected;
++			ut_asserteq(-EPROTO, apple_cd321x_snapshot(status_read, &f, &s));
++			ut_asserteq(call, f.calls);
++			ut_assertok(memcmp(&s, &expected, sizeof(s)));
++		}
++	}
++	return 0;
++}
++
++DM_TEST(dm_test_cd321x_lengths, 0);
++
++static int dm_test_cd321x_transport(struct unit_test_state *uts)
++{
++	struct apple_cd321x_status s, expected;
++	struct status_fake f;
++	int call;
++
++	memset(&expected, 0xa5, sizeof(expected));
++	for (call = 1; call <= 6; call++) {
++		f = (struct status_fake){ .usb4 = true,
++			.fault_call = call, .transport = -ETIMEDOUT };
++		s = expected;
++		ut_asserteq(-ETIMEDOUT, apple_cd321x_snapshot(status_read, &f, &s));
++		ut_asserteq(call, f.calls);
++		ut_assertok(memcmp(&s, &expected, sizeof(s)));
++	}
++	return 0;
++}
++
++DM_TEST(dm_test_cd321x_transport, 0);
++
++static int dm_test_cd321x_state(struct unit_test_state *uts)
++{
++	struct apple_cd321x_status s, expected;
++	struct status_fake f;
++	int i;
++
++	memset(&expected, 0xa5, sizeof(expected));
++	for (i = 0; i < 3; i++) {
++		f = (struct status_fake){ .usb4 = true,
++			.wrong_vendor = i == 0, .wrong_mode = i == 1,
++			.changed = i == 2 };
++		s = expected;
++		ut_asserteq(i ? -EAGAIN : -ENODEV,
++			    apple_cd321x_snapshot(status_read, &f, &s));
++		ut_assertok(memcmp(&s, &expected, sizeof(s)));
++	}
++	ut_asserteq(-EINVAL, apple_cd321x_snapshot(NULL, &f, &s));
++	ut_asserteq(-EINVAL, apple_cd321x_snapshot(status_read, &f, NULL));
++	return 0;
++}
++
++DM_TEST(dm_test_cd321x_state, 0);
++
++#if CONFIG_IS_ENABLED(CMD_APPLE_CD321X)
++static int dm_test_cd321x_command_args(struct unit_test_state *uts)
++{
++	/* Bad input is rejected before bus discovery or I2C transfers. */
++	ut_asserteq(1, run_command("cd321x", 0));
++	ut_asserteq(1, run_command("cd321x 256 3f", 0));
++	ut_asserteq(1, run_command("cd321x 0 50", 0));
++	ut_asserteq(1, run_command("cd321x 0 3fz", 0));
++	ut_asserteq(1, run_command("cd321x bogus 3f", 0));
++	return 0;
++}
++
++DM_TEST(dm_test_cd321x_command_args, 0);
++#endif

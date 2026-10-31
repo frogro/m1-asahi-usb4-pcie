@@ -178,3 +178,26 @@ bundle remained unchanged and internal Ubuntu returned after each reset.
 The broad `hardware_tested: false` manifest flag means the complete prototype
 feature set is not hardware-validated; `hardware_tested_scope` identifies the
 specific storage and Type-C checks that have passed.
+
+### Structured CD321x status query (development)
+
+The eighth patch provides `cd321x <bus-decimal> <chip-hex>` for explicit M1
+controller addresses `38` and `3f`. It performs register reads only: no bus scan,
+4CC reset, mode change or tunnel activation. It requires the observed Apple
+vendor ID, APP firmware mode and exact known register lengths. A second data
+status read detects a change during the sample; failure leaves the caller's
+result unchanged. Sequential sampling is not an atomic guarantee against a
+cable change immediately afterwards.
+
+Five tests use the real SanDisk and OWC byte vectors and inject wrong lengths,
+transport timeouts, incorrect identity/mode, changing status and bad command
+arguments. Unknown firmware layouts are rejected; this initial decoder is not
+claimed to support every CD321x revision. Neither this command nor the I2C
+patch changes the installed kernel or its excluded ACK-timeout handling.
+
+The structured command also passed twice on the real M1 with the OWC attached:
+[probe 4 evidence](validation/m1-typec-probe4-20261031.json). m1n1 supplied the
+AXI2AF, common and both CIO-lane calibration properties (120, 1092, 852 and
+852 bytes respectively). These are presence/length observations, not proof
+that U-Boot has applied or validated the full calibration arrays. The internal
+NVMe hash passed again and the guest executed its reset command.

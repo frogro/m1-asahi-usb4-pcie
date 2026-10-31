@@ -53,4 +53,4 @@ Test: pci_region_multi: pci.c
 Test: pci_region_multi: pci.c (flat tree)
 Test: pci_swapcase: pci.c
 Test: pci_swapcase: pci.c (flat tree)
-Tests run: 14, 105 ms, average: 7 ms, failures: 0
+Tests run: 14, 125 ms, average: 8 ms, failures: 0

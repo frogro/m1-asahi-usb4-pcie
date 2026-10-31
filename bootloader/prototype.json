@@ -32,6 +32,10 @@
     {
       "file": "patches/0007-i2c-apple-add-bounded-polled-transfers.patch",
       "sha256": "af8445c8f8b7c07d1e434587e057fac29d2df39ac3a9d836dd6108005ace92cc"
+    },
+    {
+      "file": "patches/0008-usb4-add-read-only-cd321x-status.patch",
+      "sha256": "71733d214d62deb61165fb97a1250a525af58b5dc9d0439f1d8a129dfcade96e"
     }
   ],
   "linux_hardware_reference": {

@@ -41,4 +41,4 @@ Test: apple_dart_usb4: apple_dart.c
 Test: apple_dart_usb4: apple_dart.c (flat tree)
 Test: apple_dart_usb4_no_bypass: apple_dart.c
 Test: apple_dart_usb4_no_bypass: apple_dart.c (flat tree)
-Tests run: 7, 54 ms, average: 7 ms, failures: 0
+Tests run: 7, 57 ms, average: 8 ms, failures: 0

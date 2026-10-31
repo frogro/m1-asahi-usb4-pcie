@@ -33,6 +33,10 @@
       {
         "file": "patches/0007-i2c-apple-add-bounded-polled-transfers.patch",
         "sha256": "af8445c8f8b7c07d1e434587e057fac29d2df39ac3a9d836dd6108005ace92cc"
+      },
+      {
+        "file": "patches/0008-usb4-add-read-only-cd321x-status.patch",
+        "sha256": "71733d214d62deb61165fb97a1250a525af58b5dc9d0439f1d8a129dfcade96e"
       }
     ],
     "linux_hardware_reference": {
@@ -80,6 +84,11 @@
       "tests": 6,
       "failures": 0,
       "live_and_flat_tree": false
+    },
+    "cd321x": {
+      "tests": 5,
+      "failures": 0,
+      "live_and_flat_tree": false
     }
   },
   "commands": [
@@ -91,7 +100,7 @@
         "worktree",
         "add",
         "--detach",
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/source",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/source",
         "b33034a515a068381c4aa28831fb709e91300cd1"
       ],
       "log": "worktree.log"
@@ -218,6 +227,23 @@
     {
       "argv": [
         "git",
+        "apply",
+        "--check",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0008-usb4-add-read-only-cd321x-status.patch"
+      ],
+      "log": "patch-8-check.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0008-usb4-add-read-only-cd321x-status.patch"
+      ],
+      "log": "patch-8-apply.log"
+    },
+    {
+      "argv": [
+        "git",
         "diff",
         "--check"
       ],
@@ -226,16 +252,16 @@
     {
       "argv": [
         "make",
-        "O=/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox",
+        "O=/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox",
         "sandbox_defconfig"
       ],
       "log": "sandbox-config.log"
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/source/scripts/config",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/source/scripts/config",
         "--file",
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox/.config",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/.config",
         "-e",
         "APPLE_DART",
         "-e",
@@ -243,14 +269,16 @@
         "-e",
         "USB4_CFG_CODEC",
         "-e",
-        "APPLE_I2C"
+        "APPLE_I2C",
+        "-e",
+        "CMD_APPLE_CD321X"
       ],
       "log": "sandbox-enable.log"
     },
     {
       "argv": [
         "make",
-        "O=/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox",
+        "O=/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox",
         "olddefconfig"
       ],
       "log": "sandbox-olddefconfig.log"
@@ -258,14 +286,14 @@
     {
       "argv": [
         "make",
-        "O=/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox",
+        "O=/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox",
         "-j4"
       ],
       "log": "sandbox-build.log"
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox/u-boot",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/u-boot",
         "-T",
         "-c",
         "ut dm apple_dart*"
@@ -274,7 +302,7 @@
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox/u-boot",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/u-boot",
         "-T",
         "-c",
         "ut dm iommu*"
@@ -283,7 +311,7 @@
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox/u-boot",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/u-boot",
         "-T",
         "-c",
         "ut dm pci*"
@@ -292,7 +320,7 @@
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox/u-boot",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/u-boot",
         "-T",
         "-c",
         "ut dm apple_mbox*"
@@ -301,7 +329,7 @@
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox/u-boot",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/u-boot",
         "-T",
         "-c",
         "ut dm usb4_cfg*"
@@ -310,7 +338,7 @@
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/sandbox/u-boot",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/u-boot",
         "-T",
         "-c",
         "ut dm apple_i2c*"
@@ -319,8 +347,17 @@
     },
     {
       "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/sandbox/u-boot",
+        "-T",
+        "-c",
+        "ut dm cd321x*"
+      ],
+      "log": "test-cd321x.log"
+    },
+    {
+      "argv": [
         "make",
-        "O=/tmp/asahi-universal-boot-20261031/repro-seven-i2c/apple",
+        "O=/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/apple",
         "CROSS_COMPILE=aarch64-linux-gnu-",
         "apple_m1_defconfig"
       ],
@@ -328,9 +365,9 @@
     },
     {
       "argv": [
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/source/scripts/config",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/source/scripts/config",
         "--file",
-        "/tmp/asahi-universal-boot-20261031/repro-seven-i2c/apple/.config",
+        "/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/apple/.config",
         "-e",
         "NVME_PCI",
         "-e",
@@ -343,6 +380,8 @@
         "APPLE_I2C",
         "-e",
         "CMD_I2C",
+        "-e",
+        "CMD_APPLE_CD321X",
         "--set-val",
         "BOOTDELAY",
         "10"
@@ -352,7 +391,7 @@
     {
       "argv": [
         "make",
-        "O=/tmp/asahi-universal-boot-20261031/repro-seven-i2c/apple",
+        "O=/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/apple",
         "CROSS_COMPILE=aarch64-linux-gnu-",
         "olddefconfig"
       ],
@@ -361,7 +400,7 @@
     {
       "argv": [
         "make",
-        "O=/tmp/asahi-universal-boot-20261031/repro-seven-i2c/apple",
+        "O=/tmp/asahi-universal-boot-20261031/repro-eight-cd321x/apple",
         "CROSS_COMPILE=aarch64-linux-gnu-",
         "-j4"
       ],
@@ -372,7 +411,7 @@
   "hardware_validated": false,
   "thunderbolt_boot_implemented": false,
   "source_date_epoch": "1786361677",
-  "apple_image_sha256": "3a29c65bee60c81eb94c4e5a48173482b1e08943492e7c14b464202ddd847cbe",
-  "apple_config_sha256": "0e0019839dc3962049ce4e58a2b4868a8a52e92224d870e503cdfc5824ed7fb1",
+  "apple_image_sha256": "5046bf82b7825a7f16f95908410503511c8c327c7afe939bb28e9089d85b12d5",
+  "apple_config_sha256": "6a160266b4785f0443ed2a840c0dc5f9f241a01ef35da027c23785c4e49b94e9",
   "status": "software-validation-passed"
 }

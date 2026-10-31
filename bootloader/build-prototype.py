@@ -65,11 +65,11 @@ def main():
     print("Build sandbox and execute DART, IOMMU, PCI, mailbox, USB4 packet and I2C tests", flush=True)
     sandbox = out / "sandbox"
     run(["make", f"O={sandbox}", "sandbox_defconfig"], "sandbox-config.log")
-    run([work / "scripts/config", "--file", sandbox / ".config", "-e", "APPLE_DART", "-e", "APPLE_MBOX", "-e", "USB4_CFG_CODEC", "-e", "APPLE_I2C"], "sandbox-enable.log")
+    run([work / "scripts/config", "--file", sandbox / ".config", "-e", "APPLE_DART", "-e", "APPLE_MBOX", "-e", "USB4_CFG_CODEC", "-e", "APPLE_I2C", "-e", "CMD_APPLE_CD321X"], "sandbox-enable.log")
     run(["make", f"O={sandbox}", "olddefconfig"], "sandbox-olddefconfig.log")
     run(["make", f"O={sandbox}", f"-j{args.jobs}"], "sandbox-build.log")
     tests = {}
-    for pattern, expected in [("apple_dart*", 7), ("iommu*", 8), ("pci*", 14), ("apple_mbox*", 2), ("usb4_cfg*", 6), ("apple_i2c*", 6)]:
+    for pattern, expected in [("apple_dart*", 7), ("iommu*", 8), ("pci*", 14), ("apple_mbox*", 2), ("usb4_cfg*", 6), ("apple_i2c*", 6), ("cd321x*", 5)]:
         name = pattern.rstrip("*")
         log = f"test-{name}.log"
         run([sandbox / "u-boot", "-T", "-c", f"ut dm {pattern}"], log, sandbox, 60)
@@ -77,19 +77,19 @@ def main():
         match = re.search(r"Tests run: (\d+),.*failures: (\d+)", text)
         if not match or tuple(map(int, match.groups())) != (expected, 0):
             raise SystemExit(f"Unexpected test result: {log}")
-        tests[name] = {"tests": expected, "failures": 0, "live_and_flat_tree": name not in ("usb4_cfg", "apple_i2c")}
+        tests[name] = {"tests": expected, "failures": 0, "live_and_flat_tree": name not in ("usb4_cfg", "apple_i2c", "cd321x")}
 
     print("Cross-build Apple M1 profile; preserve internal NVMe and USB", flush=True)
     apple = out / "apple"
     base = ["make", f"O={apple}", f"CROSS_COMPILE={cross}"]
     run(base + ["apple_m1_defconfig"], "apple-config.log")
     run([work / "scripts/config", "--file", apple / ".config", "-e", "NVME_PCI",
-         "-e", "CMD_BOOTMENU", "-e", "USB4_CFG_CODEC", "-e", "DM_I2C", "-e", "APPLE_I2C", "-e", "CMD_I2C", "--set-val", "BOOTDELAY", "10"], "apple-enable.log")
+         "-e", "CMD_BOOTMENU", "-e", "USB4_CFG_CODEC", "-e", "DM_I2C", "-e", "APPLE_I2C", "-e", "CMD_I2C", "-e", "CMD_APPLE_CD321X", "--set-val", "BOOTDELAY", "10"], "apple-enable.log")
     run(base + ["olddefconfig"], "apple-olddefconfig.log")
     config = set((apple / ".config").read_text().splitlines())
     required = ["NVME", "NVME_APPLE", "NVME_PCI", "PCIE_APPLE", "APPLE_DART",
                 "USB", "USB_STORAGE", "USB_XHCI_DWC3", "CMD_NVME", "CMD_BOOTMENU",
-                "BOOTMETH_EFILOADER", "APPLE_MBOX", "USB4_CFG_CODEC", "DM_I2C", "APPLE_I2C", "CMD_I2C"]
+                "BOOTMETH_EFILOADER", "APPLE_MBOX", "USB4_CFG_CODEC", "DM_I2C", "APPLE_I2C", "CMD_I2C", "CMD_APPLE_CD321X", "APPLE_CD321X_STATUS"]
     if any(f"CONFIG_{key}=y" not in config for key in required):
         raise SystemExit("Required boot functionality missing")
     if "boot_targets=nvme usb" not in (work / "board/apple/mac/mac.env").read_text().splitlines():

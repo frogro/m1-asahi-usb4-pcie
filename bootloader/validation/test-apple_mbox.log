@@ -31,4 +31,4 @@ Test: apple_mbox_full: apple_mbox.c
 Test: apple_mbox_full: apple_mbox.c (flat tree)
 Test: apple_mbox_send: apple_mbox.c
 Test: apple_mbox_send: apple_mbox.c (flat tree)
-Tests run: 2, 2016 ms, average: 1008 ms, failures: 0
+Tests run: 2, 2019 ms, average: 1009 ms, failures: 0

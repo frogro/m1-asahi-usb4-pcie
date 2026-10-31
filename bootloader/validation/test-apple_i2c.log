@@ -33,4 +33,4 @@ Test: apple_i2c_read: apple_i2c.c
 Test: apple_i2c_reject: apple_i2c.c
 Test: apple_i2c_timeout: apple_i2c.c
 Test: apple_i2c_write_and_max_read: apple_i2c.c
-Tests run: 6, 201 ms, average: 33 ms, failures: 0
+Tests run: 6, 203 ms, average: 33 ms, failures: 0

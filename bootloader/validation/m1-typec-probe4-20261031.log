@@ -1,0 +1,43 @@
+U-Boot 2026.07-gb33034a515a0-dirty (Oct 31 2026 - 15:31:22 +0100)
+
+Model: Apple Mac mini (M1, 2020)
+DRAM:  15.2 GiB
+Core:  179 devices, 21 uclasses, devicetree: board
+WDT:   Started watchdog@23d2b0000 with servicing every 1000ms (60s timeout)
+Loading Environment from nowhere... OK
+In:    serial,usbkbd,spikbid,mtpkbd
+Out:   vidconsole,serial
+Err:   vidconsole,serial
+Model: Apple Mac mini (M1, 2020)
+
+starting USB...
+USB XHCI 1.10
+USB XHCI 1.00
+Bus usb@502280000: 1 USB Device(s) found
+Bus xhci_pci: 2 USB Device(s) found
+       scanning usb for storage devices... 0 Storage Device(s) found
+
+Hit any key to stop autoboot: 0
+UBOOT-PROBE4 STRUCTURED-TYPEC-READ-ONLY
+CD321x bus=0 addr=3f status=108280ef data=16c00011
+USB4=1 TBT=0 USB3=0 orientation=0 active_cable=1
+USB4 mode=07 EUDO=2667e000
+Status only: no PHY setup, tunnel or disk access performed.
+CD321X-SNAPSHOT-1 PASS
+CD321x bus=0 addr=3f status=108280ef data=16c00011
+USB4=1 TBT=0 USB3=0 orientation=0 active_cable=1
+USB4 mode=07 EUDO=2667e000
+Status only: no PHY setup, tunnel or disk access performed.
+CD321X-SNAPSHOT-2 PASS
+Working FDT set to bdce327d0
+PHY-PROPERTY apple,tunable-axi2af SIZE 78
+PHY-PROPERTY apple,tunable-common-b SIZE 444
+PHY-PROPERTY apple,tunable-lane0-cio SIZE 354
+PHY-PROPERTY apple,tunable-lane1-cio SIZE 354
+373831 bytes read in 1 ms (356.5 MiB/s)
+sha256 for b9be00000 ... b9be5b446 ==> ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9
+INTERNAL-NVME-SHA256 PASS
+OWC-DISK-NOT-ACCESSED
+NO-THUNDERBOLT-TUNNEL-TEST
+RESET-IN-10-SECONDS
+resetting ...
