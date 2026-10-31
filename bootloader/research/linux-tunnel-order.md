@@ -141,3 +141,27 @@ to the m1n1 probe contains none of these before runtime export; that difference
 must not be reported as missing runtime calibration, because earlier probes
 explicitly verified the runtime-exported tunables. A byte comparison requires
 capturing the final runtime DTB, not comparing only these two input files.
+
+### Successful live reference after physical OWC reconnect
+
+The user subsequently confirmed physically reconnecting the OWC. In the same
+saved egpu2 boot, USB4 transition occurred at monotonic 365.216 s, both lanes
+reached CL0 at 365.689 s, the remote router was identified at 365.702 s,
+tunnel paths became active at 366.352 s and PCIe link-up followed at 366.353 s.
+NVMe I/O queues were ready at 366.510 s. The native host bound without the
+helper issuing its manual `drivers_probe` operation. The helper's earlier
+authorization write returned EINVAL; later sysfs reported authorized=1.
+Do not describe that failed helper command as the successful recovery.
+
+The live link reported two lanes at 20 Gbit/s per lane in each direction.
+The Crucial CT4000P310SSD8 appeared through ASMedia PCIe bridges. A direct
+64 MiB read completed successfully; its newly recorded SHA-256 is
+`aa2d018770bac11609b35427f57593fc8c80ba1ab315cf2563f9cae8b9a150da`.
+This was not a comparison against a previously known checksum. No external
+filesystem was mounted and no SSD writes were issued by the test.
+
+Captured locally: 24 router/adapter/path/DROM debug files, the Thunderbolt
+packet-event trace, complete monotonic kernel journal, live DTB and kernel
+configuration. These give an actual working reference for later tunnel
+implementation; U-Boot still has not reached the external router. The raw
+captures are retained locally because they include hardware identifiers.
