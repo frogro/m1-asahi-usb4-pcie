@@ -1,0 +1,201 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "8acf2e0db9bbeecc4154d49bba79ebcf9242825bfcd74f2c90d0ba33e9a61926",
+  "records": [
+    {
+      "ms": 22006,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 22008,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 22095,
+      "delta": 89,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 22117,
+      "delta": 111,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 22122,
+      "delta": 116,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 22125,
+      "delta": 119,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 22128,
+      "delta": 122,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 22137,
+      "delta": 131,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 22140,
+      "delta": 134,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 22153,
+      "delta": 147,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 22157,
+      "delta": 151,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 22218,
+      "delta": 212,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 22218,
+      "delta": 212,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 22221,
+      "delta": 215,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 22225,
+      "delta": 219,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 22228,
+      "delta": 222,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 22235,
+      "delta": 229,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22238,
+      "delta": 232,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22372,
+      "delta": 366,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 22375,
+      "delta": 369,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 22379,
+      "delta": 373,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22382,
+      "delta": 376,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22382,
+      "delta": 376,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 22385,
+      "delta": 379,
+      "event": "dwc3-host-begin"
+    },
+    {
+      "ms": 22395,
+      "delta": 389,
+      "event": "dwc3-host-return"
+    },
+    {
+      "ms": 22445,
+      "delta": 439,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 22457,
+      "delta": 451,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 22463,
+      "delta": 457,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 27532,
+      "delta": 5526,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 27545,
+      "delta": 5539,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 27545,
+      "delta": 5539,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 117,
+    "m3_start_to_firmware_state_return": 15,
+    "firmware_state_to_rings": 88,
+    "rings_to_cable_submit": 147,
+    "cable_submit_to_link_return": 5157
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 34,
+  "base_probe": 33,
+  "mode": "TBT",
+  "orientation": 1,
+  "cd321x_length_correction_verified": true,
+  "phy_check_pass": true,
+  "late_pipe_return": 0,
+  "dwc3_host_return": 0,
+  "cable_info": "0x413",
+  "lane_states": [
+    7
+  ],
+  "control_sent": 61,
+  "control_received": 61,
+  "return_errno": -110,
+  "dart_status_raw": "0xd020000",
+  "dart_error_valid": false,
+  "internal_nvme_before_after": true,
+  "ubuntu_return_verified": true,
+  "external_disk_accessed": false,
+  "external_pcie_tunnel_built": false,
+  "ram_only": true,
+  "installed_boot_changes": false,
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "installed_boot_bundle_unchanged": true,
+  "grub_next_entry_empty": true
+}

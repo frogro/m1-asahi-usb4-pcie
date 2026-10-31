@@ -52,4 +52,32 @@ Probe34 preparation: M1 build and all 63 sandbox tests pass, including the
 measured TB3 vector and every possible length byte at each Intel status read.
 Changed data and invalid-length output preservation remain checked. The
 isolated two-file delta reconstructs exactly; the U-Boot configuration is
-unchanged. Hardware validation is pending.
+unchanged. Hardware Probe34 now confirms the corrected TB3 status reader.
+
+
+## Hardware comparison result
+
+Probe34 accepts TB3 status and programs cable info 0x413 (TB3, present,
+20-Gb/s cable, reversed orientation). PHY preflight, ACIO firmware startup,
+DART/NHI setup, host inventory, lane unlock, DWC3 host setup and late PIPE
+all succeed. All 61 control requests receive responses. The five-second
+observation still sees only Phase2 and both lanes at state 7; there is no
+Phase3/Connected message or external-router read. Final status is -ETIMEDOUT.
+Internal NVMe control hashes match; mandatory reset is recorded.
+
+This reproduces the earlier OWC USB4 stopping point with the Yottamaster TB3
+path. It argues against an OWC-only or USB4-only explanation, but does not
+prove a single common cause. The two runs also differ in physical cable and
+orientation. The exact Phase2 cause remains open. Neither run establishes a
+PCIe tunnel, external SSD I/O or external Thunderbolt boot.
+
+Next source-level comparison should target shared host/PHY activation and
+Linux ordering, including what is absent while xHCI remains halted. Starting
+RUN on removed/freed xHCI rings is not a valid experiment; any full host-start
+comparison needs proper controller registration and valid DMA ownership.
+
+Ubuntu 7.2.0-1001-asahi-arm returned automatically and is reachable over SSH.
+The installed boot bundle SHA-256 is unchanged and GRUB next_entry is empty.
+The 61 transactions include repeated lane-status polls, not 61 boot stages.
+After ten unsuccessful polling rounds the diagnostic returns -ETIMEDOUT;
+it does not issue the external-router read while the link is unavailable.
