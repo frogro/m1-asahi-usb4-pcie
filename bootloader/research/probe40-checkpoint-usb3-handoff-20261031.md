@@ -2,6 +2,10 @@
 
 Recorded 2026-10-31. No new hardware probe is armed by this document.
 
+Follow-up: [USB3 policy audit and OWC deauthorization experiment](usb3-policy-audit-20261031.md).
+The OWC is now back on the USB4 cable and authorized; removing PCIe
+authorization did not trigger native USB3 fallback during the bounded test.
+
 ## Probe40 checkpoint
 
 Result and payload are preserved in commit b4217dc and the preceding

@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-31",
+  "kernel": "7.2.12-usb4sd4-egpu2",
+  "target": "OWC Express 1M2 / CT4000P310SSD8",
+  "transport_before": "USB4 PCIe NVMe",
+  "operation": "authorized=0 for 20 seconds, then authorized=1",
+  "samples": 5,
+  "authorization_zero_all_samples": true,
+  "router_present_all_samples": true,
+  "external_storage_absent_all_samples": true,
+  "usb_mass_storage_present_any_sample": false,
+  "authorization_restored": true,
+  "post_read_bytes": 67108864,
+  "post_read_sha256": "aa2d018770bac11609b35427f57593fc8c80ba1ab315cf2563f9cae8b9a150da",
+  "post_read_matches_previous": true,
+  "result": "No USB3 fallback observed after deauthorization; NVMe restored after reauthorization",
+  "limits": [
+    "Already-connected device; no initial-unauthorized attachment test",
+    "20-second observation",
+    "One enclosure and firmware configuration",
+    "Does not implement preboot mode policy"
+  ]
+}
