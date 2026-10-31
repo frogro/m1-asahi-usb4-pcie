@@ -6,13 +6,13 @@ A [fresh external Ubuntu Asahi installer](installer/README.md) is prepared for a
 
 An additional [internal-system kernel update candidate](installer/README.md#vorhandenes-internes-system-zusätzlichen-kernel-vorbereiten) preserves user settings and existing kernels, with an explicit older-version guard. An internal Ubuntu installation and first boot passed on 31 October; initial PCIe probe and subsequent AMD PSP errors remain open, and Fedora hardware validation is pending. Source provenance and the limits of the clean-room assessment are documented in the [31 October review](docs/provenance-review-20261031.md); this is an independent AI-assisted experimental project.
 
-Current base revision: **29 patches / usb4sd3**. An optional **43-patch / usb4sd4-egpu2** candidate appends the tested eGPU diagnostic sources through Test179; see [scope and remaining limits](consolidated/egpu179/README.md). Select `include_egpu=true` for that build. The 29 base patches and previous builds remain preserved. Full combined-kernel hardware validation is pending; reset-ACK classification changes remain excluded.
+Current base revision: **29 patches / usb4sd3**. An optional **45-patch / usb4sd4-egpu3** candidate appends the tested eGPU diagnostic sources through Test179 and the Test191 initialization corrections; see [scope and remaining limits](consolidated/egpu179/README.md). Select `include_egpu=true` for that build. The 29 base patches and previous builds remain preserved. Full combined-kernel hardware validation is pending; reset-ACK classification changes remain excluded.
 
 ## Apple Silicon USB4 / Thunderbolt PCIe bring-up
 
 ## Consolidated full-kernel build (30 October 2026)
 
-The current build-only integration is documented in [build/README.md](build/README.md). It combines 29 storage, PCIe/USB4, dock-display/audio and retained-power suspend patches on UbuntuAsahi commit `f7734f4c91c0f47d9e762786968057bec99a0788`, using the running Ubuntu kernel configuration. The optional eGPU extension adds 14 patches with separate provenance and source hashes. The older prototype below is retained as historical evidence.
+The current build-only integration is documented in [build/README.md](build/README.md). It combines 29 storage, PCIe/USB4, dock-display/audio and retained-power suspend patches on UbuntuAsahi commit `f7734f4c91c0f47d9e762786968057bec99a0788`, using the running Ubuntu kernel configuration. The optional eGPU extension adds 16 patches with separate provenance and source hashes. The older prototype below is retained as historical evidence.
 
 Development snapshot for Mac mini M1 (J274), Ubuntu Asahi, and subsequent Googlebook integration.
 

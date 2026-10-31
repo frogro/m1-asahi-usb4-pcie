@@ -1,0 +1,172 @@
+From a19a60a88a8eb250fd824cd614a86ead842f8a30 Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Sat, 31 Oct 2026 11:54:09 +0100
+Subject: [PATCH] thunderbolt: apple: retry an unbound PCIe host after tunnel
+ activation
+
+A regular internal Ubuntu boot starts the native PCIe host before boltd.
+The measured host reset-release wait failed at 7.06 seconds, while dock
+and Razer authorization completed only at 12.53 seconds. The existing
+active notification ignores an unbound host, so it never recovers until
+a manual drivers_probe write. An external-root initramfs had hidden this
+ordering gap by performing its own authorization and host reprobe.
+
+Queue a bounded device_attach attempt after a root PCIe tunnel activation.
+Use the existing DT association, rather than an enclosure UUID or a fixed
+host address. Run outside the Thunderbolt domain mutex, and let driver
+core serialize attachment against an existing probe. Queue once after
+child population to cover an authorization event that raced population.
+There is no periodic polling and no change to authorization policy.
+
+Protect queue admission against teardown. Disable admission and cancel
+the worker before child depopulation and power-off; drop the ACIO mutex
+while draining the worker. Handle the start-error path the same way. Use
+the freezable workqueue so retries do not initiate during system sleep.
+
+Validation: both changed native objects compile with the release config.
+The measured late manual reprobe enumerated the complete Radeon subtree.
+Cold boot, late authorization, disconnect races and suspend with this
+new automatic worker remain hardware validation requirements.
+
+Assisted-by: Codex:GPT-6
+---
+ drivers/thunderbolt/apple.c | 70 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
+
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index 09969ffec..5f91f2ad6 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -89,6 +89,8 @@
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+ #include <linux/pci-apple.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/reset.h>
+@@ -169,6 +171,9 @@ struct apple_cio {
+ 	struct device *dev;
+ 	struct device_node *np;
+ 	struct device_node *pcie_tunnel_np;
++	struct work_struct pcie_probe_work;
++	spinlock_t pcie_probe_lock;
++	bool pcie_probe_enabled;
+ 	struct apple_rtkit *rtk;
+ 
+ 	void __iomem *rc_base;
+@@ -579,6 +584,57 @@ static void apple_nhi_ring_configure(struct tb_ring *ring, u32 flags, u32 e2e_fl
+ 	writel(flags | e2e_flags, options);
+ }
+ 
++/*
++ * Retry an initially unbound host outside the Thunderbolt domain mutex.
++ * Authorization may arrive after its bounded initial reset-release wait.
++ * Teardown closes admission and drains this work before removing children
++ * or dropping the ACIO/PCIe power domains. This never authorizes a device.
++ */
++static void apple_cio_pcie_probe_work(struct work_struct *work)
++{
++	struct apple_cio *acio = container_of(work, struct apple_cio,
++					    pcie_probe_work);
++	struct platform_device *host;
++	int ret;
++
++	if (!acio->pcie_tunnel_np || !READ_ONCE(acio->pcie_probe_enabled))
++		return;
++	for_each_available_child_of_node_scoped(acio->pcie_tunnel_np, np) {
++		if (!of_device_is_compatible(np, "apple,t8103-pciec"))
++			continue;
++		host = of_find_device_by_node(np);
++		if (!host)
++			continue;
++		if (!device_is_bound(&host->dev)) {
++			ret = device_attach(&host->dev);
++			if (ret < 0)
++				dev_warn(&host->dev,
++					 "PCIe host retry after tunnel event failed: %d\n",
++					 ret);
++		}
++		put_device(&host->dev);
++	}
++}
++
++static void apple_cio_queue_pcie_probe(struct apple_cio *acio)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&acio->pcie_probe_lock, flags);
++	if (acio->pcie_probe_enabled)
++		queue_work(system_freezable_wq, &acio->pcie_probe_work);
++	spin_unlock_irqrestore(&acio->pcie_probe_lock, flags);
++}
++
++static void apple_cio_set_pcie_probe_enabled(struct apple_cio *acio, bool enabled)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&acio->pcie_probe_lock, flags);
++	WRITE_ONCE(acio->pcie_probe_enabled, enabled);
++	spin_unlock_irqrestore(&acio->pcie_probe_lock, flags);
++}
++
+ /* Each ACIO instance describes its own native PCIe host in the DT. */
+ static int apple_nhi_pci_tunnel_changed(struct tb_nhi *nhi, bool active,
+ 				      bool surprise)
+@@ -601,6 +657,8 @@ static int apple_nhi_pci_tunnel_changed(struct tb_nhi *nhi, bool active,
+ 						   surprise);
+ 			put_device(&host->dev);
+ 		}
++		if (active)
++			apple_cio_queue_pcie_probe(acio);
+ 		of_node_put(np);
+ 		return ret;
+ 	}
+@@ -890,7 +948,9 @@ static void apple_cio_stop(struct apple_cio *acio)
+ 	 */
+ 	lockdep_assert_held(&acio->transition_lock);
+ 	acio->dp127_stopping = true;
++	apple_cio_set_pcie_probe_enabled(acio, false);
+ 	mutex_unlock(&acio->lock);
++	cancel_work_sync(&acio->pcie_probe_work);
+ 	ret = codex_dp127_prepare_stop(acio->dev);
+ 	dev_info(acio->dev, "DP127 display retirement before CIO poweroff ret=%d\n", ret);
+ 	of_platform_depopulate(acio->dev);
+@@ -1050,6 +1110,7 @@ static int apple_cio_start(struct apple_cio *acio)
+ 			goto err_depopulate;
+ 		}
+ 
++		apple_cio_set_pcie_probe_enabled(acio, true);
+ 		ret = of_platform_populate(acio->pcie_tunnel_np, NULL, NULL,
+ 					   acio->dev);
+ 		if (ret) {
+@@ -1061,9 +1122,16 @@ static int apple_cio_start(struct apple_cio *acio)
+ 	}
+ 
+ 	acio->current_cable_info = acio->target_cable_info;
++	/* Cover authorization that raced child population. No periodic retry. */
++	if (acio->pcie_tunnel_np)
++		apple_cio_queue_pcie_probe(acio);
+ 	return 0;
+ 
+ err_depopulate:
++	apple_cio_set_pcie_probe_enabled(acio, false);
++	mutex_unlock(&acio->lock);
++	cancel_work_sync(&acio->pcie_probe_work);
++	mutex_lock(&acio->lock);
+ 	of_platform_depopulate(acio->dev);
+ err_shutdown_rtkit:
+ 	/* Ignore errors here since we're about to cut power to the entire block anyway */
+@@ -1218,6 +1286,8 @@ static int apple_cio_probe(struct platform_device *pdev)
+ 	if (!acio)
+ 		return -ENOMEM;
+ 	platform_set_drvdata(pdev, acio);
++	spin_lock_init(&acio->pcie_probe_lock);
++	INIT_WORK(&acio->pcie_probe_work, apple_cio_pcie_probe_work);
+ 
+ 	ret = devm_mutex_init(dev, &acio->transition_lock);
+ 	if (ret)
+-- 
+2.53.0
+

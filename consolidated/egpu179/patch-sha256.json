@@ -12,5 +12,7 @@
   "0040-drm-amdgpu-skip-HIQ-hardware-unmap-during-offline-te.patch": "730827f5b5c253ca24298ffcc8c49da86996fc6c9159de3f296fbe3c18ccc762",
   "0041-drm-amd-display-retire-offline-flips-and-release-HDC.patch": "93aa5c7c1725950e57b1d1f16165e6440caa30248a2e0659c5af1a6a9b0ac609",
   "0042-i2c-designware-pci-reject-UCSI-transfers-after-AMD-P.patch": "59068cd880aff4369e5a165b5fbc7178c0794fe12dff1221b789483e4c019eb9",
-  "0043-PCI-apple-enable-M1-tunneled-prefetch-aperture.patch": "bd437502263a11a0a09dc6ca951a6229fc263985b765b53a0f3aa7e94981c710"
+  "0043-PCI-apple-enable-M1-tunneled-prefetch-aperture.patch": "bd437502263a11a0a09dc6ca951a6229fc263985b765b53a0f3aa7e94981c710",
+  "0044-PCI-apple-enable-prefetch-after-resource-assignment.patch": "bc402ea62d931fdc9aab3ea1dc7c6be7b3e2956992cd44bace60f7a0fa42cea1",
+  "0045-thunderbolt-apple-retry-host-after-authorization.patch": "33a8fde14b70532aa51d6e66193fea9a30173c3443f24f01355e449253f4a064"
 }

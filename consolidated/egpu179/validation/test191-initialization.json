@@ -1,0 +1,37 @@
+{
+  "test": 191,
+  "tested_kernel": "7.2.12-usb4sd4-egpu2",
+  "candidate_kernel": "7.2.12-usb4sd4-egpu3",
+  "candidate_patches": 45,
+  "host_initial_probe_timeout_seconds": 7.062,
+  "authorization_complete_seconds": 12.529,
+  "late_strobe_restored_vram": true,
+  "same_window_rewrite_reproduced_failure": false,
+  "empty_window_early_strobe_reproduced_failure": true,
+  "late_device_enable_diagnostic": {
+    "strobes": 1,
+    "missed": 0,
+    "gpu_values_verified": 1048576,
+    "all_four_drivers_bound": true,
+    "unloaded": true
+  },
+  "native_objects_compile": "passed",
+  "native_candidate_boot": "pending",
+  "direct_amdgpu_unbind_rebind": "failed with duplicate sysfs entries and TTM list warning",
+  "physical_hotplug": "not tested",
+  "raw_evidence_sha256": {
+    "readonly-result.txt": "799cb3070eb1433d7828108b83ddc2551c68ea975d9a592ec30031c4c1a0443b",
+    "strobe-result.txt": "bef853ebe177b435759a877609e75d8cf4ef85adde82d639b95e6a486e5d6102",
+    "window-replay-control.txt": "18e171ac0545d6cc0f7b40eefa4b9d972cdf4898d81cdbace08ef6719e3fc9e5",
+    "empty-window-replay-result.txt": "67e29949cb18e50a09e6c02291ae1d0603526bb607865076e6bff7c44b820fdf",
+    "compute-after-recovery.txt": "3a0717a50ea1bc5b9954af70805ded31965fc9b4df44647d5dbcae2f9002987a",
+    "late-enable-control.txt": "e97631ad5137ec34d4d597cbd4f0ea1c94ada2485d34e397e5fca0bf66df8b29",
+    "late-enable-compute.txt": "663f39249dabeb63f9c01eefbedb0593ffdfc993cbd150cad02c9539dcc1a4b5",
+    "authorization-timeline.txt": "7829f5a405355610d8b3d71b657e8e4e3d7eced459635b1ffb64397471821ed2",
+    "native-candidate-build.log": "3ba04173e6797db43b8bc6135e0b77ba52b5a835126905397df965a4f4ab070e",
+    "native-probe-retry-build.log": "1747b3dfaaf5bff38224e47fcaac4c3ae87e8cb1bcd141d70ea88e675a97cd7a",
+    "recovery-after-window-control.txt": "d52506177172c3bfe623085de43252a5c422dccdbdf58e79235b1e41d7ca05f8",
+    "replay45.log": "81eec3dfade8cd81cc0d3a79ddb325bc3568f2247355ebce61b7dc0a0e84df6c"
+  },
+  "extension_replay": "16 patches applied after unchanged 29-patch base; all source hashes matched"
+}

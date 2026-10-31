@@ -1,5 +1,7 @@
 # Integrated-kernel audit, 2026-10-31
 
+This records the overnight 43-patch candidate. See the [later Test191 follow-up](initialization-followup-20261031.md) for its internal-boot failures and the appended corrections; pending statuses below are historical.
+
 The 42-patch source replay was correct but did not reproduce all initialization performed by the diagnostic scripts. The missing PCIe prefetch-aperture enable operation is a demonstrated integration gap. Patch 43 moves that operation into the native M1 tunneled PCIe host, before downstream enumeration and after link restart. The 29 storage/display/suspend patches and 13 existing eGPU patches remain byte-for-byte unchanged.
 
 ## Controlled evidence

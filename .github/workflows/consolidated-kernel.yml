@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       include_egpu:
-        description: 'Build experimental 43-patch eGPU integration (hardware validation pending)'
+        description: 'Build experimental 45-patch eGPU integration (hardware validation pending)'
         type: boolean
         required: false
         default: false

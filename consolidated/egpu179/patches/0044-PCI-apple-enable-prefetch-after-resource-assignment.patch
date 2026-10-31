@@ -1,0 +1,86 @@
+From fae4a13dc584b9a335dde9866f3f304eb0f37d2f Mon Sep 17 00:00:00 2001
+From: frogro <frank.grootens@gmail.com>
+Date: Sat, 31 Oct 2026 11:49:44 +0100
+Subject: [PATCH] PCI: apple: enable the tunneled prefetch window after
+ resource assignment
+
+The 43-patch integrated M1 kernel issues PREFMEM_ENABLE during port setup,
+before pci_host_probe() assigns the root bridge window. This does not
+reproduce the late strobe used by the successful diagnostic helper.
+
+On the J274/RX 6900 XT setup, the integrated boot left all sampled VRAM
+words at 0xffffffff. A late strobe made real data readable immediately;
+a subsequent isolated Razer tunnel reauthorization passed GPU compute.
+
+A controlled comparison with every endpoint unbound reproduced the
+ordering dependency: strobing with a disabled root prefetch window,
+then restoring its saved configuration, left reads at 0xffffffff. A
+second strobe after restoration recovered the same original data.
+Rewriting an already enabled window with identical values did not break
+access, so ordinary config writes alone are not claimed to clear it.
+
+Move the strobe to the existing host enable_device callback after the
+RID-to-SID mapping succeeds. PCI resource assignment precedes this
+callback, including bridge re-enable after hotplug. Retain the M1
+kernel-owned initialization restriction from patch 43; do not add GPU
+IDs, physical addresses, GRUB switches or USB reset policy.
+
+Validation: controlled live ordering experiment on the existing kernel.
+Native full-kernel cold boot and integrated hotplug remain to be tested.
+This does not fix the earlier asynchronous host-probe timeout or the
+separately observed AMDGPU unbind/rebind cleanup warnings.
+
+Assisted-by: Codex:GPT-6
+---
+ drivers/pci/controller/pcie-apple-pciec.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/pci/controller/pcie-apple-pciec.c b/drivers/pci/controller/pcie-apple-pciec.c
+index 3577b8561..75073ea62 100644
+--- a/drivers/pci/controller/pcie-apple-pciec.c
++++ b/drivers/pci/controller/pcie-apple-pciec.c
+@@ -410,10 +410,11 @@ bool apple_pcie_tunnel_needs_cold_init(struct device_node *np)
+ EXPORT_SYMBOL_GPL(apple_pcie_tunnel_needs_cold_init);
+ 
+ /*
+- * T8103's prefetchable CPU aperture needs an enable strobe after port
+- * initialization. PCI BAR assignment alone does not enable this path: reads
+- * return all ones and device firmware uploaded through VRAM is not visible.
+- * Do this before downstream drivers probe, including after tunnel restart.
++ * T8103's prefetchable CPU aperture latches the current bridge window when
++ * strobed. Enabling it before PCI resource assignment latches an empty window;
++ * later config-space writes alone do not make endpoint VRAM accessible.
++ * Refresh it from enable_device, after resource assignment and before a
++ * function driver accesses its BARs, including hotplug and re-enable paths.
+  * Keep other SoCs and firmware-owned initialization paths unchanged.
+  */
+ static void apple_pcie_enable_prefetch_window(struct apple_pcie_port *port)
+@@ -1042,7 +1043,6 @@ static int apple_pcie_tunnel_restart_link(struct apple_pcie_port *port)
+ 			msleep(100);
+ 			if (!(apple_pcie_port_readl(port, PORT_LINKSTS) & PORT_LINKSTS_UP))
+ 				continue;
+-			apple_pcie_enable_prefetch_window(port);
+ 			dev_info(port->pcie->dev, "native tunnel link ready after %d attempt(s)\n",
+ 				 attempt + 1);
+ 			return 0;
+@@ -1596,7 +1596,6 @@ static int apple_pcie_setup_port(struct apple_pcie *pcie,
+ 		msleep(100);
+ 		dev_info(pcie->dev, "initial tunnel recovery wait complete, link %#x\n",
+ 			 apple_pcie_port_readl(port, PORT_LINKSTS));
+-		apple_pcie_enable_prefetch_window(port);
+ 	}
+ 
+ 	return 0;
+@@ -1763,6 +1762,9 @@ static int apple_pcie_enable_device(struct pci_host_bridge *bridge, struct pci_d
+ 					 PORT_RID2SID_VALID |
+ 					 (sid << PORT_RID2SID_SID_SHIFT) | rid);
+ 
++		/* Resource assignment precedes the PCI device-enable callback. */
++		apple_pcie_enable_prefetch_window(port);
++
+ 		dev_dbg(&pdev->dev, "mapping RID%x to SID%x (index %d)\n",
+ 			rid, sid, idx);
+ 	}
+-- 
+2.53.0
+
