@@ -1,0 +1,10 @@
+diff --git a/avd-cm3.ld b/avd-cm3.ld
+--- a/avd-cm3.ld
++++ b/avd-cm3.ld
+@@ -8,4 +8,6 @@ SECTIONS {
+     .text ALIGN(0x100) : { *(.text*)   }
+     .data    : { *(.data*)   }
+     .rodata  : { *(.rodata*) }
++    .ARM.extab : { *(.ARM.extab*) }
++    .ARM.exidx : { *(.ARM.exidx*) }
+ }
