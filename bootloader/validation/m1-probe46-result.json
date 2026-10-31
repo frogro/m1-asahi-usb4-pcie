@@ -12,9 +12,13 @@
   "link_comparison_performed": false,
   "internal_nvme_hashes_match": true,
   "reset_observed": true,
-  "automatic_return_verified": false,
-  "return_check": "SSH not yet reachable; pending",
+  "automatic_return_verified": true,
+  "return_check": "SSH verified; user confirms Ubuntu visible",
   "external_disk_access": false,
   "uart_sha256": "be3a6f809c2c392c950baa862cf49565dd0e6a885e7df771257819b68b80d699",
-  "next_step": "Probe47 removes the five injected input tunable properties; unchanged strict runtime validation"
+  "next_step": "Probe47 removes the five injected input tunable properties; unchanged strict runtime validation",
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "boot_bundle_unchanged": true,
+  "boot_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+  "grub_next_entry_empty": true
 }
