@@ -1,0 +1,229 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "bae8b9251c082085d7fbd03cede0543c3f487069a60ab1c490e44a735d21e213",
+  "records": [
+    {
+      "ms": 19914,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 19917,
+      "delta": 3,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 20016,
+      "delta": 102,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 20038,
+      "delta": 124,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 20043,
+      "delta": 129,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 20046,
+      "delta": 132,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 20049,
+      "delta": 135,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 20059,
+      "delta": 145,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 20062,
+      "delta": 148,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 20075,
+      "delta": 161,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 20078,
+      "delta": 164,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 20139,
+      "delta": 225,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 20140,
+      "delta": 226,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 20143,
+      "delta": 229,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 20146,
+      "delta": 232,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 20150,
+      "delta": 236,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 20156,
+      "delta": 242,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20160,
+      "delta": 246,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20293,
+      "delta": 379,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 20297,
+      "delta": 383,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 20300,
+      "delta": 386,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20304,
+      "delta": 390,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 20304,
+      "delta": 390,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 20307,
+      "delta": 393,
+      "event": "dwc3-host-begin"
+    },
+    {
+      "ms": 20324,
+      "delta": 410,
+      "event": "dwc3-core-init-begin"
+    },
+    {
+      "ms": 20524,
+      "delta": 610,
+      "event": "dwc3-core-init-return"
+    },
+    {
+      "ms": 20533,
+      "delta": 619,
+      "event": "dwc3-host-return"
+    },
+    {
+      "ms": 20583,
+      "delta": 669,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 20595,
+      "delta": 681,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 20609,
+      "delta": 695,
+      "event": "xhci-start-begin"
+    },
+    {
+      "ms": 20632,
+      "delta": 718,
+      "event": "xhci-start-return"
+    },
+    {
+      "ms": 20646,
+      "delta": 732,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 25714,
+      "delta": 5800,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 25728,
+      "delta": 5814,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 25728,
+      "delta": 5814,
+      "event": "rtkit-shutdown-return"
+    },
+    {
+      "ms": 25734,
+      "delta": 5820,
+      "event": "xhci-stop-begin"
+    },
+    {
+      "ms": 25734,
+      "delta": 5820,
+      "event": "xhci-stop-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 3,
+    "phy_return_to_m3_start": 129,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 88,
+    "rings_to_cable_submit": 147,
+    "cable_submit_to_link_return": 5417
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 38,
+  "base_probe": 37,
+  "return_errno": -110,
+  "control_sent": 61,
+  "control_received": 61,
+  "usb2_signal_initial": "0x1c1000f",
+  "usb2_signal_host": "0x1c1700f",
+  "usb2_signal_final": "0x41700f",
+  "usb2_host_bits_added": "0x6000",
+  "xhci_start": 0,
+  "xhci_stop": 0,
+  "xhci_dma_maps": 6,
+  "lane_states": [
+    7,
+    7
+  ],
+  "internal_nvme_before_after": true,
+  "ubuntu_return_verified": true,
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "installed_boot_bundle_unchanged": true,
+  "grub_next_entry_empty": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "conclusion": "USB2 host role was incomplete and is corrected, but link still stays at firmware Phase2"
+}

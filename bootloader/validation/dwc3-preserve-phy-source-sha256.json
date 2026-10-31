@@ -1,0 +1,5 @@
+{
+  "drivers/usb/host/xhci-dwc3.c": "65b59bccdc4e40e31b20511aaa16e4e217fc0c8193dc0c974ae0dbc48740951f",
+  "include/linux/usb/dwc3.h": "beedee48a49986a10e35e70360c361d217e89815846f3b7f5e9bba3a87f09d99",
+  "cmd/apple_atc_m1.c": "4dd39840289980bccb7014b5a1c4348079d9bc6e4a45f97017b1daa28cb132a1"
+}

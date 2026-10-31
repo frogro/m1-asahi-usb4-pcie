@@ -1,0 +1,14 @@
+{
+  "probe": 39,
+  "base_probe": 38,
+  "delta": "Retain GCTL setup but omit redundant legacy core/PHY soft reset during ACIO training; ordinary driver unchanged",
+  "m1_build": true,
+  "extracted_sanitizer_scenarios": 60,
+  "host_setup_cases": 30,
+  "sanitizer_flag": "-fno-strict-overflow",
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "hardware_pending": true
+}

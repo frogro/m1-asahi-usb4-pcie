@@ -1,0 +1,68 @@
+--- a/drivers/usb/host/xhci-dwc3.c
++++ b/drivers/usb/host/xhci-dwc3.c
+@@ -65,7 +65,7 @@
+ 	clrbits_le32(&dwc3_reg->g_ctl, DWC3_GCTL_CORESOFTRESET);
+ }
+ 
+-int dwc3_core_init(struct dwc3 *dwc3_reg)
++static int dwc3_core_init_common(struct dwc3 *dwc3_reg, bool reset_phy)
+ {
+ 	u32 reg;
+ 	u32 revision;
+@@ -79,7 +79,8 @@
+ 		return -1;
+ 	}
+ 
+-	dwc3_core_soft_reset(dwc3_reg);
++	if (reset_phy)
++		dwc3_core_soft_reset(dwc3_reg);
+ 
+ 	dwc3_hwparams1 = readl(&dwc3_reg->g_hwparams1);
+ 
+@@ -107,6 +108,22 @@
+ 
+ 	return 0;
+ }
++
++int dwc3_core_init(struct dwc3 *dwc3_reg)
++{
++	return dwc3_core_init_common(dwc3_reg, true);
++}
++
++#if CONFIG_IS_ENABLED(CMD_APPLE_ATC_M1)
++/* RAM diagnostic: the M1 path has already reset/released DWC3 and its PHY.
++ * Do not pulse the USB PHY resets again during ACIO link training. Retain
++ * all normal GCTL setup; the subsequent xHCI path still resets its block.
++ */
++int dwc3_m1_diag_init_preserve_phy(struct dwc3 *dwc3_reg)
++{
++	return dwc3_core_init_common(dwc3_reg, false);
++}
++#endif
+ 
+ void dwc3_set_fladj(struct dwc3 *dwc3_reg, u32 val)
+ {
+--- a/include/linux/usb/dwc3.h
++++ b/include/linux/usb/dwc3.h
+@@ -218,6 +218,7 @@
+ void dwc3_set_mode(struct dwc3 *dwc3_reg, u32 mode);
+ void dwc3_core_soft_reset(struct dwc3 *dwc3_reg);
+ int dwc3_core_init(struct dwc3 *dwc3_reg);
++int dwc3_m1_diag_init_preserve_phy(struct dwc3 *dwc3_reg);
+ void dwc3_set_fladj(struct dwc3 *dwc3_reg, u32 val);
+ #endif
+ #endif /* __DWC3_H_ */
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -208,9 +208,9 @@
+   ret = check_usb_darts(hw);
+   if (ret) return ret;
+   apple_boot_trace("dwc3-core-init-begin");
+-  ret = dwc3_core_init((struct dwc3 *)(hw->xhci + DWC3_REG_OFFSET));
++  ret = dwc3_m1_diag_init_preserve_phy((struct dwc3 *)(hw->xhci + DWC3_REG_OFFSET));
+   apple_boot_trace("dwc3-core-init-return");
+-  printf("M1-DWC3 core-init ret=%d\n", ret);
++  printf("M1-DWC3 core-init preserve-phy ret=%d\n", ret);
+   if (ret) return ret;
+   ret = hw_verify_halted(hw);
+   if (ret) return ret;
