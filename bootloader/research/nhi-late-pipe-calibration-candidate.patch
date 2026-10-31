@@ -1,0 +1,92 @@
+--- a/lib/apple_atc_m1.c
++++ b/lib/apple_atc_m1.c
+@@ -168,9 +168,19 @@
+ 		if (cfg->swapped && i >= 3)
+ 			group = 7 - i;
+ 		t = &cfg->tunable[group];
+-		for (j = 0; j < t->bytes / 4; j += 3)
+-			UP(r, be32_to_cpu(t->data[j]), be32_to_cpu(t->data[j + 1]),
+-			   be32_to_cpu(t->data[j + 2]));
++		/* Match Linux apple_tunable_apply(): redundant calibration writes
++		 * are skipped. Explicit power/reset/control updates above and below
++		 * deliberately retain their unconditional write semantics.
++		 */
++		for (j = 0; j < t->bytes / 4; j += 3) {
++			u32 off = be32_to_cpu(t->data[j]), old, value;
++
++			DO(io->read(ctx, r, off, &old));
++			value = (old & ~be32_to_cpu(t->data[j + 1])) |
++				be32_to_cpu(t->data[j + 2]);
++			if (value != old)
++				DO(io->write(ctx, r, off, value));
++		}
+ 	}
+ 	/* M1 post-tunable sequence, preserving the Linux 10 us gaps. */
+ 	UP(ATC_CORE, 0x1014, 0, 0x1fe000);
+--- a/cmd/apple_nhi_m1.c
++++ b/cmd/apple_nhi_m1.c
+@@ -108,7 +108,8 @@
+ {
+ 	const u32 *data;
+ 	void *regs;
+-	u32 off, mask, value;
++	u32 off, mask, value, old;
++	unsigned int written = 0, skipped = 0;
+ 	int i, bytes, ret = tunable_load(nhi, &data, &bytes);
+ 
+ 	if (ret)
+@@ -119,9 +120,17 @@
+ 		off = be32_to_cpu(data[i]);
+ 		mask = be32_to_cpu(data[i + 1]);
+ 		value = be32_to_cpu(data[i + 2]);
+-		writel((readl(regs + off) & ~mask) | value, regs + off);
+-	}
+-	printf("ACIO %s tunables applied count=%d\n", nhi ? "NHI" : "RC", bytes / 12);
++		old = readl(regs + off);
++		value = (old & ~mask) | value;
++		if (value != old) {
++			writel(value, regs + off);
++			written++;
++		} else {
++			skipped++;
++		}
++	}
++	printf("ACIO %s tunables applied count=%d written=%u skipped=%u\n",
++	       nhi ? "NHI" : "RC", bytes / 12, written, skipped);
+ 	return 0;
+ }
+ 
+--- a/test/dm/apple_atc_m1.c
++++ b/test/dm/apple_atc_m1.c
+@@ -376,3 +376,31 @@
+  return 0;
+ }
+ DM_TEST(dm_test_atc_m1_split_failure, 0);
++
++/* An unchanged calibration register must never be written, while a changed
++ * entry still applies exactly once. Use an offset untouched by the sequence.
++ */
++static int dm_test_atc_m1_unchanged_calibration(struct unit_test_state *uts)
++{
++	struct atc_m1_config c;
++	__be32 calibration[] = { cpu_to_be32(0x40000), cpu_to_be32(~0U), 0 };
++	int changed, group, i, count;
++
++	for (changed = 0; changed < 2; changed++) {
++		c = setup();
++		calibration[2] = cpu_to_be32(changed ? 0x12345678 : 0xa5a5a5a5);
++		for (group = 0; group < 5; group++)
++			if (group != 1)
++				c.tunable[group] = (struct atc_m1_tunable){calibration, sizeof(calibration)};
++		ut_assertok(atc_m1_start(&c, &fake_io, &fake, true, &fake.stage));
++		count = 0;
++		for (i = 0; i < fake.writes; i++)
++			if (fake.trace[i].region == ATC_CORE && fake.trace[i].offset == 0x40000)
++				count++;
++		ut_asserteq(changed, count);
++		ut_asserteq(changed ? 0x12345678 : 0xa5a5a5a5,
++			    fake.reg[ATC_CORE][0x40000 / 4]);
++	}
++	return 0;
++}
++DM_TEST(dm_test_atc_m1_unchanged_calibration, 0);

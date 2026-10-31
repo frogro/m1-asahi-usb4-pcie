@@ -1,0 +1,239 @@
+{
+  "scope": "Extracted Linux functions vs extracted candidate U-Boot function; fake MMIO, no hardware or concurrency proof",
+  "cases": [
+    {
+      "mode": "USB4",
+      "swapped": false,
+      "pattern": 0,
+      "linux_operations": 273,
+      "uboot_operations": 275,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 00000000"
+          ],
+          "linux_index": 260,
+          "uboot_index": 260
+        }
+      ]
+    },
+    {
+      "mode": "USB4",
+      "swapped": false,
+      "pattern": 1,
+      "linux_operations": 246,
+      "uboot_operations": 248,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 fffffffe"
+          ],
+          "linux_index": 233,
+          "uboot_index": 233
+        }
+      ]
+    },
+    {
+      "mode": "USB4",
+      "swapped": false,
+      "pattern": 2,
+      "linux_operations": 267,
+      "uboot_operations": 269,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 a508276a"
+          ],
+          "linux_index": 254,
+          "uboot_index": 254
+        }
+      ]
+    },
+    {
+      "mode": "USB4",
+      "swapped": true,
+      "pattern": 0,
+      "linux_operations": 273,
+      "uboot_operations": 275,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 00000000"
+          ],
+          "linux_index": 260,
+          "uboot_index": 260
+        }
+      ]
+    },
+    {
+      "mode": "USB4",
+      "swapped": true,
+      "pattern": 1,
+      "linux_operations": 246,
+      "uboot_operations": 248,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 fffffffe"
+          ],
+          "linux_index": 233,
+          "uboot_index": 233
+        }
+      ]
+    },
+    {
+      "mode": "USB4",
+      "swapped": true,
+      "pattern": 2,
+      "linux_operations": 267,
+      "uboot_operations": 269,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 a508276a"
+          ],
+          "linux_index": 254,
+          "uboot_index": 254
+        }
+      ]
+    },
+    {
+      "mode": "TBT",
+      "swapped": false,
+      "pattern": 0,
+      "linux_operations": 273,
+      "uboot_operations": 275,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 00000000"
+          ],
+          "linux_index": 260,
+          "uboot_index": 260
+        }
+      ]
+    },
+    {
+      "mode": "TBT",
+      "swapped": false,
+      "pattern": 1,
+      "linux_operations": 246,
+      "uboot_operations": 248,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 fffffffe"
+          ],
+          "linux_index": 233,
+          "uboot_index": 233
+        }
+      ]
+    },
+    {
+      "mode": "TBT",
+      "swapped": false,
+      "pattern": 2,
+      "linux_operations": 267,
+      "uboot_operations": 269,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 a508276a"
+          ],
+          "linux_index": 254,
+          "uboot_index": 254
+        }
+      ]
+    },
+    {
+      "mode": "TBT",
+      "swapped": true,
+      "pattern": 0,
+      "linux_operations": 273,
+      "uboot_operations": 275,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 00000000"
+          ],
+          "linux_index": 260,
+          "uboot_index": 260
+        }
+      ]
+    },
+    {
+      "mode": "TBT",
+      "swapped": true,
+      "pattern": 1,
+      "linux_operations": 246,
+      "uboot_operations": 248,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 fffffffe"
+          ],
+          "linux_index": 233,
+          "uboot_index": 233
+        }
+      ]
+    },
+    {
+      "mode": "TBT",
+      "swapped": true,
+      "pattern": 2,
+      "linux_operations": 267,
+      "uboot_operations": 269,
+      "differences": [
+        {
+          "kind": "insert",
+          "linux": [],
+          "uboot": [
+            "D 10",
+            "W 3 10 a508276a"
+          ],
+          "linux_index": 254,
+          "uboot_index": 254
+        }
+      ]
+    }
+  ],
+  "sources_sha256": {
+    "drivers/phy/apple/atc.c": "4c50dfc1aadce391a76afec36e07a0b7d48eb75b3faef49d9e49c2049c01e12b",
+    "drivers/soc/apple/tunable.c": "98b61d2836c8dafbc979b138e200e26158e916edf108dfa680531d0622b680b1"
+  },
+  "candidate": "separate unchanged-calibration-write candidate; not Probe29",
+  "uboot_phy_sha256": "5ec0034398ca73af28cac9e03ae74b7660381652c7744953da0e34dc070656df"
+}

@@ -1,0 +1,230 @@
+--- a/lib/apple_atc_m1.c
++++ b/lib/apple_atc_m1.c
+@@ -85,7 +85,7 @@
+ #define DELAY() io->delay(ctx, 10)
+ #define POLL(r, off, mask, wanted, us) DO(poll(io, ctx, r, off, mask, wanted, us))
+ 
+-int atc_m1_start(const struct atc_m1_config *cfg, const struct atc_m1_io *io,
++int atc_m1_start_core(const struct atc_m1_config *cfg, const struct atc_m1_io *io,
+ 		 void *ctx, bool quiesced, enum atc_m1_stage *stage)
+ {
+ 	int ret, i, group;
+@@ -209,6 +209,21 @@
+ 	UP(ATC_PIPE, 0x1c, 0, BIT(0)); DELAY();
+ 	DO(io->verify_halted(ctx));
+ 
++	*stage = ATC_CORE_READY;
++	return 0;
++}
++
++int atc_m1_start_pipe(const struct atc_m1_config *cfg, const struct atc_m1_io *io,
++		    void *ctx, enum atc_m1_stage *stage)
++{
++	int ret;
++
++	if (!stage || *stage != ATC_CORE_READY)
++		return -EINVAL;
++	DO(atc_m1_validate(cfg));
++	if (!io || !io->read || !io->write || !io->delay || !io->verify_halted)
++		return -EINVAL;
++
+ 	/* A stale lock must be released before taking ownership. */
+ 	*stage = ATC_PIPE_CLEAR;
+ 	UP(ATC_PIPE, PIPE_REQ, BIT(0), 0);
+@@ -242,3 +257,12 @@
+ 	*stage = ATC_DONE;
+ 	return 0;
+ }
++
++/* Compatibility entry point for earlier staged diagnostics. */
++int atc_m1_start(const struct atc_m1_config *cfg, const struct atc_m1_io *io,
++		 void *ctx, bool quiesced, enum atc_m1_stage *stage)
++{
++	int ret = atc_m1_start_core(cfg, io, ctx, quiesced, stage);
++
++	return ret ? ret : atc_m1_start_pipe(cfg, io, ctx, stage);
++}
+--- a/include/apple_atc_m1.h
++++ b/include/apple_atc_m1.h
+@@ -7,7 +7,7 @@
+ enum atc_m1_mode { ATC_USB4, ATC_TBT };
+ enum atc_m1_stage { ATC_VALIDATE, ATC_ISOLATE, ATC_SLEEP_BIG, ATC_SLEEP_SMALL,
+ 	ATC_WAKE_SMALL, ATC_WAKE_BIG, ATC_TUNABLES, ATC_LANES,
+-	ATC_PIPE_CLEAR, ATC_PIPE_LOCK, ATC_PIPE_MUX, ATC_PIPE_UNLOCK, ATC_DONE, ATC_PIPE_BOOTSTRAP, ATC_USB_RELEASE, ATC_USB_REISOLATE };
++	ATC_PIPE_CLEAR, ATC_PIPE_LOCK, ATC_PIPE_MUX, ATC_PIPE_UNLOCK, ATC_DONE, ATC_PIPE_BOOTSTRAP, ATC_USB_RELEASE, ATC_USB_REISOLATE, ATC_CORE_READY };
+ 
+ struct atc_m1_tunable { const __be32 *data; size_t bytes; };
+ 
+@@ -35,4 +35,11 @@
+  */
+ int atc_m1_start(const struct atc_m1_config *cfg, const struct atc_m1_io *io,
+ 		 void *ctx, bool quiesced, enum atc_m1_stage *stage);
++/* Split diagnostic entry points: core must succeed before PIPE can run.
++ * A failed PIPE call consumes the state and must never be retried without reset.
++ */
++int atc_m1_start_core(const struct atc_m1_config *cfg, const struct atc_m1_io *io,
++		 void *ctx, bool quiesced, enum atc_m1_stage *stage);
++int atc_m1_start_pipe(const struct atc_m1_config *cfg, const struct atc_m1_io *io,
++		 void *ctx, enum atc_m1_stage *stage);
+ #endif
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -105,6 +105,18 @@
+ 	.read = hw_read, .write = hw_write, .delay = hw_delay,
+ 	.verify_halted = hw_verify_halted,
+ };
++
++static int start_late_pipe(void *context)
++{
++ struct atc_m1_hw *hw = context;
++ int ret;
++
++ apple_boot_trace("late-pipe-begin");
++ ret = atc_m1_start_pipe(&hw->cfg, &hw_io, hw, &hw->stage);
++ apple_boot_trace("late-pipe-return");
++ printf("ATC-M1 late PIPE ret=%d stage=%u\n", ret, hw->stage);
++ return ret;
++}
+ 
+ static int status_read(void *ctx, u8 reg, u8 *buf, size_t size)
+ {
+@@ -314,7 +326,10 @@
+ 	hw.cap = cap;
+ 	hw.printed_stage = ATC_DONE;
+ 	apple_boot_trace("phy-sequence-begin");
+-	ret = atc_m1_start(&hw.cfg, &hw_io, &hw, true, &hw.stage);
++	/* Test Linux ordering only in full host mode; earlier diagnostics unchanged. */
++	ret = stage >= 4 ?
++		atc_m1_start_core(&hw.cfg, &hw_io, &hw, true, &hw.stage) :
++		atc_m1_start(&hw.cfg, &hw_io, &hw, true, &hw.stage);
+ 	apple_boot_trace("phy-sequence-return");
+ 	if (ret) {
+ 		printf("ATC-M1 stopped at stage=%u; reset required\n", hw.stage);
+@@ -325,7 +340,10 @@
+ 	if (acio) {
+ 		puts("ATC-M1 PHY retained for ACIO; xHCI remains halted\n");
+ 		snapshot_phy(&hw, "before-acio");
++		if (stage >= 4)
++			apple_nhi_m1_set_post_cable(start_late_pipe, &hw);
+ 		ret = apple_acio_m1_start(stage);
++		apple_nhi_m1_set_post_cable(NULL, NULL);
+ 		snapshot_phy(&hw, "after-acio");
+ 		if (ret) goto fail;
+ 	} else {
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -44,6 +44,15 @@
+  struct usb4_cfg_event pending[8];
+  ulong started;
+ };
++
++static int (*post_cable)(void *);
++static void *post_cable_context;
++
++void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context)
++{
++ post_cable = callback;
++ post_cable_context = context;
++}
+ 
+ static u32 diagnostic_cable;
+ static bool diagnostic_cable_valid;
+@@ -284,6 +293,14 @@
+  if ((value & 0x1f) != diagnostic_cable) return -EIO;
+  apple_boot_trace("cable-info-readback-verified");
+  printf("NHI-CABLE-INFO PASS value=%#x\n", value);
++ if (post_cable) {
++  int (*callback)(void *) = post_cable;
++  void *context = post_cable_context;
++  /* Consume before calling: no retry on a partially configured PIPE. */
++  apple_nhi_m1_set_post_cable(NULL, NULL);
++  ret = callback(context);
++  if (ret) return ret;
++ }
+  for (i = 0; i < 10; i++) {
+   ret = diagnostic_read(ring, 1, 1, phy[0], 2, data);
+   if (ret) return ret;
+@@ -392,6 +409,7 @@
+ }
+ 
+ #else
++void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context) {}
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status) { return -ENOSYS; }
+ int apple_nhi_m1_control_read(struct udevice *dart) { return -ENOSYS; }
+ #endif
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -5,6 +5,8 @@
+ struct udevice;
+ struct apple_cd321x_status;
+ struct apple_nhi_host_info { u32 apple, null_ports, port1_cap, tmu; };
++/* RAM-only single-use hook, after verified cable info and before link polling. */
++void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context);
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status);
+ int apple_nhi_m1_link_metadata(const u8 *drom, unsigned int len,
+ 			      u32 status, u32 eudo, u32 *cable);
+--- a/test/dm/apple_atc_m1.c
++++ b/test/dm/apple_atc_m1.c
+@@ -317,3 +317,62 @@
+  return 0;
+ }
+ DM_TEST(dm_test_atc_m1_retained_dwc3, 0);
++
++/* ACIO/NHI may run between core and PIPE. The split must preserve every
++ * hardware write of the legacy sequence, but keep the halted DWC3 on the dummy clock until then.
++ */
++static int dm_test_atc_m1_split_order(struct unit_test_state *uts)
++{
++ static struct atc_trace expected[1024];
++ struct atc_m1_config c;
++ int mode, swap, count, calls;
++
++ for (mode = 0; mode < 2; mode++) {
++  for (swap = 0; swap < 2; swap++) {
++   c = setup(); c.mode = mode; c.swapped = swap; c.retain_dwc3 = true;
++   ut_assertok(atc_m1_start(&c, &fake_io, &fake, true, &fake.stage));
++   count = fake.writes;
++   memcpy(expected, fake.trace, count * sizeof(expected[0]));
++   c = setup(); c.mode = mode; c.swapped = swap; c.retain_dwc3 = true;
++   fake.stage = ATC_VALIDATE;
++   ut_asserteq(-EINVAL, atc_m1_start_pipe(&c, &fake_io, &fake, &fake.stage));
++   ut_asserteq(0, fake.calls);
++   ut_assertok(atc_m1_start_core(&c, &fake_io, &fake, true, &fake.stage));
++   ut_asserteq(ATC_CORE_READY, fake.stage);
++   ut_asserteq(1, fake.reg[ATC_PIPE][0x1c / 4] & 0x11);
++   ut_asserteq(0x22, fake.reg[ATC_PIPE][0xc / 4] & 0x3f);
++   ut_asserteq(0x1b, fake.reg[ATC_CORE][0x20000 / 4] & 0x1f);
++   ut_assertok(atc_m1_start_pipe(&c, &fake_io, &fake, &fake.stage));
++   ut_asserteq(count, fake.writes);
++   ut_assert(!memcmp(expected, fake.trace, count * sizeof(expected[0])));
++   calls = fake.calls;
++   ut_asserteq(-EINVAL, atc_m1_start_pipe(&c, &fake_io, &fake, &fake.stage));
++   ut_asserteq(calls, fake.calls);
++  }
++ }
++ return 0;
++}
++DM_TEST(dm_test_atc_m1_split_order, 0);
++
++static int dm_test_atc_m1_split_failure(struct unit_test_state *uts)
++{
++ struct atc_m1_config c = setup();
++ int first, last, i, calls;
++
++ ut_assertok(atc_m1_start_core(&c, &fake_io, &fake, true, &fake.stage));
++ first = fake.calls + 1;
++ ut_assertok(atc_m1_start_pipe(&c, &fake_io, &fake, &fake.stage));
++ last = fake.calls;
++ for (i = first; i <= last; i++) {
++  c = setup();
++  ut_assertok(atc_m1_start_core(&c, &fake_io, &fake, true, &fake.stage));
++  fake.fault_call = i;
++  ut_asserteq(-EIO, atc_m1_start_pipe(&c, &fake_io, &fake, &fake.stage));
++  ut_asserteq(i, fake.calls);
++  calls = fake.calls;
++  ut_asserteq(-EINVAL, atc_m1_start_pipe(&c, &fake_io, &fake, &fake.stage));
++  ut_asserteq(calls, fake.calls);
++ }
++ return 0;
++}
++DM_TEST(dm_test_atc_m1_split_failure, 0);

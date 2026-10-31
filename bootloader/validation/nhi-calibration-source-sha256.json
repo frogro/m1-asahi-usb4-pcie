@@ -1,0 +1,5 @@
+{
+  "lib/apple_atc_m1.c": "e54a51d42a5535caba2735fea1c5a76f4b9d44f238b9c6aa1e8ed0578536fddf",
+  "cmd/apple_nhi_m1.c": "91f32740899f2ac0f26e2353da3e2157df06288121fc323cdada2808e9240851",
+  "test/dm/apple_atc_m1.c": "6ae14349b490ed91efb65c189a4962aede945c6b0e076794a45883077514184e"
+}

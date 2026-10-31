@@ -1,0 +1,127 @@
+{
+  "mask32": {
+    "identical": true,
+    "local_sha256": "8e2b867c52e45f6b2c042386afbf409ab0a6d05f6dcb111f484ec71f34a02ac6",
+    "upstream_sha256": "8e2b867c52e45f6b2c042386afbf409ab0a6d05f6dcb111f484ec71f34a02ac6"
+  },
+  "core_mask32": {
+    "identical": true,
+    "local_sha256": "90f32fec715c4d6e7b326ca59b0cba2585a0a0b6965627ebb352cb69017958ac",
+    "upstream_sha256": "90f32fec715c4d6e7b326ca59b0cba2585a0a0b6965627ebb352cb69017958ac"
+  },
+  "set32": {
+    "identical": true,
+    "local_sha256": "09fc1514ef92319033fb2b4419e45e51e2f1d204b5f28c3b0459f90465528516",
+    "upstream_sha256": "09fc1514ef92319033fb2b4419e45e51e2f1d204b5f28c3b0459f90465528516"
+  },
+  "core_set32": {
+    "identical": true,
+    "local_sha256": "6d128809041e0d430079825de9140a4e13897476561a16ed5be231510e4df662",
+    "upstream_sha256": "6d128809041e0d430079825de9140a4e13897476561a16ed5be231510e4df662"
+  },
+  "clear32": {
+    "identical": true,
+    "local_sha256": "bd6498b98187737dbb16e168107650e3fcc181409570758a7051f1fb2b1907d8",
+    "upstream_sha256": "bd6498b98187737dbb16e168107650e3fcc181409570758a7051f1fb2b1907d8"
+  },
+  "core_clear32": {
+    "identical": true,
+    "local_sha256": "336222942bc2764f92500fd5f7fa579cd6d067fd21619de8aa5c18ec4b32cdea",
+    "upstream_sha256": "336222942bc2764f92500fd5f7fa579cd6d067fd21619de8aa5c18ec4b32cdea"
+  },
+  "atcphy_get_mode_config": {
+    "identical": true,
+    "local_sha256": "885430682cab50fc3fb9d0d2997fef8642e591c5d7812ee1f23ae2d9a17abac6",
+    "upstream_sha256": "885430682cab50fc3fb9d0d2997fef8642e591c5d7812ee1f23ae2d9a17abac6"
+  },
+  "atcphy_apply_tunables": {
+    "identical": true,
+    "local_sha256": "313e0febf5441a7d6070dfc881df7d398dc4b64fd927f0af9fa3901d08f31892",
+    "upstream_sha256": "313e0febf5441a7d6070dfc881df7d398dc4b64fd927f0af9fa3901d08f31892"
+  },
+  "atcphy_pipehandler_lock": {
+    "identical": true,
+    "local_sha256": "324c8ef909e30c093cfa90eb1326f879e182c938cfa55fb049c309d68399c115",
+    "upstream_sha256": "324c8ef909e30c093cfa90eb1326f879e182c938cfa55fb049c309d68399c115"
+  },
+  "atcphy_pipehandler_unlock": {
+    "identical": true,
+    "local_sha256": "52c33fa4e07af8ee7b7f7fbc3fa012488bb1909892a01d41911641bdc66a1e67",
+    "upstream_sha256": "52c33fa4e07af8ee7b7f7fbc3fa012488bb1909892a01d41911641bdc66a1e67"
+  },
+  "atcphy_pipehandler_check": {
+    "identical": true,
+    "local_sha256": "a487e503f01f869cf8bf8c91d0d6eed0ea2bca9fd785ccaf2a73a9fa64d9c899",
+    "upstream_sha256": "a487e503f01f869cf8bf8c91d0d6eed0ea2bca9fd785ccaf2a73a9fa64d9c899"
+  },
+  "atcphy_pipehandler_set_mux": {
+    "identical": true,
+    "local_sha256": "1f5521b860d99a7f140c7ab1a8d7f14d6cc78283e39c39757f41599a565e4780",
+    "upstream_sha256": "1f5521b860d99a7f140c7ab1a8d7f14d6cc78283e39c39757f41599a565e4780"
+  },
+  "atcphy_configure_pipehandler_usb4": {
+    "identical": true,
+    "local_sha256": "2adf79f413832be5bc00868bbcbe9e7a3444a6c2b164c5d4083422b9e8730b3d",
+    "upstream_sha256": "2adf79f413832be5bc00868bbcbe9e7a3444a6c2b164c5d4083422b9e8730b3d"
+  },
+  "atcphy_configure_pipehandler_dummy": {
+    "identical": true,
+    "local_sha256": "1a89a949800d38d412fae9bdd0c0178eefd10dfe224e67581396ddcffd6984bb",
+    "upstream_sha256": "1a89a949800d38d412fae9bdd0c0178eefd10dfe224e67581396ddcffd6984bb"
+  },
+  "atcphy_setup_pipehandler": {
+    "identical": true,
+    "local_sha256": "f796d458cb471422a1e1c22a956f0935cb097e4a10272f1fe388e7c5747fb304",
+    "upstream_sha256": "f796d458cb471422a1e1c22a956f0935cb097e4a10272f1fe388e7c5747fb304"
+  },
+  "atcphy_configure_lanes": {
+    "identical": true,
+    "local_sha256": "3d5c9c284104735bfa7ee90518ff7d53694a39a0e3520d91add3ccc8a4cffc67",
+    "upstream_sha256": "3d5c9c284104735bfa7ee90518ff7d53694a39a0e3520d91add3ccc8a4cffc67"
+  },
+  "atcphy_disable_dp_aux": {
+    "identical": true,
+    "local_sha256": "d25e3c164e9e31dea5401750301ccd017f0e03e1e4fecf0199e849cad1267242",
+    "upstream_sha256": "d25e3c164e9e31dea5401750301ccd017f0e03e1e4fecf0199e849cad1267242"
+  },
+  "atcphy_usb2_power_off": {
+    "identical": true,
+    "local_sha256": "6842f73c743f3a0b7843e40e8ee39fbdf707e6d1d1ccc78afac0b1f2cf9158a4",
+    "upstream_sha256": "6842f73c743f3a0b7843e40e8ee39fbdf707e6d1d1ccc78afac0b1f2cf9158a4"
+  },
+  "atcphy_power_off": {
+    "identical": true,
+    "local_sha256": "45166d33a532a5a8c9ef1f6d6018595c5caaa3eeb46d7eb79675355e607cbeb2",
+    "upstream_sha256": "45166d33a532a5a8c9ef1f6d6018595c5caaa3eeb46d7eb79675355e607cbeb2"
+  },
+  "atcphy_usb2_power_on": {
+    "identical": true,
+    "local_sha256": "5502637f37b799acddd7a8e29da08a60d9d24206d2c220431124969fceda4474",
+    "upstream_sha256": "5502637f37b799acddd7a8e29da08a60d9d24206d2c220431124969fceda4474"
+  },
+  "atcphy_power_on": {
+    "identical": true,
+    "local_sha256": "5638e679a01c89128baf0c28e6e9bd0f3adecc4ec020c0be80187e1f8816c03c",
+    "upstream_sha256": "5638e679a01c89128baf0c28e6e9bd0f3adecc4ec020c0be80187e1f8816c03c"
+  },
+  "atcphy_configure_post_tunable_t8103": {
+    "identical": true,
+    "local_sha256": "8418c0de8a9cc53eacc2a539fe7cd0227f64c551feb0e554731cc043109c3717",
+    "upstream_sha256": "8418c0de8a9cc53eacc2a539fe7cd0227f64c551feb0e554731cc043109c3717"
+  },
+  "_atcphy_dwc3_reset_assert": {
+    "identical": true,
+    "local_sha256": "0dce97695d35d5c1243f07f5d329a27fccb7e4f5a7645da1ca2506c2447f1585",
+    "upstream_sha256": "0dce97695d35d5c1243f07f5d329a27fccb7e4f5a7645da1ca2506c2447f1585"
+  },
+  "atcphy_usb3_set_mode": {
+    "identical": true,
+    "local_sha256": "fbe62f0fa1402fb31e203c72a4840c649821f3b5ed6a09a0d138a1b08c605a28",
+    "upstream_sha256": "fbe62f0fa1402fb31e203c72a4840c649821f3b5ed6a09a0d138a1b08c605a28"
+  },
+  "atcphy_dwc3_reset_deassert": {
+    "identical": true,
+    "local_sha256": "67f367552c3ce8e70a6e89c11980c365bd63c984079acecc9af781f70a0a1ce0",
+    "upstream_sha256": "67f367552c3ce8e70a6e89c11980c365bd63c984079acecc9af781f70a0a1ce0"
+  }
+}

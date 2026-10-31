@@ -440,3 +440,47 @@ The bounded next counterprobe removes only successful per-packet console
 printing from the NHI transport. The buffered timestamps, error reports, event
 ACKs, register writes, waits and limits remain. This tests diagnostic overhead
 as a cause; it is not yet a demonstrated fix.
+
+### Probe28 result and deeper Phase2 source audit
+
+Removing successful per-packet logging reduced ring-start-to-cable submission
+from 276 to 146 ms. The link nevertheless stayed in Phase2 for the bounded
+5.081-second observation; no remote router was read. Internal NVMe checks and
+reset passed, and stock Ubuntu returned. See [Probe28](../validation/m1-probe28-result.json).
+
+The [31 October source audit](phase2-source-audit-20261031.md) compares current
+Asahi helpers, the local Linux call chain, all pre-cable control writes in the
+working Linux trace, and mailing-list discussions. It identifies a previously
+missed interleaving: Linux configures core PHY before ACIO, but selects USB4
+PIPE only after ACIO/NHI/cable setup. The previous prototype selected PIPE
+before ACIO. Twenty-five relevant upstream PHY helpers match the reference.
+
+`nhi-late-pipe-candidate.patch` is the separate Probe29 comparison on top of
+Probe28. The old monolithic PHY entry point retains its exact writes; only the
+full host diagnostic uses the split and a one-use post-cable callback. All
+59 sandbox tests, 97 ASan/UBSan transport mock cases and the M1 build pass.
+The split tests verify write-for-write equivalence and fail-stop behavior at
+every PIPE access. Transport tests cover callback order, single-use and error
+cleanup. Hardware results are recorded below; no installation or external SSD writes.
+
+`nhi-calibration-noop-candidate.patch` is another source-parity candidate saved
+separately. It is not included in Probe29. Linux skips unchanged calibration
+writes; the prototype does not. The extracted-source comparison (12 cases)
+used that candidate and found only a remaining extra 10-us delay and redundant
+PIPE lock clear within the PHY sequence. `compare-phy-sources.py` can regenerate
+this comparison from the stated Linux checkout and candidate U-Boot sources;
+its fake-MMIO results do not validate analog hardware or inter-driver timing.
+
+Probe29 hardware: late PIPE configuration succeeded, but both lanes remained
+in state 7 and Phase2. All 61 control requests had replies; internal NVMe
+hashes and reset passed. This excludes the reordered PIPE step as a sufficient
+fix in this test, not every possible timing dependency.
+See [Probe29 result](../validation/m1-probe29-result.json).
+
+Probe30 added `nhi-late-pipe-calibration-candidate.patch` on Probe29. The M1
+build, 60 sandbox tests and 45 calibration fault cases passed. Hardware skipped
+94 unchanged RC/NHI values but still stopped at Phase2; all 61 control requests
+were answered. Stock Ubuntu returned, internal NVMe hashes matched and the
+installed boot bundle is unchanged. See [Probe30](../validation/m1-probe30-result.json).
+Next compare DWC3 core/PHY suspend state with working Linux; do not infer a
+working TB boot path from these partial initialization results.

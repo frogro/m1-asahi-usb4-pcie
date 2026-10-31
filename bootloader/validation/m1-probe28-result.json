@@ -1,0 +1,155 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "3fcbfb3c4609ce09176eb72c2d297118ae3e256758a76d5f02feced519b69545",
+  "records": [
+    {
+      "ms": 21913,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 21915,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 21925,
+      "delta": 12,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 21949,
+      "delta": 36,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 21954,
+      "delta": 41,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 21957,
+      "delta": 44,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 21960,
+      "delta": 47,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 21969,
+      "delta": 56,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 21973,
+      "delta": 60,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 21985,
+      "delta": 72,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 21988,
+      "delta": 75,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 22049,
+      "delta": 136,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 22049,
+      "delta": 136,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 22053,
+      "delta": 140,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 22056,
+      "delta": 143,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 22059,
+      "delta": 146,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 22066,
+      "delta": 153,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22069,
+      "delta": 156,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22202,
+      "delta": 289,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 22205,
+      "delta": 292,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 22208,
+      "delta": 295,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22212,
+      "delta": 299,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22212,
+      "delta": 299,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 22265,
+      "delta": 352,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 27286,
+      "delta": 5373,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 27299,
+      "delta": 5386,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 27299,
+      "delta": 5386,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 42,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 86,
+    "rings_to_cable_submit": 146,
+    "cable_submit_to_link_return": 5081
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true
+}

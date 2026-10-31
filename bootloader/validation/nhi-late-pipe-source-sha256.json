@@ -1,0 +1,8 @@
+{
+  "lib/apple_atc_m1.c": "26fd6842d5f609f59a8198d45516c9560545f00324888d8cd4687ff31bc1ba95",
+  "include/apple_atc_m1.h": "029adb9915e08886f746fb3d8ce38c30ca74190d7bfce78c7a9a0a1f67e79add",
+  "cmd/apple_atc_m1.c": "bc1677f62552c3f1f79e0410784163d2d862761af3fcabe12b4fdd4bf93a22eb",
+  "cmd/apple_nhi_m1_ring.c": "73288121b60dda009e2a0bea58b7e34f1844e1af48a24100a7293cf64aeb34a5",
+  "include/apple_nhi_m1.h": "a4c3c46974aaf7fcf92a35a3f50fbec87e3b6328c82a7f635145dc73de9d411b",
+  "test/dm/apple_atc_m1.c": "f59508044bf2bf24d6e419a90d630db192124ce9398221a77153bdf543525cdf"
+}
