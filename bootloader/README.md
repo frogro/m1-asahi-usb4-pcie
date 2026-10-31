@@ -138,3 +138,43 @@ all pinned patches, runs the sandbox tests and cross-builds the Apple profile.
 It publishes no bootloader release and changes neither kernel Latest nor the
 installer. Local `validation/prototype-result.json` records the exact tested
 patch hashes; changing a patch invalidates that recorded result until rebuilt.
+
+### First M1 hardware regression check
+
+On 31 October the six-patch prototype, loaded only into RAM under the m1n1
+hypervisor, read known files from the **real internal NVMe and SanDisk USB**
+media. Both SHA-256 digests matched. Virtual UART captured the result and
+regular internal Ubuntu returned after reset. See
+[the scoped result](validation/m1-storage-probe-20261031.json) and
+[U-Boot output](validation/m1-storage-probe-20261031.log).
+This establishes existing-storage regression coverage, **not Thunderbolt
+tunnel support, native GRUB boot or Linux handover**. The diagnostic device
+tree omitted the unused GPU alias because AGX firmware initialization on the
+Sonoma Test bootstrap rejected firmware 14.7; the known HDMI bootstrap failure
+was avoided by recording the virtual UART. No installed boot files changed.
+
+### Apple I2C and Type-C hardware status
+
+The seventh patch adds bounded polled Apple/PA Semi I2C transfers, retaining
+upstream Linux attribution. It supports short 7-bit transfers and combined
+register reads; rejects unsupported transactions before the first bus write;
+and reports NACK, arbitration, FIFO and timeout failures. Six sandbox tests
+cover read/write ordering, maximum read size, invalid combined transactions,
+timeouts and error recovery. The complete seven-patch build passes 43 tests
+and cross-builds the M1 profile.
+
+On the real M1, the same diagnostic U-Boot image read CD321x registers with a
+SanDisk attached, then with an OWC Express 1M2 attached. The controller reported
+USB mode for the former and its USB4 connection flag for the latter. Internal
+NVMe file hashes passed in both runs; the SanDisk file hash also passed.
+See [SanDisk evidence](validation/m1-typec-probe2-20261031.json) and
+[OWC evidence](validation/m1-typec-probe3-20261031.json), with adjacent UART logs.
+The OWC was **not read as a disk**. PHY, ACIO/NHI and PCIe tunnel setup are still
+missing. One optional Intel-status read was shorter than its advertised block
+length and is retained only as raw evidence, not decoded as a complete record.
+
+All three hardware runs used RAM-only payloads under m1n1; the installed boot
+bundle remained unchanged and internal Ubuntu returned after each reset.
+The broad `hardware_tested: false` manifest flag means the complete prototype
+feature set is not hardware-validated; `hardware_tested_scope` identifies the
+specific storage and Type-C checks that have passed.

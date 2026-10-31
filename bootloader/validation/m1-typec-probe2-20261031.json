@@ -1,0 +1,35 @@
+{
+  "status": "scoped-read-only-hardware-probe-passed",
+  "board": "Apple Mac mini M1 (J274)",
+  "run": "hv-run-20261031T141415Z",
+  "execution": "RAM-only U-Boot under m1n1 hypervisor",
+  "firmware": "14.7",
+  "source_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "artifacts": {
+    "j274-probe-hv.dtb": "340fb8b55ccfe193b374cb00105bb4a68f370bdcf952d056cc6977f296b23842",
+    "m1n1-uboot-probe-hv.bin": "baf6e870d7074e3fd0d887835a1208eb094493b98dcdb9f95dc382cd6dd3c9a8",
+    "u-boot-nodtb.bin": "cb8b1c7cdeada10e88df15f0bdc6cab43a573d8ac8a796099d34273dbaab779d",
+    "uboot.config": "cc0975579dacc05d325d2332bcda194e1e610c553d7d4a42466aaa86e4e085a1",
+    "bootcommand.txt": "23e677cf390c894a1889ab55235d0dcf7ff34e93cb8deb7e9bc2f9ae003d92f3"
+  },
+  "port": "Mac USB-C port away from Ethernet; I2C bus 0, address 0x3f",
+  "mode": "APP ",
+  "vendor_id": "0x00000028",
+  "installed": false,
+  "tunnel_implemented": false,
+  "reset": "U-Boot reset marker; internal Ubuntu returned over SSH",
+  "limitations": [
+    "No CD321x mode-changing command issued",
+    "No PHY/ACIO/NHI initialization or external PCIe DMA validated",
+    "Hardware image precedes two additional sandbox-only tests; production I2C code unchanged",
+    "No native GRUB/Linux handover test"
+  ],
+  "device": "SanDisk through USB-C adapter",
+  "status_register": "0x100248fd",
+  "data_status": "0x00000073",
+  "checks": {
+    "internal_nvme_sha256": true,
+    "usb_sandisk_sha256": true
+  },
+  "interpretation": "USB2/USB3 connection bits set; USB4/TBT bits clear. Gen2 flag is controller status, not a measured device transfer speed."
+}

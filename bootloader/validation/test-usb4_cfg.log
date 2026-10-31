@@ -33,4 +33,4 @@ Test: usb4_cfg_input_bounds: usb4_cfg.c
 Test: usb4_cfg_mismatch: usb4_cfg.c
 Test: usb4_cfg_reply: usb4_cfg.c
 Test: usb4_cfg_vectors: usb4_cfg.c
-Tests run: 6, 2 ms, average: 0 ms, failures: 0
+Tests run: 6, 3 ms, average: 0 ms, failures: 0

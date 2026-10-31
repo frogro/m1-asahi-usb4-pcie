@@ -1,0 +1,33 @@
+{
+  "status": "read-only-hardware-storage-probe-passed",
+  "utc": "2026-10-31T14:08:00Z",
+  "board": "Apple Mac mini M1 (J274)",
+  "execution": "RAM-only U-Boot guest under m1n1 hypervisor; real internal NVMe and USB storage",
+  "source_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "patches": "prototype.json six-patch version before I2C bring-up",
+  "m1n1": "v1.9.9 / 809541515659bf4e504807fd72bc0a539be5eee7",
+  "firmware": "14.7",
+  "image_sha256": "4cac59c5ca093dde3090998e71dad099f713b3c754de5940b9afaea6c1b6ec24",
+  "diagnostic_config": [
+    "CMD_HASH",
+    "SHA256",
+    "ENV_IS_NOWHERE"
+  ],
+  "temporary_dt_changes": [
+    "remove unused gpu alias to skip unsupported AGX firmware init",
+    "read-only bootcmd",
+    "bootdelay=0"
+  ],
+  "results": {
+    "INTERNAL-NVME-SHA256": true,
+    "USB-SANDISK-SHA256": true
+  },
+  "limitations": [
+    "Not a Thunderbolt tunnel test",
+    "Not a native GRUB or Linux boot test",
+    "HDMI under this Sonoma Test bootstrap remains unavailable; virtual UART records results",
+    "Only known configuration files read, no disk writes or saved environment"
+  ],
+  "reset": "resetting marker captured; regular internal Ubuntu 7.2.0-1001-asahi-arm reachable over SSH afterwards",
+  "installed": false
+}

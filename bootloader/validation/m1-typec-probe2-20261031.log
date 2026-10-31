@@ -1,0 +1,61 @@
+U-Boot 2026.07-gb33034a515a0-dirty (Oct 31 2026 - 15:13:21 +0100)
+
+Model: Apple Mac mini (M1, 2020)
+DRAM:  15.2 GiB
+Core:  179 devices, 21 uclasses, devicetree: board
+WDT:   Started watchdog@23d2b0000 with servicing every 1000ms (60s timeout)
+Loading Environment from nowhere... OK
+In:    serial,usbkbd,spikbid,mtpkbd
+Out:   vidconsole,serial
+Err:   vidconsole,serial
+Model: Apple Mac mini (M1, 2020)
+
+starting USB...
+USB XHCI 1.10
+USB XHCI 1.00
+Bus usb@502280000: 2 USB Device(s) found
+Bus xhci_pci: 2 USB Device(s) found
+       scanning usb for storage devices... 1 Storage Device(s) found
+
+Hit any key to stop autoboot: 0
+UBOOT-PROBE2 TYPEC-READ-ONLY
+Bus 0:	i2c@235010000
+Bus 1:	i2c@235014000
+Bus 2:	i2c@235018000
+Setting bus to 0
+CD321X-PORT1-MODE
+0003: 04 41 50 50 20    .APP 
+CD321X-PORT1-VID
+0000: 04 28 00 00 00    .(...
+CD321X-PORT1-VERSION
+000f: 04 00 64 21 00    ..d!.
+CD321X-PORT1-STATUS
+001a: 04 fd 48 02 10    ..H..
+CD321X-PORT1-DATA-STATUS
+005f: 05 73 00 00 00 00 00 00 00    .s.......
+UBOOT-PROBE2 READ-ONLY BEGIN
+U-Boot 2026.07-gb33034a515a0-dirty (Oct 31 2026 - 15:13:21 +0100)
+
+aarch64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+GNU ld (GNU Binutils for Ubuntu) 2.46
+373831 bytes read in 1 ms (356.5 MiB/s)
+sha256 for b9be00000 ... b9be5b446 ==> ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9
+373867 bytes read in 11 ms (32.4 MiB/s)
+sha256 for b9be00000 ... b9be5b46a ==> d803c8668142d64cf5eb949927ad037fa9e04f045462c28a5a503d932ec772bc
+** Bad device specification usb 1 **
+Couldn't find partition usb 1:2
+Can't set block device
+** Bad device specification usb 2 **
+Couldn't find partition usb 2:2
+Can't set block device
+** Bad device specification usb 3 **
+Couldn't find partition usb 3:2
+Can't set block device
+================================
+UBOOT-PROBE2 RESULT
+INTERNAL-NVME-SHA256 PASS
+USB-SANDISK-SHA256 PASS
+NO-THUNDERBOLT-TUNNEL-TEST
+AUTOMATIC-RESET-IN-10-SECONDS
+================================
+resetting ...

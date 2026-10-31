@@ -1,0 +1,47 @@
+{
+  "status": "scoped-read-only-hardware-probe-passed",
+  "board": "Apple Mac mini M1 (J274)",
+  "run": "hv-run-20261031T141654Z",
+  "execution": "RAM-only U-Boot under m1n1 hypervisor",
+  "firmware": "14.7",
+  "source_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "artifacts": {
+    "j274-probe-hv.dtb": "4a330d99b07f3ea73991c2dded864fb500d339f0942504af59c7d3e13e5d8ede",
+    "m1n1-uboot-probe-hv.bin": "26ae8e04a9858a6fbccb4c65f7a05c1d245209b5e955e8c0530186970ff3c186",
+    "u-boot-nodtb.bin": "cb8b1c7cdeada10e88df15f0bdc6cab43a573d8ac8a796099d34273dbaab779d",
+    "uboot.config": "cc0975579dacc05d325d2332bcda194e1e610c553d7d4a42466aaa86e4e085a1",
+    "bootcommand.txt": "364c1975d273d6e58c83e43df585329607c4eeaf079eaa498b7483b48a2e34f1"
+  },
+  "port": "Mac USB-C port away from Ethernet; I2C bus 0, address 0x3f",
+  "mode": "APP ",
+  "vendor_id": "0x00000028",
+  "installed": false,
+  "tunnel_implemented": false,
+  "reset": "U-Boot reset marker; internal Ubuntu returned over SSH",
+  "limitations": [
+    "No CD321x mode-changing command issued",
+    "No PHY/ACIO/NHI initialization or external PCIe DMA validated",
+    "Hardware image precedes two additional sandbox-only tests; production I2C code unchanged",
+    "No native GRUB/Linux handover test"
+  ],
+  "device": "OWC Express 1M2 directly through USB4 cable",
+  "status_register": "0x108280ef",
+  "data_status": "0x16c00011",
+  "usb4_status": {
+    "length": 9,
+    "mode_status": "0x07",
+    "eudo": "0x2667e000",
+    "unknown": "0x00000000"
+  },
+  "intel_vid_status": {
+    "advertised_length": 11,
+    "captured_payload_bytes": 9,
+    "complete": false,
+    "decoded": false
+  },
+  "checks": {
+    "internal_nvme_sha256": true,
+    "owc_disk_read": false
+  },
+  "interpretation": "CD321x USB4 connection bit 23 and active-cable bit 22 set. This is Type-C negotiation evidence, not an operating PCIe tunnel. U-Boot found zero USB storage devices."
+}

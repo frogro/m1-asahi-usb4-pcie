@@ -28,6 +28,10 @@
     {
       "file": "patches/0006-iommu-apple-reject-invalid-dma-reservations.patch",
       "sha256": "1d5d5cf02d7d071879151558e07c00ef230ee7d3e3fdf5dfa7260c2c17e24bb5"
+    },
+    {
+      "file": "patches/0007-i2c-apple-add-bounded-polled-transfers.patch",
+      "sha256": "af8445c8f8b7c07d1e434587e057fac29d2df39ac3a9d836dd6108005ace92cc"
     }
   ],
   "linux_hardware_reference": {
@@ -39,5 +43,9 @@
       "TTBR base 0x400",
       "no bypass"
     ]
-  }
+  },
+  "hardware_tested_scope": [
+    "six-patch internal NVMe and USB file hashes",
+    "seven-patch CD321x status reads and internal NVMe/USB file hashes"
+  ]
 }

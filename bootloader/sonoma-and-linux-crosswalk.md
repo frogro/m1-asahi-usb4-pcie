@@ -34,7 +34,7 @@ and page-table values from macOS are not reusable buffer allocations.
    addresses into those fields. The Apple internal NVMe path uses different
    SART/NVMMU machinery and must remain independently functional.
 4. Bounded DART flush waits and allocation-error propagation. Existing U-Boot
-   DART polling is unbounded; mapping allocation failures are not safely handled.
+   DART polling is unbounded; allocation rejection is now tested, but caller error handling remains incomplete.
 5. Read-only external-file hashes, clean DMA quiescence and EFI/GRUB handover.
    Then validate internal, USB and Thunderbolt boot with and without a disk.
 
@@ -51,8 +51,8 @@ for that first read-only storage proof.
 
 1. Read the Type-C controller's negotiated mode, orientation and cable data.
    U-Boot's current `phy-apple-atc.c` has empty PHY operations; it does not
-   configure USB4 lanes. An Apple I2C/CD321x path and the actual ATCPHY sequence
-   are still required. m1n1's existing I2C/TPS6598x code and exported ATC tunables
+   configure USB4 lanes. The Apple I2C register-read path is now hardware-tested; structured CD321x
+   mode handling and the actual ATCPHY sequence are still required. m1n1's existing I2C/TPS6598x code and exported ATC tunables
    are useful references; its USB2 preparation alone does not establish USB4.
 2. Configure ATCPHY for that negotiation **before** starting ACIO. Power domains,
    clocks and reset ordering must keep the PHY alive while ACIO is active.

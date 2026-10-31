@@ -43,4 +43,4 @@ Test: iommu_pci_truncated_map: iommu.c
 Test: iommu_pci_truncated_map: iommu.c (flat tree)
 Test: iommu_pci_unmapped_no_ofnode: iommu.c
 Test: iommu_pci_unmapped_no_ofnode: iommu.c (flat tree)
-Tests run: 8, 69 ms, average: 8 ms, failures: 0
+Tests run: 8, 71 ms, average: 8 ms, failures: 0
