@@ -18,6 +18,11 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Reserve and verify release upload before compilation
+        id: release_prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 build/release-output.py prepare
       - name: Runner capacity and toolchain
         shell: bash
         run: |
@@ -40,24 +45,8 @@ jobs:
         env:
           INCLUDE_EGPU: ${{ inputs.include_egpu }}
         run: build/full-kernel.sh
-      - name: Save outputs to a private draft release (no Actions artifacts)
-        if: always()
+      - name: Save outputs to a draft release (no Actions artifacts)
+        if: always() && steps.release_prepare.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts
-          tag="kernel-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          printf 'Private build-only output. No deployment.\nRun: %s/%s/actions/runs/%s\nCommit: %s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_SHA" > artifacts/RUN.txt
-          if test -f artifacts/RESULT.txt; then
-            cp artifacts/RESULT.txt artifacts/release-notes.txt
-          else
-            printf 'Build incomplete or failed. Diagnostics only; not an installable verified kernel.\n' > artifacts/release-notes.txt
-          fi
-          cat artifacts/RUN.txt >> artifacts/release-notes.txt
-          python3 build/prepare-assets.py
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Kernel build ${GITHUB_RUN_ID} (not installed)" --notes-file artifacts/release-notes.txt
-          # GitHub rejects zero-byte release assets; retain their hashes in SHA256SUMS.
-          find artifacts -maxdepth 1 -type f -size +0c -print0 | xargs -0 -r -n1 gh release upload "$tag" --repo "$GITHUB_REPOSITORY"
-          printf 'Private draft release: %s/%s/releases\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" >> "$GITHUB_STEP_SUMMARY"
+        run: python3 build/release-output.py upload

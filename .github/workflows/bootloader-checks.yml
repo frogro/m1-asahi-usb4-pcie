@@ -19,7 +19,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential gcc-aarch64-linux-gnu bison flex bc pkg-config libssl-dev libgnutls28-dev libsdl2-dev uuid-dev libelf-dev swig python3-dev python3-setuptools python3-pyelftools python3-yaml device-tree-compiler
+          sudo apt-get install -y --no-install-recommends build-essential gcc-aarch64-linux-gnu bison flex bc pkg-config libssl-dev libgnutls28-dev libsdl2-dev uuid-dev libelf-dev liblzma-dev libzstd-dev liblz4-dev swig python3-dev python3-setuptools python3-pyelftools python3-yaml python3-jsonschema device-tree-compiler
       - name: Fetch pinned upstream source
         shell: bash
         run: |
@@ -41,6 +41,6 @@ jobs:
             cat "$RUNNER_TEMP/prototype-build/result.json" >> "$GITHUB_STEP_SUMMARY"
             printf '\n```\n' >> "$GITHUB_STEP_SUMMARY"
           else
-            find "$RUNNER_TEMP/prototype-build" -maxdepth 1 -name '*.log' -exec sh -c 'echo "$1"; tail -n 30 "$1"' sh {} \;
+            find "$RUNNER_TEMP/prototype-build" -maxdepth 1 -name '*.log' -exec sh -c 'echo "$1"; grep -n -E -C 3 "error:|fatal:|Error|not found|No such|Traceback|Exception|FAILED" "$1" || true; tail -n 30 "$1"' sh {} \;
             exit 1
           fi
