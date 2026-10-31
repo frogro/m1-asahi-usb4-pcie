@@ -1,0 +1,282 @@
+{
+  "events": [
+    {
+      "rx": 10,
+      "sof": 0,
+      "eof": 5,
+      "size": 16,
+      "raw_words": [
+        "80000000",
+        "00000000",
+        "00000005",
+        "d7df61d9"
+      ],
+      "route": 0,
+      "kind": "plug_event",
+      "port": 5,
+      "unplug": false
+    },
+    {
+      "rx": 34,
+      "sof": 0,
+      "eof": 5,
+      "size": 16,
+      "raw_words": [
+        "80000000",
+        "00000000",
+        "00000005",
+        "d7df61d9"
+      ],
+      "route": 0,
+      "kind": "plug_event",
+      "port": 5,
+      "unplug": false
+    },
+    {
+      "rx": 41,
+      "sof": 0,
+      "eof": 5,
+      "size": 16,
+      "raw_words": [
+        "80000000",
+        "00000000",
+        "00000005",
+        "d7df61d9"
+      ],
+      "route": 0,
+      "kind": "plug_event",
+      "port": 5,
+      "unplug": false
+    },
+    {
+      "rx": 46,
+      "sof": 0,
+      "eof": 5,
+      "size": 16,
+      "raw_words": [
+        "80000000",
+        "00000000",
+        "00000005",
+        "d7df61d9"
+      ],
+      "route": 0,
+      "kind": "plug_event",
+      "port": 5,
+      "unplug": false
+    },
+    {
+      "rx": 51,
+      "sof": 0,
+      "eof": 5,
+      "size": 16,
+      "raw_words": [
+        "80000000",
+        "00000000",
+        "00000005",
+        "d7df61d9"
+      ],
+      "route": 0,
+      "kind": "plug_event",
+      "port": 5,
+      "unplug": false
+    }
+  ],
+  "lanes": [
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 230
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 237
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 350
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 357
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 464
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 471
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 578
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 585
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 698
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 705
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 812
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 819
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 932
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 939
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 1046
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 1053
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 1166
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 1173
+    },
+    {
+      "lane": 1,
+      "state": 7,
+      "raw": [
+        "003c0114",
+        "5c00001c"
+      ],
+      "time_ms": 1280
+    },
+    {
+      "lane": 2,
+      "state": 7,
+      "raw": [
+        "003c0128",
+        "5c00001c"
+      ],
+      "time_ms": 1287
+    }
+  ],
+  "mailbox": [
+    {
+      "phase": "before",
+      "tx": "0x26601",
+      "rx": "0x26601",
+      "rx_empty": true
+    },
+    {
+      "phase": "after",
+      "tx": "0x26601",
+      "rx": "0x26601",
+      "rx_empty": true
+    }
+  ],
+  "remote_read_pass": false,
+  "reset_observed": true
+}

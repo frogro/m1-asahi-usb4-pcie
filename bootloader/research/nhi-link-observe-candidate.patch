@@ -1,0 +1,152 @@
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -13,6 +13,7 @@
+ #include <apple_cd321x.h>
+ #include <dm/ofnode.h>
+ #include <asm/io.h>
++#include <asm/unaligned.h>
+ #include <cpu_func.h>
+ #include <dm.h>
+ #include <iommu.h>
+@@ -37,7 +38,7 @@
+ struct diagnostic_ring {
+  void *buffer, *nhi, *dart_regs;
+  struct diagnostic_desc *tx, *rx;
+- unsigned int sent, received;
++ unsigned int sent, received, skipped;
+  ulong started;
+ };
+ 
+@@ -116,6 +117,17 @@
+    r->received++;
+    if (!ret) got_reply = true;
+    else if (ret != -EAGAIN) return ret;
++   else {
++    const u8 *packet = r->buffer + 3 * PAGE + (r->received - 1) * 256;
++    unsigned int length = fields & 0xfff, j;
++    /* decode already validated bounds, framing and CRC. Never ack by guess. */
++    r->skipped++;
++    printf("NHI unsolicited rx=%u sof=%u eof=%u bytes=%u words=",
++           r->received, (fields >> 16) & 15, (fields >> 12) & 15, length);
++    for (j = 0; j < length / 4 && j < 8; j++)
++     printf(" %08x", get_unaligned_be32(packet + 4 * j));
++    printf("\n");
++   }
+   }
+   if (got_reply && (tx_flags & DESC_DONE)) {
+    printf("NHI xfer type=%u port=%u space=%u offset=%#x words=%u response-port=%u tx=%u rx=%u\n",
+@@ -135,8 +147,8 @@
+  return diagnostic_xfer(context, port, space, offset, words, data, USB4_CFG_READ, 0);
+ }
+ 
+-/* The only write allowed by this probe: four root-router config words.
+- * No arbitrary write command, port unlock or cable-information write.
++/* Root configuration callback; diagnostic_link separately constrains the
++ * host-port unlock and cable-information writes. No arbitrary write command.
+  */
+ static int diagnostic_host_config(void *context, u32 *data)
+ {
+@@ -150,22 +162,31 @@
+ static int diagnostic_link(struct diagnostic_ring *ring,
+                            const struct apple_nhi_host_info *info)
+ {
+- u32 data[5], seen[16], phy = 0, offset = info->port1_cap, value;
++ u32 data[8], seen[16], phy[2] = {}, offset, value;
+  unsigned int count = 0, i, port, state;
+  int ret;
+  if (!diagnostic_cable_valid || info->null_ports != 6 ||
+      info->apple < 5 || info->apple > 0x1ffe) return -EPROTO;
+- /* Find the lane PHY capability before changing the link. */
++ /* Discover each lane's capability independently before changing the link. */
++ for (port = 1; port <= 2; port++) {
++ count = 0;
++ offset = info->port1_cap;
++ if (port == 2) {
++  ret = diagnostic_read(ring, 2, 1, 0, 8, data);
++  if (ret) return ret;
++  offset = data[1] & 255;
++ }
+  while (offset) {
+   if (offset < 8 || offset > 255 || count == 16) return -ERANGE;
+   for (i = 0; i < count; i++) if (seen[i] == offset) return -ELOOP;
+   seen[count++] = offset;
+-  ret = diagnostic_read(ring, 1, 1, offset, 2, data);
++  ret = diagnostic_read(ring, port, 1, offset, 2, data);
+   if (ret) return ret;
+-  if (((data[0] >> 8) & 255) == 1) { phy = offset; break; }
++  if (((data[0] >> 8) & 255) == 1) { phy[port - 1] = offset; break; }
+   offset = data[0] & 255;
+  }
+- if (!phy) return -ENOENT;
++ if (!phy[port - 1]) return -ENOENT;
++ }
+  for (port = 1; port <= 2; port++) {
+   ret = diagnostic_read(ring, port, 1, 4, 1, &value);
+   if (ret) return ret;
+@@ -186,10 +207,15 @@
+  if ((value & 0x1f) != diagnostic_cable) return -EIO;
+  printf("NHI-CABLE-INFO PASS value=%#x\n", value);
+  for (i = 0; i < 10; i++) {
+-  ret = diagnostic_read(ring, 1, 1, phy, 2, data);
++  ret = diagnostic_read(ring, 1, 1, phy[0], 2, data);
+   if (ret) return ret;
+   state = (data[1] >> 26) & 15;
+-  printf("NHI lane1 state=%u\n", state);
++  printf("NHI lane1 state=%u raw=%08x %08x time-ms=%lu\n",
++         state, data[0], data[1], get_timer(ring->started));
++  ret = diagnostic_read(ring, 2, 1, phy[1], 2, data);
++  if (ret) return ret;
++  printf("NHI lane2 state=%u raw=%08x %08x time-ms=%lu\n",
++         (data[1] >> 26) & 15, data[0], data[1], get_timer(ring->started));
+   if (state >= 2 && state <= 6) break;
+   udelay(100000);
+  }
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -87,6 +87,19 @@
+ 	return 0;
+ }
+ 
++/* Known powered PHY control/status registers only; no FIFO or clear-on-read. */
++static void snapshot_phy(struct atc_m1_hw *hw, const char *phase)
++{
++ static const u32 core[] = { 8, 0x48, 0x4c, 0x1b0, 0x2a00,
++                            0x20000, 0x20004, 0x20008, 0x9010, 0x10010 };
++ static const u32 pipe[] = { 0, 4, 0xc, 0x10, 0x14, 0x1c, 0x20 };
++ unsigned int i;
++ for (i = 0; i < ARRAY_SIZE(core); i++)
++  printf("ATC-SNAPSHOT %s core[%#x]=%#x\n", phase, core[i], readl(hw->base[ATC_CORE] + core[i]));
++ for (i = 0; i < ARRAY_SIZE(pipe); i++)
++  printf("ATC-SNAPSHOT %s pipe[%#x]=%#x\n", phase, pipe[i], readl(hw->base[ATC_PIPE] + pipe[i]));
++}
++
+ static const struct atc_m1_io hw_io = {
+ 	.read = hw_read, .write = hw_write, .delay = hw_delay,
+ 	.verify_halted = hw_verify_halted,
+@@ -266,7 +279,9 @@
+ 	}
+ 	if (acio) {
+ 		puts("ATC-M1 PHY retained for ACIO; xHCI remains halted\n");
++		snapshot_phy(&hw, "before-acio");
+ 		ret = apple_acio_m1_start(stage);
++		snapshot_phy(&hw, "after-acio");
+ 		if (ret) goto fail;
+ 	} else {
+ 		puts("ATC-M1 PHY SEQUENCE PASS; DWC3 held reset, no ACIO/NHI/tunnel/DMA\n");
+--- a/cmd/apple_acio_m1.c
++++ b/cmd/apple_acio_m1.c
+@@ -230,7 +230,13 @@
+    puts("NHI-READONLY PASS; no configuration, rings or DMA\n");
+  }
+  if (!ret && stage >= 3) ret = apple_nhi_m1_tunables_apply(false);
+- if (!ret && stage >= 2) ret = apple_nhi_m1_dart_test(stage);
++ if (!ret && stage >= 2) {
++  void *mbox_regs = map_sysmem(0x501100000ULL, 0x4000);
++  /* Status only: do not pop or acknowledge queued firmware messages. */
++  printf("ACIO-MBOX before-nhi tx=%#x rx=%#x\n", readl(mbox_regs + 0x50), readl(mbox_regs + 0x80));
++  ret = apple_nhi_m1_dart_test(stage);
++  printf("ACIO-MBOX after-nhi tx=%#x rx=%#x\n", readl(mbox_regs + 0x50), readl(mbox_regs + 0x80));
++ }
+  shutdown = apple_rtkit_shutdown(rtk, APPLE_RTKIT_PWR_STATE_SLEEP);
+  printf("ACIO RTKit shutdown ret=%d\n", shutdown);
+  if (!ret) ret = shutdown;

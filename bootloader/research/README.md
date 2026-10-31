@@ -227,3 +227,35 @@ not a decoded diagnosis. DMA storage remains retained until mandatory reset.
 PCIe tunnel setup, external NVMe reads and safe OS handover remain absent.
 Discovery is intended to become generic; this diagnostic deliberately requires
 the validated M1 host lane mapping and USB4 mode. No installed changes.
+
+
+### Probe20: link-state and event observation
+
+`nhi-link-observe-candidate.patch` follows Probe19. Its added reads found both
+lanes in state7 and unchanged PHY control/mux/reset snapshots. The M3 mailbox
+was empty before and after the NHI sequence. Five additional, CRC-valid packets
+were identical EOF5 plug events for root port5 (the host DP-input adapter).
+These do not establish a physical OWC connection. The root event was not
+acknowledged by Probe20. Overall result remained timeout; the remote-router
+read was not attempted. Internal hashes passed and Ubuntu returned by itself.
+See the raw validation log and `nhi-link-observe-hardware.json`.
+
+Next test adds Linux-style bounded root event acknowledgments. This is
+separate from the excluded Linux PCIe reset-ACK classification patch.
+No claim is made yet that missing event acknowledgments cause the link failure.
+
+
+### Prepared Probe21: bounded root event acknowledgement
+
+`nhi-event-ack-candidate.patch` follows Probe20. It adds the Linux
+`tb_cfg_ack_plug` wire format to the codec and serializes one-way ACK packets
+after the current TX descriptor completes. It accepts only CRC-valid, exactly
+sized root-router events for ports1–7; at most eight acknowledgments and
+63 total TX slots are permitted. The existing two-second TX and ten-second
+transport deadlines remain. Other routes, malformed events and event floods
+stop the diagnostic. No external router register write or disk access is added.
+
+The 94 extracted-production host cases include exact plug/unplug wire values,
+CRC/reserved-bit failures, wrong routes/ports, uncompleted ACK TX, DART faults
+and notification floods. Sandbox57 and M1 build pass. Hardware result is tracked
+in `nhi-event-ack-result.json`; prepared does not mean hardware verified.

@@ -1,0 +1,9 @@
+{
+  "base": "frozen Probe19, files in before/",
+  "files_identical": [
+    "cmd/apple_nhi_m1_ring.c",
+    "cmd/apple_atc_m1.c",
+    "cmd/apple_acio_m1.c"
+  ],
+  "patch_output": "patching file cmd/apple_nhi_m1_ring.c\npatching file cmd/apple_atc_m1.c\npatching file cmd/apple_acio_m1.c\n"
+}

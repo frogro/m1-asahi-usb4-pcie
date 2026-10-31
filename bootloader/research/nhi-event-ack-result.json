@@ -1,0 +1,10 @@
+{
+  "prepared": true,
+  "hardware_tested": false,
+  "software_mock_cases": 94,
+  "sandbox_cases": 57,
+  "m1_build": "passed",
+  "scope": "At most eight Linux-format root plug/unplug acknowledgments, no external writes or disk I/O",
+  "distinction": "Not the excluded Linux PCIe reset-ACK classification change",
+  "hardware_runner": "waiting for m1n1 connection"
+}

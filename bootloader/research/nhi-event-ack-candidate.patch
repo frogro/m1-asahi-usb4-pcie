@@ -1,0 +1,152 @@
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -38,7 +38,8 @@
+ struct diagnostic_ring {
+  void *buffer, *nhi, *dart_regs;
+  struct diagnostic_desc *tx, *rx;
+- unsigned int sent, received, skipped;
++ unsigned int sent, received, skipped, acked, pending_count;
++ struct usb4_cfg_event pending[8];
+  ulong started;
+ };
+ 
+@@ -66,6 +67,49 @@
+  * RX descriptors are published once and only invalidated/read afterwards.
+  * This avoids CPU cache writeback racing a device update on a shared line.
+  */
++/* Serialize ACKs after the current TX descriptor completes. No descriptor
++ * reuse, recursion or response wait: Linux sends these notifications one-way.
++ * This M1 diagnostic acknowledges only validated events from its root ports.
++ */
++static int diagnostic_ack_events(struct diagnostic_ring *r)
++{
++ unsigned int i;
++ for (i = 0; i < r->pending_count; i++) {
++  const struct usb4_cfg_event *event = &r->pending[i];
++  unsigned int slot = r->sent;
++  ulong started;
++  int len;
++  if (event->route || !event->port || event->port > 7) return -EPROTO;
++  if (r->acked >= 8 || slot >= RING_COUNT - 1) return -ENOSPC;
++  if (get_timer(r->started) >= 10000) return -ETIMEDOUT;
++  len = usb4_cfg_ack_plug_encode(event, r->buffer + 2 * PAGE + slot * 256, 256);
++  if (len < 0) return len;
++  invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
++  r->tx[slot].fields = cpu_to_le32(len | (USB4_CFG_ERROR << 12) |
++                                  (USB4_CFG_ERROR << 16) | DESC_POSTED);
++  flush_dcache_range((ulong)r->buffer + 2 * PAGE, (ulong)r->buffer + 3 * PAGE);
++  flush_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
++  mb();
++  r->sent++;
++  writel(r->sent << 16, r->nhi + 0x10008);
++  started = get_timer(0);
++  for (;;) {
++   invalidate_dcache_range((ulong)r->tx, (ulong)r->tx + PAGE);
++   mb();
++   if (readl(r->dart_regs + 0x40) & BIT(31)) return -EFAULT;
++   if (readl(&r->tx[slot].fields) & DESC_DONE) break;
++   if (get_timer(started) >= 2000 || get_timer(r->started) >= 10000)
++    return -ETIMEDOUT;
++   udelay(50);
++  }
++  r->acked++;
++  printf("NHI-EVENT-ACK SENT port=%u unplug=%u count=%u\n",
++         event->port, event->unplug, r->acked);
++ }
++ r->pending_count = 0;
++ return 0;
++}
++
+ static int diagnostic_xfer(void *context, unsigned int port, unsigned int space,
+                            unsigned int offset, unsigned int words, u32 *data,
+                            unsigned int type, u64 route)
+@@ -127,8 +171,21 @@
+     for (j = 0; j < length / 4 && j < 8; j++)
+      printf(" %08x", get_unaligned_be32(packet + 4 * j));
+     printf("\n");
++    if (((fields >> 12) & 15) == USB4_CFG_EVENT) {
++     struct usb4_cfg_event event;
++     ret = usb4_cfg_decode_event(packet, length, (fields >> 16) & 15,
++                                 (fields >> 12) & 15, &event);
++     if (ret) return ret;
++     if (event.route || !event.port || event.port > 7) return -EPROTO;
++     if (r->pending_count >= 8) return -ENOSPC;
++     r->pending[r->pending_count++] = event;
++    }
+    }
+   }
++  if (r->pending_count && (tx_flags & DESC_DONE)) {
++   ret = diagnostic_ack_events(r);
++   if (ret) return ret;
++  }
+   if (got_reply && (tx_flags & DESC_DONE)) {
+    printf("NHI xfer type=%u port=%u space=%u offset=%#x words=%u response-port=%u tx=%u rx=%u\n",
+           type, port, space, offset, words, response_port, r->sent, r->received);
+--- a/lib/usb4_cfg.c
++++ b/lib/usb4_cfg.c
+@@ -105,3 +105,36 @@
+ 	*response_port = (address >> 19) & 63;
+ 	return 0;
+ }
++
++/* Linux tb_msgs.h cfg_event_pkg and ctl.c tb_cfg_ack_plug. */
++int usb4_cfg_decode_event(const void *frame, size_t size, unsigned int sof,
++                         unsigned int eof, struct usb4_cfg_event *event)
++{
++ const u8 *bytes = frame;
++ u32 hi, value;
++ if (!frame || !event) return -EINVAL;
++ if (eof != USB4_CFG_EVENT) return -EAGAIN;
++ if (sof || size != 16) return -EPROTO;
++ if (get_unaligned_be32(bytes + 12) != usb4_cfg_crc(bytes, 12)) return -EBADMSG;
++ hi = get_unaligned_be32(bytes);
++ value = get_unaligned_be32(bytes + 8);
++ if ((hi & 0xffc00000) != BIT(31) || (value & 0x7fffffc0)) return -EPROTO;
++ event->route = (u64)(hi & 0x003fffff) << 32 | get_unaligned_be32(bytes + 4);
++ event->port = value & 63;
++ event->unplug = !!(value & BIT(31));
++ return 0;
++}
++
++int usb4_cfg_ack_plug_encode(const struct usb4_cfg_event *event,
++                            void *frame, size_t capacity)
++{
++ u8 *bytes = frame;
++ if (!event || !frame || event->route >> 54 || event->port > 63) return -EINVAL;
++ if (capacity < 16) return -ENOSPC;
++ put_unaligned_be32(event->route >> 32, bytes);
++ put_unaligned_be32(event->route, bytes + 4);
++ put_unaligned_be32(7U | event->port << 8 |
++                    (event->unplug ? 3U : 2U) << 30, bytes + 8);
++ put_unaligned_be32(usb4_cfg_crc(bytes, 12), bytes + 12);
++ return 16;
++}
+--- a/include/usb4_cfg.h
++++ b/include/usb4_cfg.h
+@@ -8,6 +8,14 @@
+ #define USB4_CFG_MAX_WORDS 60
+ #define USB4_CFG_READ 1
+ #define USB4_CFG_WRITE 2
++#define USB4_CFG_ERROR 3
++#define USB4_CFG_EVENT 5
++
++struct usb4_cfg_event {
++	u64 route;
++	unsigned int port;
++	bool unplug;
++};
+ 
+ /* Values are deliberately wider than their wire fields for input validation. */
+ struct usb4_cfg_request {
+@@ -36,4 +44,11 @@
+ 		    size_t size, unsigned int sof, unsigned int eof,
+ 		    u32 *data, unsigned int *response_port);
+ 
++/* Validated plug events only. Output is unchanged on failure. */
++int usb4_cfg_decode_event(const void *frame, size_t size, unsigned int sof,
++                         unsigned int eof, struct usb4_cfg_event *event);
++/* Linux tb_cfg_ack_plug wire format; no reply is expected. TX SOF/EOF are 3. */
++int usb4_cfg_ack_plug_encode(const struct usb4_cfg_event *event,
++                            void *frame, size_t capacity);
++
+ #endif
