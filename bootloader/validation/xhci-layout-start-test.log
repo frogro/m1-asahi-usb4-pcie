@@ -1,0 +1,42 @@
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI port1 power-control=0 status=0
+M1-XHCI port2 power-control=0 status=0
+M1-XHCI start ret=0 maps=4 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI caps length=0 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x41 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0xff000001 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0xffffffff dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0xb000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2001 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0xb000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x2001 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI start ret=-110 maps=0 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI start ret=-14 maps=4 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI caps length=0x40 slots_ports=0x2000420 scratch=0 dboff=0x2000 rtsoff=0x3000 pages=0x1
+M1-XHCI start ret=-12 maps=4 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+M1-XHCI port1 power-control=1 status=0x220
+M1-XHCI port2 power-control=1 status=0x200
+M1-XHCI caps length=0x20 slots_ports=0x200047f scratch=0x1c0000f1 dboff=0x4e0 rtsoff=0x440 pages=0x1
+M1-XHCI port1 power-control=0 status=0
+M1-XHCI port2 power-control=0 status=0
+M1-XHCI start ret=0 maps=4 dma_failed=0 command=0 status=0x1
+M1-XHCI buffers retained until full reset; no USB enumeration
+
+48 extracted start/stop/capability/DMA/port cases passed

@@ -1,0 +1,215 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "4caf0ff37047b7c85aa07dc58b1a0e78af03a681ffac8ecffc8a28aeaab8b194",
+  "records": [
+    {
+      "ms": 21771,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 21773,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 21859,
+      "delta": 88,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 21882,
+      "delta": 111,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 21886,
+      "delta": 115,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 21889,
+      "delta": 118,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 21892,
+      "delta": 121,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 21902,
+      "delta": 131,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 21905,
+      "delta": 134,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 21918,
+      "delta": 147,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 21921,
+      "delta": 150,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 21982,
+      "delta": 211,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 21982,
+      "delta": 211,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 21985,
+      "delta": 214,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 21989,
+      "delta": 218,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 21992,
+      "delta": 221,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 21999,
+      "delta": 228,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22002,
+      "delta": 231,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22135,
+      "delta": 364,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 22138,
+      "delta": 367,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 22142,
+      "delta": 371,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22145,
+      "delta": 374,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22145,
+      "delta": 374,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 22148,
+      "delta": 377,
+      "event": "dwc3-host-begin"
+    },
+    {
+      "ms": 22165,
+      "delta": 394,
+      "event": "dwc3-core-init-begin"
+    },
+    {
+      "ms": 22365,
+      "delta": 594,
+      "event": "dwc3-core-init-return"
+    },
+    {
+      "ms": 22375,
+      "delta": 604,
+      "event": "dwc3-host-return"
+    },
+    {
+      "ms": 22424,
+      "delta": 653,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 22436,
+      "delta": 665,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 22450,
+      "delta": 679,
+      "event": "xhci-start-begin"
+    },
+    {
+      "ms": 22457,
+      "delta": 686,
+      "event": "xhci-start-return"
+    },
+    {
+      "ms": 22457,
+      "delta": 686,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 22470,
+      "delta": 699,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 22473,
+      "delta": 702,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 116,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 87,
+    "rings_to_cable_submit": 146,
+    "cable_submit_to_link_return": 319
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 36,
+  "base_probe": 35,
+  "xhci_caps": {
+    "length": "0x20",
+    "slots_ports": "0x0200047f",
+    "ports": 2,
+    "slots": 127,
+    "interrupters": 4,
+    "scratch": "0x1c0000f1",
+    "dboff": "0x4e0",
+    "rtsoff": "0x440",
+    "pages": "0x1"
+  },
+  "return_errno": -71,
+  "rejection": "Only arbitrary 0x1000 minimum for runtime/doorbell offsets; port count is two, not 32",
+  "control_sent": 41,
+  "control_received": 41,
+  "dwc3_core_init": 0,
+  "internal_nvme_before_after": true,
+  "ubuntu_return_verified": true,
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "installed_boot_bundle_unchanged": true,
+  "grub_next_entry_empty": true,
+  "ram_only": true,
+  "external_ssd_io": false
+}

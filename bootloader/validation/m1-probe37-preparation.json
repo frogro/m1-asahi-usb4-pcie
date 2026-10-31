@@ -1,0 +1,13 @@
+{
+  "probe": 37,
+  "base_probe": 36,
+  "delta": "Replace arbitrary offset floor with checked operational/runtime/doorbell non-overlap and complete-range bounds",
+  "m1_build": true,
+  "extracted_sanitizer_cases": 48,
+  "source_contracts": 4,
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "hardware_pending": true
+}

@@ -1,0 +1,34 @@
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -1294,11 +1294,26 @@
+ {
+  unsigned int nsp = HCS_MAX_SCRATCHPAD(scratch);
+  unsigned int nports = HCS_MAX_PORTS(slots_ports);
+- return cap >= 0x20 && cap <= 0x100 && !(cap & 3) &&
+-        (slots_ports & HCS_SLOTS_MASK) && nports && nports <= 16 &&
+-        nsp <= 64 && (pages & 0xffff) &&
+-        dboff >= 0x1000 && dboff <= 0xa000 && !(dboff & 3) &&
+-        rtsoff >= 0x1000 && rtsoff <= 0xa000 && !(rtsoff & 31);
++ unsigned int slots = slots_ports & HCS_SLOTS_MASK;
++ unsigned int intrs = HCS_MAX_INTRS(slots_ports);
++ u32 op_end, runtime_size, doorbell_size;
++
++ if (cap < 0x20 || cap > 0x100 || (cap & 3) || !slots ||
++     !nports || nports > 16 || !intrs || intrs > 128 ||
++     nsp > 64 || !(pages & 0xffff) || (dboff & 3) || (rtsoff & 31))
++  return false;
++ /* Operational ports start at 0x400; each PORT/IR register set is 16/32
++  * bytes. Use capability-provided offsets, like xhci_mem_init(), rather
++  * than assuming a minimum of 0x1000. Keep complete register regions
++  * within the diagnostic's original 0xa000 aperture bound.
++  */
++ op_end = cap + 0x400 + nports * 0x10;
++ runtime_size = 0x20 + intrs * 0x20;
++ doorbell_size = (slots + 1) * 4;
++ return rtsoff >= op_end && rtsoff <= 0xa000 - runtime_size &&
++        dboff >= op_end && dboff <= 0xa000 - doorbell_size &&
++        (rtsoff + runtime_size <= dboff ||
++         dboff + doorbell_size <= rtsoff);
+ }
+ 
+ static int xhci_m1_diag_port_power(struct xhci_ctrl *ctrl)
