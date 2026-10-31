@@ -330,7 +330,7 @@ The next isolated diagnostic enables bounded ACIO RTKit SYSLOG handling.
 It is intended to expose firmware progress; no link-fix claim is made.
 
 
-### Probe25 prepared: bounded ACIO SYSLOG
+### Probe25: bounded ACIO SYSLOG
 
 `nhi-acio-syslog-candidate.patch` follows Probe24. It opts only this ACIO
 instance into SYSLOG endpoint2; normal RTKit clients retain their prior
@@ -350,4 +350,55 @@ before. This tests firmware visibility, not a presumed firmware deadlock.
 M1 build,57 sandbox cases,95 extracted-production transport cases and27
 RTKit cases pass. The latter include6912 index/size/buffer combinations and
 address/undefined-behavior sanitizers. Exact application of the incremental
-patch reproduces all five changed source files. Hardware result is pending.
+patch reproduces all five changed source files. Hardware produced the expected SYSLOG initialization and five serviced
+messages during NHI. The firmware version and lane-init parameters match the
+successful Linux capture. It reached Phase1 and Phase2 but not Phase3 or
+Connected in the observation window; both lanes remained state7. No decoder
+rejections occurred. Internal hashes and RTKit shutdown passed; stock Ubuntu
+returned. See [Probe25 evidence](../validation/m1-probe25-result.json).
+Firmware phase numbers are observations, not reverse-engineered meanings.
+The next comparison changes only the physical connection starting state:
+a fresh OWC disconnect/reconnect after xHCI quiesce, before PHY/ACIO setup.
+
+
+### Probe26: fresh connection after xHCI quiesce
+
+`nhi-fresh-cable-candidate.patch` follows Probe25. The explicit `fresh` command
+runs the existing resource preflight and halts only the selected xHCI. Before
+PHY/ACIO initialization it waits at most120 seconds for a read-only CD321x
+snapshot to show disconnect and then a USB4/TBT data connection. An unchanged
+connection cannot satisfy this test. Transport errors abort; only transient
+snapshot inconsistency (`EAGAIN`) is retried within the window. Newly read
+mode/orientation/cable data are revalidated by the existing configuration path.
+No PHY/ACIO/NHI initialization sequence is changed. This distinguishes a stale
+partner starting state from missing host setup; it is not an acceptable final
+requirement to physically reconnect a boot disk on every boot.
+
+M1 build,57 sandbox cases and14 extracted-production cases with ASan/UBSan
+passed. Tests cover absent disconnect, absent reconnect, USB-only state,
+ambiguous modes, changing snapshots, I2C errors and the full wait deadline.
+Hardware observed both detach and reconnect. Firmware again reached Phase2 only;
+both lanes remained unplugged. Internal hashes and shutdown passed, and stock
+Ubuntu returned. A fresh cable transition alone does not fix link establishment.
+See [Probe26 evidence](../validation/m1-probe26-result.json).
+The host240-second runner timeout and guest's
+software reset remain recovery aids, not a hardware-hang recovery guarantee.
+
+
+### Live Linux PHY register comparison after Probe26
+
+A one-shot boot of `7.2.12-usb4sd4-egpu2` reproduced initial link loss. After
+a physical OWC reconnect, Linux exposed the external router with two lanes
+at 20 Gb/s each and the external NVMe. The normal internal boot bundle had
+already been restored by the initramfs; a bounded return service was active.
+A read-only allowlist captured 17 PHY/PIPE registers, guarding every read
+with the associated active power-domain state and live router presence.
+All 17 values exactly match Probe26, despite their different link outcomes.
+This rules out a mismatch in these final values, not in all hardware state
+or in initialization order. No external SSD writes were performed.
+See [register comparison](../validation/probe26-linux-phy-register-comparison.json).
+
+The next useful diagnostic compares the timing/order around ACIO readiness,
+RC/NHI initialization and cable-info submission. Any extra register capture
+must first establish that reads are safe and meaningful. No blind PHY writes
+or PD resets are justified by the current evidence.

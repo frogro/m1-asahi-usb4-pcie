@@ -1,0 +1,18 @@
+{
+  "probe": 26,
+  "physical_disconnect_observed": true,
+  "physical_reconnect_observed": true,
+  "firmware_phases": [
+    "Phase 1",
+    "Phase 2"
+  ],
+  "phase3_seen": false,
+  "connected_seen": false,
+  "external_router_read": false,
+  "external_ssd_access": false,
+  "internal_nvme_before_after": true,
+  "reset_executed": true,
+  "stock_ubuntu_return_verified": true,
+  "raw_log_sha256": "4781056013523b68ec8c555baeb8659972f12eaaf0634a3f0a04fb9e2c3be8bf",
+  "interpretation": "Fresh physical connection after selected xHCI quiesce is insufficient: firmware still stops at Phase2 and both lanes remain unplugged. No successful external boot claimed."
+}

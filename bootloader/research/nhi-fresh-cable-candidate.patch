@@ -1,0 +1,89 @@
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -17,6 +17,7 @@
+ #include <linux/iopoll.h>
+ #include <mapmem.h>
+ #include <power-domain.h>
++#include <time.h>
+ 
+ struct atc_m1_hw {
+ 	void *base[ATC_REGIONS];
+@@ -168,6 +169,43 @@
+ 	return 0;
+ }
+ 
++/* Explicit fresh-cable diagnostic, after selected xHCI is halted and before
++ * PHY/ACIO start. Only bounded read-only PD snapshots during the user window.
++ */
++static int wait_fresh_cable(struct apple_cd321x_status *result)
++{
++ struct udevice *bus, *chip;
++ struct apple_cd321x_status status;
++ ulong started;
++ bool detached = false;
++ int ret;
++ ret = uclass_get_device_by_seq(UCLASS_I2C, 0, &bus);
++ if (!ret) ret = i2c_get_chip(bus, 0x3f, 1, &chip);
++ if (!ret) ret = i2c_set_chip_offset_len(chip, 1);
++ if (ret) return ret;
++ puts("ATC-FRESH-CABLE WAIT detach then reconnect same OWC; 120-second limit\n");
++ started = get_timer(0);
++ while (get_timer(started) < 120000) {
++  ret = apple_cd321x_snapshot(status_read, chip, &status);
++  /* A changing read-only snapshot can be retried within this window. */
++  if (ret && ret != -EAGAIN) return ret;
++  if (!ret) {
++   if (!(status.data_status & BIT(0))) {
++    if (!detached) puts("ATC-FRESH-CABLE DETACHED\n");
++    detached = true;
++   } else if (detached &&
++              (!!(status.data_status & BIT(23)) != !!(status.data_status & BIT(16)))) {
++    *result = status;
++    printf("ATC-FRESH-CABLE CONNECTED data=%#x eudo=%#x\n", status.data_status, status.eudo);
++    return 0;
++   }
++  }
++  /* U-Boot udelay services schedule/watchdog in bounded chunks. */
++  udelay(50000);
++ }
++ return -ETIMEDOUT;
++}
++
+ static int do_atcm1(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+ {
+ 	struct atc_m1_hw hw = {};
+@@ -179,13 +217,14 @@
+ 	u32 cap, halted;
+ 	int ret, i;
+ 	unsigned int stage;
+-	bool acio;
++	bool acio, fresh;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "fresh")))
+ 		return CMD_RET_USAGE;
+-	stage = !strcmp(argv[2], "host") ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
++	fresh = !strcmp(argv[2], "fresh");
++	stage = (!strcmp(argv[2], "host") || fresh) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+ 	acio = !strcmp(argv[2], "acio") || stage;
+ 	if (stage >= 4) {
+ 		ret = apple_nhi_m1_control_check();
+@@ -245,6 +284,10 @@
+ 	if (ret)
+ 		goto fail;
+ 	puts("ATC-M1 selected DWC3 halted; other USB hosts untouched\n");
++	if (fresh) {
++		ret = wait_fresh_cable(&before);
++		if (ret) goto fail;
++	}
+ 	ret = load_config(node, &hw, &after);
+ 	if (ret)
+ 		goto fail;
+@@ -295,4 +338,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host - staged M3/NHI/DART diagnostic; no DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|fresh - staged M3/NHI/DART diagnostic; no DMA");

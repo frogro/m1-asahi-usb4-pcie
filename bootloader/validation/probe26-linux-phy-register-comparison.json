@@ -1,0 +1,36 @@
+{
+  "linux_kernel": "7.2.12-usb4sd4-egpu2",
+  "linux_router": {
+    "device_name": "Express 1M2",
+    "rx_lanes": "2",
+    "tx_lanes": "2",
+    "rx_speed": "20.0 Gb/s",
+    "tx_speed": "20.0 Gb/s",
+    "authorized": "1"
+  },
+  "probe": 26,
+  "read_only": true,
+  "allowlisted_register_count": 17,
+  "different_registers": {},
+  "registers": {
+    "core:0x8": "0x11833fef",
+    "core:0x48": "0x0",
+    "core:0x4c": "0x0",
+    "core:0x1b0": "0x15570cff",
+    "core:0x2a00": "0x2022",
+    "core:0x20000": "0x1b",
+    "core:0x20004": "0x3",
+    "core:0x20008": "0x1",
+    "core:0x9010": "0x53600000",
+    "core:0x10010": "0x53600000",
+    "pipe:0x0": "0x0",
+    "pipe:0x4": "0x10",
+    "pipe:0xc": "0x11",
+    "pipe:0x10": "0x0",
+    "pipe:0x14": "0x0",
+    "pipe:0x1c": "0x1",
+    "pipe:0x20": "0x9332"
+  },
+  "scope": "Selected PHY and PIPE registers only. Matching final values do not prove identical temporal initialization or all hardware state. Linux source checkout is newer than running kernel; source comparison is not binary-equivalence proof.",
+  "result": "All 17 selected registers match; Linux link is connected, U-Boot link is not."
+}

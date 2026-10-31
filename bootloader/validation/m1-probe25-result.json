@@ -1,0 +1,23 @@
+{
+  "probe": 25,
+  "syslog_enabled": true,
+  "firmware_version_matches_linux": true,
+  "firmware_phases": [
+    "Phase 1",
+    "Phase 2"
+  ],
+  "phase3_seen": false,
+  "connected_seen": false,
+  "service_messages": 5,
+  "log_buffer_rejections": false,
+  "lane_states": [
+    "7"
+  ],
+  "external_router": false,
+  "internal_nvme_before_after": true,
+  "reset_executed": true,
+  "ubuntu_return_verified": true,
+  "external_disk_access": false,
+  "raw_log_sha256": "b4e70831dda20f262899668700e34fec3511ed686c686e0bca3a6a406c42a677",
+  "interpretation": "Firmware reaches Phase2, no Phase3/Connected in five-second observation. Same firmware version and lane init parameters as successful Linux capture. Phase numbering is observed firmware output, not a decoded proprietary implementation."
+}

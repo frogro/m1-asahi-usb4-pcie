@@ -1,0 +1,35 @@
+UBOOT-PROBE25 ACIO-SYSLOG
+INTERNAL-NVME-BEFORE PASS
+ACIO RTKit boot ret=0
+ACIO-SYSLOG INIT entries=8 size=80
+ACIO RTKit AP-on ret=0
+ACIO-SYSLOG main.c:60: #ACIO FW IS READY# FW_VERSION_STRING=AppleCIOFirmware-480~10483__2026-10-07-21:
+ACIO-SYSLOG main.c:61: FW state=1
+ACIO-SYSLOG lane_init.c:181: Entering Phase 1. action=0
+ACIO-SYSLOG lane_init.c:78: Lane init parmas = 0x00000011
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=298
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=305
+ACIO-SYSLOG lane_init.c:343: Entering Phase 2
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=815
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=822
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1329
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1336
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=1843
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=1850
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2357
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2364
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=2871
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=2878
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3385
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3391
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=3898
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=3905
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4412
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4419
+NHI lane1 state=7 raw=003c0114 5c00001c time-ms=4926
+NHI lane2 state=7 raw=003c0128 5c00001c time-ms=4933
+ACIO-SYSLOG service messages=5 ret=-110
+ACIO RTKit shutdown ret=0
+ACIO diagnostic ret=-110; power held until mandatory full reset
+INTERNAL-NVME-AFTER PASS
+resetting ...
