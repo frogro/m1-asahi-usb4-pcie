@@ -47,4 +47,23 @@ gadget-only GUCTL1 bits are deliberately not copied from the Linux snapshot.
 This is not a full Linux DWC3 core port. 26 extracted-source mock cases
 passed, including every one of 19 read-fault positions, bad core identity,
 wrong stage, reset-active and halt-check failures. M1 build and exact patch
-reconstruction passed. Probe32 hardware is pending.
+reconstruction passed. Probe32 hardware result follows below.
+
+## Probe32 hardware outcome
+
+Host setup returned zero. GCTL role is now HOST; USB2/SUSPHY, USB3/SUSPHY and
+all three CIO controls match the selected Linux reference fields. xHCI command
+remains 0 and status 1 (halted). The late PIPE step also succeeded. Firmware
+nevertheless stopped at Phase2, with 61/61 control replies and no remote-router
+read. Internal NVMe hashes matched and reset completed. This fixes a measured
+initialization discrepancy but is not demonstrated to restore USB4 link-up.
+
+Still untested: full DWC3 core initialization and a safely registered/running
+xHCI host, as opposed to copying the eight selected controls. Starting RUN
+on the removed controller is not safe: its prior DMA rings were deregistered.
+A follow-up must re-establish valid DMA mappings/rings via the normal host
+registration path and account for its reset/PHY callbacks, or obtain a more
+specific Linux trace first. Do not merely set xHCI RUN in the current probe.
+
+Stock Ubuntu return after Probe32 is confirmed over SSH. The installed boot
+bundle SHA-256 equals the pre-test original; no permanent bootloader change.

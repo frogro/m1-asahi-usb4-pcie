@@ -1,0 +1,200 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "cbd06b8c351400fba808c2eaab360a26a01763564d4d0dc1ba61e9ea668d5faf",
+  "records": [
+    {
+      "ms": 21207,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 21209,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 21296,
+      "delta": 89,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 21318,
+      "delta": 111,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 21322,
+      "delta": 115,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 21325,
+      "delta": 118,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 21329,
+      "delta": 122,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 21338,
+      "delta": 131,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 21341,
+      "delta": 134,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 21354,
+      "delta": 147,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 21357,
+      "delta": 150,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 21418,
+      "delta": 211,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 21418,
+      "delta": 211,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 21422,
+      "delta": 215,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 21425,
+      "delta": 218,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 21428,
+      "delta": 221,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 21435,
+      "delta": 228,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21438,
+      "delta": 231,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21571,
+      "delta": 364,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 21574,
+      "delta": 367,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 21578,
+      "delta": 371,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21581,
+      "delta": 374,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21581,
+      "delta": 374,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 21584,
+      "delta": 377,
+      "event": "dwc3-host-begin"
+    },
+    {
+      "ms": 21594,
+      "delta": 387,
+      "event": "dwc3-host-return"
+    },
+    {
+      "ms": 21644,
+      "delta": 437,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 21656,
+      "delta": 449,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 21662,
+      "delta": 455,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 26731,
+      "delta": 5524,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 26744,
+      "delta": 5537,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 26744,
+      "delta": 5537,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 116,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 87,
+    "rings_to_cable_submit": 146,
+    "cable_submit_to_link_return": 5157
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 32,
+  "host_setup_return": 0,
+  "xhci_halted_after_setup": true,
+  "host_configured_registers": {
+    "0xc110": "0x30c11004",
+    "0xc11c": "0x1908",
+    "0xc120": "0x33313130",
+    "0xc12c": "0xa416802",
+    "0xc140": "0x4020800a",
+    "0xc144": "0x2092486",
+    "0xc14c": "0x10420086",
+    "0xc200": "0x102540",
+    "0xc2c0": "0x1021102",
+    "0xc630": "0xa87f020",
+    "0xcd38": "0xf800f80",
+    "0xcd3c": "0xfc00fc0",
+    "0xcd40": "0x3c140a10"
+  },
+  "internal_nvme_before_after": true,
+  "control_sent": 61,
+  "control_received": 61,
+  "ubuntu_return_verified": true,
+  "external_disk_accessed": false,
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "installed_boot_bundle_unchanged": true
+}

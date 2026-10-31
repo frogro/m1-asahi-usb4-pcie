@@ -490,6 +490,8 @@ working TB boot path from these partial initialization results.
 A fresh 7.2.12-usb4sd4-egpu2 Linux capture with the OWC linked over USB4
 (two lanes, 20 Gb/s each) supplies the DWC3 reference. Probe31 adds read-only
 controller snapshots to Probe30. M1 build, patch reconstruction and the
-45-read snapshot fixture passed; hardware remains pending. See
+45-read snapshot fixture passed. Probe31 confirmed a lost host role and missing
+CIO controls. Probe32 restored those controls, but Phase2 still stalled. Both
+runs returned to stock Ubuntu with matching internal NVMe hashes. See
 [DWC3 comparison](dwc3-core-comparison-20261031.md). This is diagnostic
 instrumentation, not a link fix or an enabled xHCI DMA path.
