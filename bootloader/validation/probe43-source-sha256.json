@@ -1,0 +1,5 @@
+{
+  "include/apple_nhi_m1.h": "30da20deabcdd6ea8cf7a558b5f5af4675b8b4a44bd0bc6e26d048f6fb83f1d5",
+  "cmd/apple_nhi_m1_ring.c": "528b86798f22cb77f16441852e1988c9bf054aabc7543861a8e31ad4d4ab038b",
+  "cmd/apple_atc_m1.c": "77154516f657977f2fecb045fe01a17134ba6557d6ab4bfa740f2e5c2ce9fa40"
+}

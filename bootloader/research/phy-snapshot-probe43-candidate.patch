@@ -1,0 +1,117 @@
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -6,6 +6,7 @@
+ struct apple_cd321x_status;
+ struct apple_nhi_host_info { u32 apple, null_ports, port1_cap, tmu, dp_in_ports; };
+ void apple_nhi_m1_set_queries(bool enabled);
++void apple_nhi_m1_set_post_link(void (*callback)(void *), void *context);
+ /* RAM-only single-use hook, after verified cable info and before link polling. */
+ void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context);
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status);
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -47,6 +47,11 @@
+  struct usb4_cfg_event pending[8];
+  ulong started;
+ };
++
++static void (*post_link)(void *);
++static void *post_link_context;
++void apple_nhi_m1_set_post_link(void (*callback)(void *), void *context)
++{ post_link = callback; post_link_context = context; }
+ 
+ static bool diagnostic_queries;
+ void apple_nhi_m1_set_queries(bool enabled) { diagnostic_queries = enabled; }
+@@ -438,7 +443,16 @@
+   if (!ret) ret = diagnostic_query(&ring, 0x10, 6);
+   if (!ret) puts("NHI-QUERIES complete before lane unlock and cable submit\n");
+  }
+- if (!ret) ret = diagnostic_link(&ring, &info);
++ if (!ret) {
++  ret = diagnostic_link(&ring, &info);
++  /* Observe after the bounded link attempt, before RTKit shutdown. */
++  if (post_link) {
++   void (*callback)(void *) = post_link;
++   void *context = post_link_context;
++   apple_nhi_m1_set_post_link(NULL, NULL);
++   callback(context);
++  }
++ }
+  apple_boot_trace("link-observation-return");
+  writel(0, nhi + 0x10010);
+  writel(0, nhi + 0x80010);
+@@ -453,6 +467,7 @@
+ }
+ 
+ #else
++void apple_nhi_m1_set_post_link(void (*callback)(void *), void *context) {}
+ void apple_nhi_m1_set_queries(bool enabled) {}
+ void apple_nhi_m1_set_post_cable(int (*callback)(void *), void *context) {}
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status) { return -ENOSYS; }
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -111,6 +111,25 @@
+  printf("USB2-SNAPSHOT %s control=%#x reset=%#x signal=%#x misc=%#x\n",
+         phase, readl(hw->base[ATC_USB2]), readl(hw->base[ATC_USB2] + 4),
+         readl(hw->base[ATC_USB2] + 8), readl(hw->base[ATC_USB2] + 0x1c));
++}
++
++/* Linux atc.c control registers already accessed using read/modify/write,
++ * plus status registers read by the driver. No FIFO, event or read-clear bank.
++ * Observed only after link polling, while PHY and ACIO remain powered.
++ */
++static void snapshot_phy_extended(void *context)
++{
++ struct atc_m1_hw *hw = context;
++ static const u32 core[] = { 0x8, 0x48, 0x4c, 0x1b0, 0x804, 0xa00, 0xa04, 0xa20, 0xa74, 0x1014, 0x1028, 0x2000, 0x2200, 0x2208, 0x2214, 0x2220, 0x2224, 0x2a00, 0x2a20, 0x2a38, 0x2aa4, 0x9010, 0x90f0, 0xb000, 0xb004, 0xb02c, 0xb030, 0xb034, 0xb048, 0xb054, 0xb060, 0xd000, 0xd004, 0xd008, 0x10010, 0x100f0, 0x12000, 0x12004, 0x1202c, 0x12030, 0x12034, 0x12048, 0x12054, 0x12060, 0x14000, 0x14004, 0x14008, 0x20000, 0x20004, 0x20008 };
++ static const u32 pipe[] = { 0x0, 0x4, 0xc, 0x10, 0x14, 0x1c, 0x20 };
++ static const u32 usb2[] = { 0x0, 0x4, 0x8, 0x1c };
++ unsigned int i;
++ for (i = 0; i < ARRAY_SIZE(core); i++)
++  printf("ATC-EXTENDED core[%#x]=%#x\n", core[i], readl(hw->base[ATC_CORE] + core[i]));
++ for (i = 0; i < ARRAY_SIZE(pipe); i++)
++  printf("ATC-EXTENDED pipe[%#x]=%#x\n", pipe[i], readl(hw->base[ATC_PIPE] + pipe[i]));
++ for (i = 0; i < ARRAY_SIZE(usb2); i++)
++  printf("ATC-EXTENDED usb2[%#x]=%#x\n", usb2[i], readl(hw->base[ATC_USB2] + usb2[i]));
+ }
+ 
+ /* Read-only allowlist: no FIFO, event ring, W1C writes or device registers. */
+@@ -376,15 +395,16 @@
+ 	u32 cap, halted;
+ 	int ret, i;
+ 	unsigned int stage;
+-	bool acio, fresh, tb_only, usb4_host, queries;
++	bool acio, fresh, tb_only, usb4_host, queries, extended;
+ 
+ 	if (argc != 3 || strcmp(argv[1], "1") ||
+ 	    (strcmp(argv[2], "check") && strcmp(argv[2], "start") &&
+-	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host") && strcmp(argv[2], "usb4query")))
++	     strcmp(argv[2], "acio") && strcmp(argv[2], "nhi") && strcmp(argv[2], "dart") && strcmp(argv[2], "tune") && strcmp(argv[2], "host") && strcmp(argv[2], "hostrun") && strcmp(argv[2], "fresh") && strcmp(argv[2], "tbonly") && strcmp(argv[2], "usb4host") && strcmp(argv[2], "usb4query") && strcmp(argv[2], "usb4snapshot")))
+ 		return CMD_RET_USAGE;
+ 	fresh = !strcmp(argv[2], "fresh");
+ 	tb_only = !strcmp(argv[2], "tbonly");
+-	queries = !strcmp(argv[2], "usb4query");
++	extended = !strcmp(argv[2], "usb4snapshot");
++	queries = !strcmp(argv[2], "usb4query") || extended;
+ 	usb4_host = !strcmp(argv[2], "usb4host") || queries;
+ 	hw.hostrun = !strcmp(argv[2], "hostrun") || usb4_host;
+ 	stage = (!strcmp(argv[2], "host") || hw.hostrun || fresh || tb_only) ? 4 : !strcmp(argv[2], "tune") ? 3 : !strcmp(argv[2], "dart") ? 2 : !strcmp(argv[2], "nhi");
+@@ -516,9 +536,12 @@
+ 			puts("TBT-ONLY DWC3 remains reset; no late PIPE, xHCI or USB DMA\n");
+ 		if (stage >= 4 && !tb_only)
+ 			apple_nhi_m1_set_post_cable(start_late_pipe, &hw);
++		if (extended)
++			apple_nhi_m1_set_post_link(snapshot_phy_extended, &hw);
+ 		apple_nhi_m1_set_queries(queries);
+ 		ret = apple_acio_m1_start(stage);
+ 		apple_nhi_m1_set_queries(false);
++		apple_nhi_m1_set_post_link(NULL, NULL);
+ 		apple_nhi_m1_set_post_cable(NULL, NULL);
+ #if CONFIG_IS_ENABLED(USB_XHCI_HCD)
+         if (hw.retained_xhci) {
+@@ -548,4 +571,4 @@
+ 
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+-	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
++	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query|usb4snapshot - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
