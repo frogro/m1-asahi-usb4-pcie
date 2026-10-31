@@ -12,7 +12,8 @@ Hardware: M1 Mac mini, Dynabook Thunderbolt 4 dock, Razer Core X, RX 6900 XT; Yo
 4. Rebuilt the original Test55 diagnostic helper against the exact integrated source/configuration. Read-only observation returned all-one VRAM words.
 5. Enabled PREFMEM_ENABLE through this explicitly scoped helper: VRAM immediately became readable. A direct GPU retry still failed because the earlier failed initialization had left device state behind.
 6. With Radeon functions unbound, deauthorized and reauthorized only the Razer Thunderbolt device. GPU initialization then completed; all four drivers bound. IB tests and repeated deterministic Vulkan compute over 1,048,576 values passed.
-7. Compiled the native host implementation and replayed all 43 patches on a second fresh full-source checkout. Native-hook cold boot and physical hotplug remain pending; this audit does not substitute the helper result for that test.
+7. Two further complete software deauthorization/reauthorization cycles with all four drivers initially bound passed. Each cycle included a 1 GiB direct read of the Yotta device and successful GPU compute after reauthorization. No reboot or Oops occurred. Removal still logged SMU/gfxoff and, in one cycle, JPEG/VCN power-gating timeouts; these diagnostics are not declared fixed.
+8. Compiled the native host implementation and replayed all 43 patches on a second fresh full-source checkout. Native-hook cold boot and physical hotplug remain pending; this audit does not substitute the helper result for that test.
 
 ## Runtime prerequisites and remaining gaps
 
@@ -33,6 +34,10 @@ Hardware: M1 Mac mini, Dynabook Thunderbolt 4 dock, Razer Core X, RX 6900 XT; Yo
 ### External-root initramfs hooks
 
 The current Yotta installation contains a local dracut module that authorizes the known Ash Creek enclosure and retries an initially unbound PCIe host after authorization. It also restores the previous boot selection for fallback. These installation-specific scripts are not supplied by the 43 Linux patches. They remain necessary for the demonstrated external-root setup until a generic boot path is validated. Do not ship a machine-specific boot blob or UUID-based authorization script as a general kernel fix.
+
+### Module and configuration integrity
+
+The prepared configuration retains all 12,501 previously enabled options; only release metadata and the added PCIe host option differ. All four Radeon functions use MSI interrupts after initialization, despite legacy `of_irq_parse_pci` warnings. The global TTM diagnostic parameter is absent.
 
 ### Initial-probe disconnect
 

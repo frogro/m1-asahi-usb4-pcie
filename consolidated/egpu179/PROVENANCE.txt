@@ -10,3 +10,12 @@ Test61: Full AMD initialization passed, including GFX, SDMA, VCN and JPEG. /dev/
 Test62: PR188 patch04 applied fuzz0. Full init and IB tests pass, but FFmpeg still SIGBUS at vkCreateDevice. GDB confirms libc __memcpy_generic SIMD pair store called by libvulkan_radeon.so. Host remains operational. Test63 adds exact PR188 patch07 (Joshua Warren), CPU-faulted unpinned VRAM BO migration to GTT. Original author/signoff retained; pinned BOs still fail SIGBUS per upstream design, attached display remains untested. Built unchanged imports/ABI, live application test pending.
 Test63 result: Vulkan device creation no SIGBUS. IB and deterministic compute pass:65536 values,1048576 values,three further1M runs. Host-visible coherent GTT memory type2 flags6; explicit Radeon ICD/device1002:73bf. VRAM/GTT counters return to identical baselines. Per-VM statistics warning remains. FFmpeg color_vulkan fails unavailable flags0x7; Xvfb vkcube lacks DRI3. No real-image/render/presentation assertion. See HANDOFF.txt.
 Test64: TTM replaces the global Test56 nonposted_test override with per-device/per-resource BAR classification, without changing public structure layouts. Mapping semantics originate from Joshua Warren PR188 patch2, attribution retained in source. AMDGPU Test63 and host stack unchanged. Scope selftest13 cases and live compute+OWC checks passed. See HANDOFF.txt for limitations; not a complete production submission.
+
+2026-10-31 integration audit update (historical notes above are preserved):
+The Test55 aperture operation was still executed by the successful Test176/179
+harness even though its early standalone result was inconclusive. Repeating it
+against the integrated egpu1 kernel showed a direct all-ones to readable VRAM
+transition. With controlled tunnel reauthorization, PSP initialization and GPU
+compute then succeeded. Native patch43 replaces this omitted initialization
+step. It does not import the old global TTM override or later speculative UCSI
+reset prototypes. See integration-audit-20261031.md for scope and remaining tests.

@@ -7,7 +7,7 @@ This workflow builds a complete ARM64 `Image`, all modules selected by the runni
 - UbuntuAsahi/linux commit `f7734f4c91c0f47d9e762786968057bec99a0788` (Linux 7.2.12).
 - `running-kernel.config`: read from `/boot/config-7.2.0-1001-asahi-arm` on 30 October 2026.
 - 29 patches in `consolidated/20261030`, including storage/PCIe/USB4 and dock video/audio plus whole-dock retirement. Preimage, patch and final file hashes are checked against the real Git base before compiling.
-- By default, the experimental AMDGPU/TTM/eGPU modifications are excluded. With `include_egpu=true`, 13 patches in `consolidated/egpu179` are appended after verifying their source preimages; the result is `7.2.12-usb4sd4-egpu1`. See that directory's README for hardware evidence, required diagnostic parameters and remaining integration limits.
+- By default, the experimental AMDGPU/TTM/eGPU modifications are excluded. With `include_egpu=true`, 14 patches in `consolidated/egpu179` are appended after verifying their source preimages; the result is `7.2.12-usb4sd4-egpu2`. See that directory's README for hardware evidence, required diagnostic parameters and remaining integration limits.
 
 The new release is `7.2.12-usb4sd3`. Existing enabled options must remain unchanged after `olddefconfig`; changes to compiler metadata and release identification are reported separately. `PCIE_APPLE_PCIEC=y` is added. Public Ubuntu trust/revocation certificates are assembled using the source packaging rules. Modules are signed with a newly generated build key, not Canonical's private key. The private signing key is not exported.
 
