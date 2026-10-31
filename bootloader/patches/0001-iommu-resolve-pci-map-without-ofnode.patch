@@ -1,0 +1,71 @@
+diff --git a/drivers/iommu/iommu-uclass.c b/drivers/iommu/iommu-uclass.c
+index 31b40e57..1470d546 100644
+--- a/drivers/iommu/iommu-uclass.c
++++ b/drivers/iommu/iommu-uclass.c
+@@ -79,8 +79,14 @@ int dev_iommu_enable(struct udevice *dev)
+ 	const struct iommu_ops *ops;
+ 	int i, count, ret = 0;
+ 
+-	if (!dev_has_ofnode(dev))
++	if (!dev_has_ofnode(dev)) {
++#if CONFIG_IS_ENABLED(PCI)
++		/* Enumerated PCI endpoints use their host bridge's iommu-map. */
++		if (device_is_on_pci_bus(dev))
++			return dev_pci_iommu_enable(dev);
++#endif
+ 		return 0;
++	}
+ 
+ 	count = dev_count_phandle_with_args(dev, "iommus",
+ 					    "#iommu-cells", 0);
+diff --git a/test/dm/iommu.c b/test/dm/iommu.c
+index c5dd917f..a45e646f 100644
+--- a/test/dm/iommu.c
++++ b/test/dm/iommu.c
+@@ -97,3 +97,46 @@ static int dm_test_iommu_pci_noiommu(struct unit_test_state *uts)
+ 	return 0;
+ }
+ DM_TEST(dm_test_iommu_pci_noiommu, UTF_SCAN_FDT);
++
++/* Dynamically enumerated PCI endpoints need not have a devicetree node. */
++static int dm_test_iommu_pci_no_ofnode(struct unit_test_state *uts)
++{
++	struct udevice *dev, *iommu;
++	ofnode node;
++	int ret;
++
++	ut_assertok(uclass_get_device(UCLASS_P2SB, 0, &dev));
++	iommu = dev->iommu;
++	ut_assertnonnull(iommu);
++	node = dev_ofnode(dev);
++	dev_set_ofnode(dev, ofnode_null());
++	dev->iommu = NULL;
++	ret = dev_iommu_enable(dev);
++	dev_set_ofnode(dev, node);
++	ut_assertok(ret);
++	ut_asserteq_ptr(iommu, dev->iommu);
++
++	return 0;
++}
++
++DM_TEST(dm_test_iommu_pci_no_ofnode, UTF_SCAN_FDT);
++
++static int dm_test_iommu_pci_unmapped_no_ofnode(struct unit_test_state *uts)
++{
++	struct udevice *dev;
++	ofnode node;
++	int ret;
++
++	ut_assertok(uclass_get_device(UCLASS_ACPI_PMC, 0, &dev));
++	ut_assertnull(dev->iommu);
++	node = dev_ofnode(dev);
++	dev_set_ofnode(dev, ofnode_null());
++	ret = dev_iommu_enable(dev);
++	dev_set_ofnode(dev, node);
++	ut_assertok(ret);
++	ut_assertnull(dev->iommu);
++
++	return 0;
++}
++
++DM_TEST(dm_test_iommu_pci_unmapped_no_ofnode, UTF_SCAN_FDT);

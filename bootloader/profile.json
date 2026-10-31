@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "apple_boot_picker_name": "Asahi Linux",
+  "platform": "Apple Mac mini M1 / J274 / T8103",
+  "status": "development-only-not-installable",
+  "uboot": {
+    "repository": "https://github.com/AsahiLinux/u-boot.git",
+    "commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+    "defconfig": "apple_m1_defconfig",
+    "enable": ["NVME_PCI", "CMD_BOOTMENU"],
+    "bootdelay": 10,
+    "preserve_boot_targets": "nvme usb"
+  },
+  "required_boot_sources": [
+    "internal-apple-nvme",
+    "external-usb-mass-storage-stick-or-ssd",
+    "external-thunderbolt-pcie-nvme"
+  ],
+  "grub_policy": {
+    "visible_menu": true,
+    "timeout_seconds": 10,
+    "filesystem_selection": "UUID",
+    "entry_labels": "distribution, kernel release, detected drive model, UUID",
+    "preserve_internal_fallback": true
+  },
+  "thunderbolt_boot": {
+    "implemented": false,
+    "hardware_validated": false,
+    "missing": [
+      "Apple USB4 host/router and PCIe tunnel setup before GRUB",
+      "PCIe-C host integration, resource allocation and DART DMA mapping",
+      "bounded discovery and read validation of an external PCIe NVMe",
+      "safe DMA shutdown and hardware handover to Linux"
+    ]
+  },
+  "installation": {
+    "separate_internal_apfs_stub_and_system_esp": true,
+    "use_official_asahi_bootstrap_and_recovery_authorization": true,
+    "preserve_existing_ubuntu_boot_environment": true,
+    "copy_linux_kernel_to_internal_storage": false,
+    "automatic_partition_changes": false
+  }
+}

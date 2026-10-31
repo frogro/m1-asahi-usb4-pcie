@@ -1,0 +1,422 @@
+diff --git a/include/usb4_cfg.h b/include/usb4_cfg.h
+new file mode 100644
+index 00000000..b90231fd
+--- /dev/null
++++ b/include/usb4_cfg.h
+@@ -0,0 +1,39 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __USB4_CFG_H
++#define __USB4_CFG_H
++
++#include <linux/types.h>
++
++#define USB4_CFG_FRAME_BYTES 256
++#define USB4_CFG_MAX_WORDS 60
++#define USB4_CFG_READ 1
++#define USB4_CFG_WRITE 2
++
++/* Values are deliberately wider than their wire fields for input validation. */
++struct usb4_cfg_request {
++	u64 route;
++	u32 offset;
++	unsigned int port, space, seq, words, type;
++};
++
++/*
++ * Encode one read/write request, including the final CRC32C. The caller sets
++ * both TX SOF and EOF to req->type. Return frame bytes, or a negative errno.
++ * All input validation completes before frame is changed.
++ */
++int usb4_cfg_encode(const struct usb4_cfg_request *req, const u32 *data,
++		    void *frame, size_t capacity);
++
++/*
++ * Decode a normal read/write response from the NHI RX ring. Size includes CRC.
++ * RX SOF must be zero; EOF identifies the response. A different response type,
++ * route or sequence returns -EAGAIN for the caller to dispatch or discard.
++ * In particular, events/error packets need separate handling by the transport.
++ * Response port is the responder's upstream port, not necessarily req->port.
++ * Data and response_port change only after every check succeeds.
++ */
++int usb4_cfg_decode(const struct usb4_cfg_request *req, const void *frame,
++		    size_t size, unsigned int sof, unsigned int eof,
++		    u32 *data, unsigned int *response_port);
++
++#endif
+diff --git a/lib/Kconfig b/lib/Kconfig
+index 9e0f0ad7..638710ee 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -1332,6 +1332,16 @@ config UTHREAD_STACK_SIZE
+ 	  When the stack_sz argument to uthread_create() is zero then this
+ 	  value is used.
+ 
++config USB4_CFG_CODEC
++	bool "Experimental USB4 boot configuration packet codec"
++	depends on ARCH_APPLE || SANDBOX
++	select CRC32C if SANDBOX
++	help
++	  Build the validated wire encoder and reply decoder for USB4 router
++	  configuration. This provides no NHI transport, tunnel creation or
++	  Thunderbolt boot support by itself. Intended for development only.
++	  Sandbox builds include independent wire-format and corruption tests.
++
+ endmenu
+ 
+ source "lib/fwu_updates/Kconfig"
+diff --git a/lib/Makefile b/lib/Makefile
+index d0ffabc2..551312b4 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -180,3 +180,5 @@ quiet_cmd_build_OID_registry = GEN     $@
+ clean-files     += oid_registry_data.c
+ 
+ subdir-ccflags-$(CONFIG_CC_OPTIMIZE_LIBS_FOR_SPEED) += -O2
++
++obj-$(CONFIG_USB4_CFG_CODEC) += usb4_cfg.o
+diff --git a/lib/usb4_cfg.c b/lib/usb4_cfg.c
+new file mode 100644
+index 00000000..675f07a9
+--- /dev/null
++++ b/lib/usb4_cfg.c
+@@ -0,0 +1,107 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * USB4/Thunderbolt boot configuration packet codec.
++ * Wire layout and CRC convention follow Linux drivers/thunderbolt/tb_msgs.h
++ * and ctl.c (Andreas Noever, Intel Corporation). Uses explicit words rather
++ * than C bitfields, and has no hardware access or automatic authorization.
++ */
++#include <usb4_cfg.h>
++#include <linux/errno.h>
++#include <linux/bitops.h>
++#include <asm/unaligned.h>
++
++/* Reflected Castagnoli polynomial; these control frames are at most 256 B. */
++static u32 usb4_cfg_crc(const u8 *data, size_t size)
++{
++	u32 crc = ~0U;
++	int bit;
++
++	while (size--) {
++		crc ^= *data++;
++		for (bit = 0; bit < 8; bit++)
++			crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78 : 0);
++	}
++	return ~crc;
++}
++
++static int usb4_cfg_validate(const struct usb4_cfg_request *req)
++{
++	if (!req || req->route >> 54 || req->port > 63 || req->space > 3 ||
++	    req->seq > 3 || !req->words || req->words > USB4_CFG_MAX_WORDS ||
++	    req->offset > 0x1fff || req->words > 0x2000 - req->offset ||
++	    (req->type != USB4_CFG_READ && req->type != USB4_CFG_WRITE))
++		return -EINVAL;
++	return 0;
++}
++
++int usb4_cfg_encode(const struct usb4_cfg_request *req, const u32 *data,
++		    void *frame, size_t capacity)
++{
++	u8 *bytes = frame;
++	u32 address;
++	size_t size;
++	unsigned int i;
++	int ret = usb4_cfg_validate(req);
++
++	if (ret)
++		return ret;
++	if (!frame || (req->type == USB4_CFG_WRITE && !data))
++		return -EINVAL;
++	size = 16 + (req->type == USB4_CFG_WRITE ? 4 * req->words : 0);
++	if (capacity < size)
++		return -ENOSPC;
++
++	address = req->offset | req->words << 13 | req->port << 19 |
++		  req->space << 25 | req->seq << 27;
++	put_unaligned_be32(req->route >> 32, bytes);
++	put_unaligned_be32(req->route, bytes + 4);
++	put_unaligned_be32(address, bytes + 8);
++	if (req->type == USB4_CFG_WRITE) {
++		for (i = 0; i < req->words; i++)
++			put_unaligned_be32(data[i], bytes + 12 + 4 * i);
++	}
++	put_unaligned_be32(usb4_cfg_crc(bytes, size - 4), bytes + size - 4);
++	return size;
++}
++
++int usb4_cfg_decode(const struct usb4_cfg_request *req, const void *frame,
++		    size_t size, unsigned int sof, unsigned int eof,
++		    u32 *data, unsigned int *response_port)
++{
++	const u8 *bytes = frame;
++	u32 hi, address;
++	u64 route;
++	size_t expected;
++	unsigned int i;
++	int ret = usb4_cfg_validate(req);
++
++	if (ret)
++		return ret;
++	if (!frame || !response_port || (req->type == USB4_CFG_READ && !data))
++		return -EINVAL;
++	if (size < 16 || size > USB4_CFG_FRAME_BYTES || size % 4 || sof)
++		return -EPROTO;
++	if (get_unaligned_be32(bytes + size - 4) != usb4_cfg_crc(bytes, size - 4))
++		return -EBADMSG;
++	if (eof != req->type)
++		return -EAGAIN;
++
++	hi = get_unaligned_be32(bytes);
++	if ((hi & 0xffc00000) != BIT(31))
++		return -EPROTO;
++	route = (u64)(hi & 0x003fffff) << 32 | get_unaligned_be32(bytes + 4);
++	address = get_unaligned_be32(bytes + 8);
++	if (route != req->route || ((address >> 27) & 3) != req->seq)
++		return -EAGAIN;
++	expected = 16 + (req->type == USB4_CFG_READ ? 4 * req->words : 0);
++	if (size != expected || address >> 29 || (address & 0x1fff) != req->offset ||
++	    ((address >> 13) & 63) != req->words || ((address >> 25) & 3) != req->space)
++		return -EPROTO;
++
++	if (req->type == USB4_CFG_READ) {
++		for (i = 0; i < req->words; i++)
++			data[i] = get_unaligned_be32(bytes + 12 + 4 * i);
++	}
++	*response_port = (address >> 19) & 63;
++	return 0;
++}
+diff --git a/test/dm/Makefile b/test/dm/Makefile
+index d609c0c0..ca8f1d12 100644
+--- a/test/dm/Makefile
++++ b/test/dm/Makefile
+@@ -140,6 +140,6 @@ ifeq ($(CONFIG_WDT_GPIO)$(CONFIG_WDT_SANDBOX),yy)
+ obj-y += wdt.o
+ endif
+ endif
+-endif # !SPL
+-
+ obj-$(CONFIG_APPLE_MBOX) += apple_mbox.o
++obj-$(CONFIG_USB4_CFG_CODEC) += usb4_cfg.o
++endif # !SPL
+diff --git a/test/dm/usb4_cfg.c b/test/dm/usb4_cfg.c
+new file mode 100644
+index 00000000..e59b3765
+--- /dev/null
++++ b/test/dm/usb4_cfg.c
+@@ -0,0 +1,188 @@
++// SPDX-License-Identifier: GPL-2.0
++#include <dm.h>
++#include <dm/test.h>
++#include <usb4_cfg.h>
++#include <asm/unaligned.h>
++#include <u-boot/crc.h>
++#include <test/test.h>
++#include <test/ut.h>
++#include "usb4_cfg_vectors.h"
++
++static const struct usb4_cfg_request sample = {
++	.route = 0x0102030405ULL, .offset = 0x123, .port = 3,
++	.space = 2, .seq = 1, .words = 2, .type = USB4_CFG_READ,
++};
++
++/* Separate, existing table-based CRC implementation for reply fault injection. */
++static void reseal(u8 *bytes, size_t size)
++{
++	u32 table[256], crc;
++
++	crc32c_init(table, 0x82f63b78);
++	crc = ~crc32c_cal(~0U, (const char *)bytes, size - 4, table);
++	put_unaligned_be32(crc, bytes + size - 4);
++}
++
++static int dm_test_usb4_cfg_vectors(struct unit_test_state *uts)
++{
++	struct usb4_cfg_request req = sample;
++	u32 data[] = { 0x12345678, 0xabcdef01 };
++	u8 buf[USB4_CFG_FRAME_BYTES];
++
++	ut_asserteq(sizeof(read_request), usb4_cfg_encode(&req, NULL, buf, sizeof(buf)));
++	ut_assertok(memcmp(buf, read_request, sizeof(read_request)));
++	req.type = USB4_CFG_WRITE;
++	ut_asserteq(sizeof(write_request), usb4_cfg_encode(&req, data, buf, sizeof(buf)));
++	ut_assertok(memcmp(buf, write_request, sizeof(write_request)));
++	return 0;
++}
++DM_TEST(dm_test_usb4_cfg_vectors, 0);
++
++static int dm_test_usb4_cfg_reply(struct unit_test_state *uts)
++{
++	struct usb4_cfg_request req = sample;
++	u32 data[2] = {};
++	unsigned int port = 0;
++
++	ut_assertok(usb4_cfg_decode(&req, read_reply, sizeof(read_reply), 0,
++				   USB4_CFG_READ, data, &port));
++	ut_asserteq(0x12345678, data[0]);
++	ut_asserteq(0xabcdef01, data[1]);
++	ut_asserteq(9, port);
++	req.type = USB4_CFG_WRITE;
++	ut_assertok(usb4_cfg_decode(&req, write_reply, sizeof(write_reply), 0,
++				   USB4_CFG_WRITE, NULL, &port));
++	ut_asserteq(9, port);
++	return 0;
++}
++DM_TEST(dm_test_usb4_cfg_reply, 0);
++
++static int dm_test_usb4_cfg_input_bounds(struct unit_test_state *uts)
++{
++	struct usb4_cfg_request req;
++	u8 buf[USB4_CFG_FRAME_BYTES], expected[USB4_CFG_FRAME_BYTES];
++	unsigned int i;
++
++	memset(expected, 0xa5, sizeof(expected));
++	for (i = 0; i < 9; i++) {
++		req = sample;
++		switch (i) {
++		case 0:
++			req.route = 1ULL << 54;
++			break;
++		case 1:
++			req.port = 64;
++			break;
++		case 2:
++			req.space = 4;
++			break;
++		case 3:
++			req.seq = 4;
++			break;
++		case 4:
++			req.words = 0;
++			break;
++		case 5:
++			req.words = 61;
++			break;
++		case 6:
++			req.offset = 0x2000;
++			break;
++		case 7:
++			req.offset = 0x1fff;
++			break;
++		case 8:
++			req.type = 9;
++			break;
++		}
++		memcpy(buf, expected, sizeof(buf));
++		ut_asserteq(-EINVAL, usb4_cfg_encode(&req, NULL, buf, sizeof(buf)));
++		ut_assertok(memcmp(buf, expected, sizeof(buf)));
++	}
++	ut_asserteq(-ENOSPC, usb4_cfg_encode(&sample, NULL, buf, 15));
++	ut_assertok(memcmp(buf, expected, sizeof(buf)));
++	ut_asserteq(-EINVAL, usb4_cfg_encode(NULL, NULL, buf, sizeof(buf)));
++	return 0;
++}
++DM_TEST(dm_test_usb4_cfg_input_bounds, 0);
++
++static int dm_test_usb4_cfg_corrupt(struct unit_test_state *uts)
++{
++	u8 buf[sizeof(read_reply)];
++	u32 data[2];
++	unsigned int i, port;
++
++	for (i = 0; i < sizeof(buf); i++) {
++		memcpy(buf, read_reply, sizeof(buf));
++		buf[i] ^= 0x80;
++		data[0] = data[1] = 0xa5a5a5a5;
++		port = 0xdead;
++		ut_asserteq(-EBADMSG, usb4_cfg_decode(&sample, buf, sizeof(buf), 0,
++						   USB4_CFG_READ, data, &port));
++		ut_asserteq(0xa5a5a5a5, data[0]);
++		ut_asserteq(0xa5a5a5a5, data[1]);
++		ut_asserteq(0xdead, port);
++	}
++	return 0;
++}
++DM_TEST(dm_test_usb4_cfg_corrupt, 0);
++
++static int dm_test_usb4_cfg_mismatch(struct unit_test_state *uts)
++{
++	u8 buf[sizeof(read_reply)];
++	u32 data[2];
++	unsigned int port, i;
++	/* Valid CRC, but wrong reply flag, reserved bits, address, or transaction. */
++	static const struct { unsigned int word; u32 bit; int error; } faults[] = {
++		{ 0, BIT(31), -EPROTO }, { 0, BIT(30), -EPROTO },
++		{ 1, BIT(0), -EAGAIN }, { 2, BIT(27), -EAGAIN },
++		{ 2, BIT(29), -EPROTO }, { 2, BIT(25), -EPROTO },
++		{ 2, BIT(0), -EPROTO }, { 2, BIT(13), -EPROTO },
++	};
++
++	for (i = 0; i < ARRAY_SIZE(faults); i++) {
++		memcpy(buf, read_reply, sizeof(buf));
++		put_unaligned_be32(get_unaligned_be32(buf + 4 * faults[i].word) ^
++				   faults[i].bit, buf + 4 * faults[i].word);
++		reseal(buf, sizeof(buf));
++		port = 0xdead;
++		data[0] = data[1] = 0xa5a5a5a5;
++		ut_asserteq(faults[i].error, usb4_cfg_decode(&sample, buf, sizeof(buf),
++							  0, USB4_CFG_READ, data, &port));
++		ut_asserteq(0xa5a5a5a5, data[0]);
++		ut_asserteq(0xa5a5a5a5, data[1]);
++		ut_asserteq(0xdead, port);
++	}
++	for (i = 0; i < 16; i++)
++		ut_asserteq(-EPROTO, usb4_cfg_decode(&sample, buf, i, 0,
++						  USB4_CFG_READ, data, &port));
++	ut_asserteq(-EPROTO, usb4_cfg_decode(&sample, read_reply, sizeof(read_reply),
++					  1, USB4_CFG_READ, data, &port));
++	ut_asserteq(-EAGAIN, usb4_cfg_decode(&sample, read_reply, sizeof(read_reply),
++					  0, USB4_CFG_WRITE, data, &port));
++	return 0;
++}
++DM_TEST(dm_test_usb4_cfg_mismatch, 0);
++
++static int dm_test_usb4_cfg_full_frame(struct unit_test_state *uts)
++{
++	struct usb4_cfg_request req = sample;
++	u8 buf[USB4_CFG_FRAME_BYTES];
++	u32 input[USB4_CFG_MAX_WORDS], output[USB4_CFG_MAX_WORDS];
++	unsigned int i, port;
++
++	for (i = 0; i < ARRAY_SIZE(input); i++)
++		input[i] = 0x12340000 + i;
++	req.type = USB4_CFG_WRITE;
++	req.words = USB4_CFG_MAX_WORDS;
++	ut_asserteq(sizeof(buf), usb4_cfg_encode(&req, input, buf, sizeof(buf)));
++	/* Turn this independently CRC-checked payload into a normal read reply. */
++	put_unaligned_be32(get_unaligned_be32(buf) | BIT(31), buf);
++	reseal(buf, sizeof(buf));
++	req.type = USB4_CFG_READ;
++	ut_assertok(usb4_cfg_decode(&req, buf, sizeof(buf), 0, USB4_CFG_READ,
++				   output, &port));
++	ut_assertok(memcmp(input, output, sizeof(input)));
++	return 0;
++}
++DM_TEST(dm_test_usb4_cfg_full_frame, 0);
+diff --git a/test/dm/usb4_cfg_vectors.h b/test/dm/usb4_cfg_vectors.h
+new file mode 100644
+index 00000000..20b457ea
+--- /dev/null
++++ b/test/dm/usb4_cfg_vectors.h
+@@ -0,0 +1,20 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Fixed wire vectors generated independently of the codec under test. */
++static const u8 read_request[] = {
++	0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
++	0x0c, 0x18, 0x41, 0x23, 0x85, 0x4f, 0x38, 0x6b,
++};
++static const u8 write_request[] = {
++	0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
++	0x0c, 0x18, 0x41, 0x23, 0x12, 0x34, 0x56, 0x78,
++	0xab, 0xcd, 0xef, 0x01, 0x50, 0xc6, 0x38, 0x78,
++};
++static const u8 read_reply[] = {
++	0x80, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
++	0x0c, 0x48, 0x41, 0x23, 0x12, 0x34, 0x56, 0x78,
++	0xab, 0xcd, 0xef, 0x01, 0xa0, 0x93, 0x9b, 0x4f,
++};
++static const u8 write_reply[] = {
++	0x80, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
++	0x0c, 0x48, 0x41, 0x23, 0xfb, 0xc6, 0x05, 0xa0,
++};

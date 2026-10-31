@@ -1,0 +1,237 @@
+diff --git a/arch/sandbox/dts/test.dts b/arch/sandbox/dts/test.dts
+index 0887de43..37e29e81 100644
+--- a/arch/sandbox/dts/test.dts
++++ b/arch/sandbox/dts/test.dts
+@@ -1085,6 +1085,18 @@
+ 		#iommu-cells = <0>;
+ 	};
+ 
++	apple-dart@5000000 {
++		compatible = "apple,t8103-dart";
++		reg = <0x05000000 0x4000>;
++		#iommu-cells = <1>;
++	};
++
++	apple-dart@5004000 {
++		compatible = "apple,t8103-usb4-dart";
++		reg = <0x05004000 0x4000>;
++		#iommu-cells = <1>;
++	};
++
+ 	irq: irq {
+ 		compatible = "sandbox,irq";
+ 		interrupt-controller;
+diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
+index 2ba6d9c1..413d585c 100644
+--- a/drivers/iommu/Kconfig
++++ b/drivers/iommu/Kconfig
+@@ -16,13 +16,13 @@ config IOMMU
+ 
+ config APPLE_DART
+ 	bool "Apple DART support"
+-	depends on IOMMU && ARCH_APPLE
+-	default y
++	depends on IOMMU && (ARCH_APPLE || SANDBOX)
++	default y if ARCH_APPLE
+ 	help
+ 	  Enable support for the DART on Apple SoCs.  The DART is Apple's
+-	  IOMMU implementation.  The driver performs the necessary
+-	  configuration to put the DART into bypass mode such that it can
+-	  be used transparently by U-Boot.
++	  IOMMU implementation. The driver uses bypass where supported,
++	  and otherwise translates DMA addresses through page tables.
++	  Sandbox builds can enable this driver for register-level tests.
+ 
+ config QCOM_HYP_SMMU
+ 	bool "Qualcomm quirky SMMU support"
+diff --git a/drivers/iommu/apple_dart.c b/drivers/iommu/apple_dart.c
+index ebef28d0..de50c8f1 100644
+--- a/drivers/iommu/apple_dart.c
++++ b/drivers/iommu/apple_dart.c
+@@ -24,11 +24,13 @@
+ #define DART_T8020_CONFIG		0x0060
+ #define  DART_T8020_CONFIG_LOCK			BIT(15)
+ #define DART_T8020_SID_ENABLE		0x00fc
++#define DART_T8103_USB4_SID_ENABLE	0x00f8
+ #define DART_T8020_TCR_BASE		0x0100
+ #define  DART_T8020_TCR_TRANSLATE_ENABLE	BIT(7)
+ #define  DART_T8020_TCR_BYPASS_DART		BIT(8)
+ #define  DART_T8020_TCR_BYPASS_DAPF		BIT(12)
+ #define DART_T8020_TTBR_BASE		0x0200
++#define DART_T8020_USB4_TTBR_BASE	0x0400
+ #define  DART_T8020_TTBR_VALID			BIT(31)
+ 
+ #define DART_T8110_PARAMS4		0x000c
+@@ -57,8 +59,6 @@
+ 	((priv)->ttbr_base + 4 * (priv)->nttbr * (sid) + 4 * (idx))
+ #define  DART_TTBR_SHIFT	12
+ 
+-#define DART_ALL_STREAMS(priv)	((1U << (priv)->nsid) - 1)
+-
+ #define DART_PAGE_SIZE		SZ_16K
+ #define DART_PAGE_MASK		(DART_PAGE_SIZE - 1)
+ 
+@@ -92,9 +92,16 @@ struct apple_dart_priv {
+ 
+ static void apple_dart_t8020_flush_tlb(struct apple_dart_priv *priv)
+ {
+-	dsb();
++	int i;
++
++	/* Publish page-table writes before invalidating cached translations. */
++	mb();
++	for (i = 0; i < DIV_ROUND_UP(priv->nsid, 32); i++) {
++		int bits = min(priv->nsid - 32 * i, 32);
+ 
+-	writel(DART_ALL_STREAMS(priv), priv->base + DART_T8020_TLB_SIDMASK);
++		writel(GENMASK(bits - 1, 0),
++		       priv->base + DART_T8020_TLB_SIDMASK + 4 * i);
++	}
+ 	writel(DART_T8020_TLB_CMD_FLUSH, priv->base + DART_T8020_TLB_CMD);
+ 	while (readl(priv->base + DART_T8020_TLB_CMD) &
+ 	       DART_T8020_TLB_CMD_BUSY)
+@@ -103,7 +110,8 @@ static void apple_dart_t8020_flush_tlb(struct apple_dart_priv *priv)
+ 
+ static void apple_dart_t8110_flush_tlb(struct apple_dart_priv *priv)
+ {
+-	dsb();
++	/* Publish page-table writes before invalidating cached translations. */
++	mb();
+ 
+ 	writel(DART_T8110_TLB_CMD_FLUSH_ALL,
+ 	       priv->base + DART_T8110_TLB_CMD_FLUSH_ALL);
+@@ -207,6 +215,12 @@ static int apple_dart_probe(struct udevice *dev)
+ 		priv->ttbr_valid = DART_T8020_TTBR_VALID;
+ 		priv->flush_tlb = apple_dart_t8020_flush_tlb;
+ 	}
++	if (device_is_compatible(dev, "apple,t8103-usb4-dart")) {
++		priv->nsid = 64;
++		priv->sid_enable_base = DART_T8103_USB4_SID_ENABLE;
++		priv->ttbr_base = DART_T8020_USB4_TTBR_BASE;
++		priv->tcr_bypass = 0;
++	}
+ 
+ 	if (device_is_compatible(dev, "apple,t6000-dart") ||
+ 	    device_is_compatible(dev, "apple,t8110-dart"))
+@@ -235,7 +249,7 @@ static int apple_dart_probe(struct udevice *dev)
+ 	priv->flush_tlb(priv);
+ 
+ 	params2 = readl(priv->base + DART_PARAMS2);
+-	if (params2 & DART_PARAMS2_BYPASS_SUPPORT) {
++	if (priv->tcr_bypass && (params2 & DART_PARAMS2_BYPASS_SUPPORT)) {
+ 		for (sid = 0; sid < priv->nsid; sid++) {
+ 			writel(priv->tcr_bypass,
+ 			       priv->base + DART_TCR(priv, sid));
+@@ -275,7 +289,7 @@ static int apple_dart_probe(struct udevice *dev)
+ 	priv->flush_tlb(priv);
+ 
+ 	/* Enable all streams. */
+-	for (i = 0; i < priv->nsid / 32; i++)
++	for (i = 0; i < DIV_ROUND_UP(priv->nsid, 32); i++)
+ 		writel(~0, priv->base + DART_SID_ENABLE(priv, i));
+ 
+ 	/* Enable translations. */
+@@ -310,6 +324,7 @@ static int apple_dart_remove(struct udevice *dev)
+ 
+ static const struct udevice_id apple_dart_ids[] = {
+ 	{ .compatible = "apple,t8103-dart" },
++	{ .compatible = "apple,t8103-usb4-dart" },
+ 	{ .compatible = "apple,t6000-dart" },
+ 	{ .compatible = "apple,t8110-dart" },
+ 	{ /* sentinel */ }
+diff --git a/test/dm/Makefile b/test/dm/Makefile
+index 0e3c6356..4e128dfe 100644
+--- a/test/dm/Makefile
++++ b/test/dm/Makefile
+@@ -63,6 +63,7 @@ obj-$(CONFIG_I3C) += i3c.o
+ obj-$(CONFIG_SOUND) += i2s.o
+ obj-$(CONFIG_CLK_K210_SET_RATE) += k210_pll.o
+ obj-$(CONFIG_IOMMU) += iommu.o
++obj-$(CONFIG_APPLE_DART) += apple_dart.o
+ obj-$(CONFIG_LED) += led.o
+ obj-$(CONFIG_VIDEO_BRIDGE_LVDS_CODEC) += video_bridge.o
+ obj-$(CONFIG_DM_MAILBOX) += mailbox.o
+diff --git a/test/dm/apple_dart.c b/test/dm/apple_dart.c
+new file mode 100644
+index 00000000..0ad6cb1c
+--- /dev/null
++++ b/test/dm/apple_dart.c
+@@ -0,0 +1,78 @@
++// SPDX-License-Identifier: GPL-2.0+
++/* Register-level tests; no ACIO firmware or actual DMA is emulated. */
++
++#include <dm.h>
++#include <dm/device-internal.h>
++#include <dm/test.h>
++#include <dm/uclass.h>
++#include <mapmem.h>
++#include <asm/io.h>
++#include <asm/test.h>
++#include <test/test.h>
++#include <test/ut.h>
++
++static int check_dart_registers(struct unit_test_state *uts, bool usb4,
++				bool bypass)
++{
++	struct udevice *dev;
++	const char *name = usb4 ? "apple-dart@5004000" : "apple-dart@5000000";
++	u32 *regs = map_sysmem(usb4 ? 0x05004000 : 0x05000000, 0x4000);
++	int sid, idx, streams = usb4 ? 64 : 16;
++	int ttbr = usb4 ? 0x400 : 0x200;
++
++	sandbox_set_enable_memio(true);
++	memset(regs, 0, 0x4000);
++	/* USB4 must translate even if the generic bypass bit is advertised. */
++	writel(bypass ? 1 : 0, &regs[0x4 / 4]);
++	ut_assertok(uclass_get_device_by_name(UCLASS_IOMMU, name, &dev));
++	ut_asserteq(usb4 ? 0xffffffff : 0xffff, readl(&regs[0x34 / 4]));
++	ut_asserteq(usb4 ? 0xffffffff : 0, readl(&regs[0x38 / 4]));
++	ut_asserteq(BIT(20), readl(&regs[0x20 / 4]));
++	for (sid = 0; sid < streams; sid++) {
++		u32 expected = bypass && !usb4 ? BIT(8) | BIT(12) : BIT(7);
++
++		ut_asserteq(expected, readl(&regs[(0x100 + 4 * sid) / 4]));
++		ut_asserteq(!(bypass && !usb4),
++			    !!(readl(&regs[(ttbr + 16 * sid) / 4]) & BIT(31)));
++	}
++	if (!bypass || usb4)
++		ut_asserteq(0xffffffff, readl(&regs[0xfc / 4]));
++	/* The hardware-tested USB4 layout starts one word before T8020. */
++	ut_asserteq(usb4 ? 0xffffffff : 0, readl(&regs[0xf8 / 4]));
++	ut_assertok(device_remove(dev, DM_REMOVE_NORMAL));
++	for (sid = 0; sid < streams; sid++) {
++		ut_asserteq(0, readl(&regs[(0x100 + 4 * sid) / 4]));
++		for (idx = 0; idx < 4; idx++)
++			ut_asserteq(0, readl(&regs[(ttbr + 16 * sid + 4 * idx) / 4]));
++	}
++	unmap_sysmem(regs);
++	return 0;
++}
++
++static int dm_test_apple_dart_usb4(struct unit_test_state *uts)
++{
++	return check_dart_registers(uts, true, false);
++}
++
++DM_TEST(dm_test_apple_dart_usb4, UTF_SCAN_FDT);
++
++static int dm_test_apple_dart_usb4_no_bypass(struct unit_test_state *uts)
++{
++	return check_dart_registers(uts, true, true);
++}
++
++DM_TEST(dm_test_apple_dart_usb4_no_bypass, UTF_SCAN_FDT);
++
++static int dm_test_apple_dart_t8103_translate(struct unit_test_state *uts)
++{
++	return check_dart_registers(uts, false, false);
++}
++
++DM_TEST(dm_test_apple_dart_t8103_translate, UTF_SCAN_FDT);
++
++static int dm_test_apple_dart_t8103_bypass(struct unit_test_state *uts)
++{
++	return check_dart_registers(uts, false, true);
++}
++
++DM_TEST(dm_test_apple_dart_t8103_bypass, UTF_SCAN_FDT);

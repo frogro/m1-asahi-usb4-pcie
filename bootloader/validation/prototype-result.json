@@ -1,0 +1,331 @@
+{
+  "prototype": {
+    "schema": 1,
+    "base_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+    "status": "software-tested-development-only",
+    "hardware_tested": false,
+    "thunderbolt_boot_implemented": false,
+    "patches": [
+      {
+        "file": "patches/0001-iommu-resolve-pci-map-without-ofnode.patch",
+        "sha256": "6304abc0a6d29986c87c883a82993851c61eb44b14c873066f22cf91941d3fa9"
+      },
+      {
+        "file": "patches/0002-iommu-apple-usb4-dart-prototype.patch",
+        "sha256": "ccc5e62020c67d172b10b05a56f898f3fdd4192de5114b554365d6484a46198e"
+      },
+      {
+        "file": "patches/0003-iommu-validate-pci-map-ranges.patch",
+        "sha256": "7985915272c86bd320095f86244601427c23725fec220c13b4e67c726d3b31ba"
+      },
+      {
+        "file": "patches/0004-mailbox-apple-bound-full-queue-waits.patch",
+        "sha256": "433b6772d8638c07aa493aba01f03030a43eec08e7ff3e1d063a7db696dc09f8"
+      },
+      {
+        "file": "patches/0005-usb4-add-configuration-packet-codec.patch",
+        "sha256": "843b4acd83d6b3d198216e1fc19cabb17a99f318b8a6a9e1a5c969c7e9730760"
+      },
+      {
+        "file": "patches/0006-iommu-apple-reject-invalid-dma-reservations.patch",
+        "sha256": "1d5d5cf02d7d071879151558e07c00ef230ee7d3e3fdf5dfa7260c2c17e24bb5"
+      }
+    ],
+    "linux_hardware_reference": {
+      "file": "consolidated/20261030/patches/0001-iommu-apple-dart-retain-tested-USB4-stream-and-lifet.patch",
+      "facts": [
+        "USB4 stream-enable bank at 0xf8",
+        "two 32-bit SID selection registers",
+        "64 streams",
+        "TTBR base 0x400",
+        "no bypass"
+      ]
+    }
+  },
+  "tests": {
+    "apple_dart": {
+      "tests": 7,
+      "failures": 0,
+      "live_and_flat_tree": true
+    },
+    "iommu": {
+      "tests": 8,
+      "failures": 0,
+      "live_and_flat_tree": true
+    },
+    "pci": {
+      "tests": 14,
+      "failures": 0,
+      "live_and_flat_tree": true
+    },
+    "apple_mbox": {
+      "tests": 2,
+      "failures": 0,
+      "live_and_flat_tree": true
+    },
+    "usb4_cfg": {
+      "tests": 6,
+      "failures": 0,
+      "live_and_flat_tree": false
+    }
+  },
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/tmp/asahi-universal-boot-20261031/u-boot",
+        "worktree",
+        "add",
+        "--detach",
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/source",
+        "b33034a515a068381c4aa28831fb709e91300cd1"
+      ],
+      "log": "worktree.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--check",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0001-iommu-resolve-pci-map-without-ofnode.patch"
+      ],
+      "log": "patch-1-check.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0001-iommu-resolve-pci-map-without-ofnode.patch"
+      ],
+      "log": "patch-1-apply.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--check",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0002-iommu-apple-usb4-dart-prototype.patch"
+      ],
+      "log": "patch-2-check.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0002-iommu-apple-usb4-dart-prototype.patch"
+      ],
+      "log": "patch-2-apply.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--check",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0003-iommu-validate-pci-map-ranges.patch"
+      ],
+      "log": "patch-3-check.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0003-iommu-validate-pci-map-ranges.patch"
+      ],
+      "log": "patch-3-apply.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--check",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0004-mailbox-apple-bound-full-queue-waits.patch"
+      ],
+      "log": "patch-4-check.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0004-mailbox-apple-bound-full-queue-waits.patch"
+      ],
+      "log": "patch-4-apply.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--check",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0005-usb4-add-configuration-packet-codec.patch"
+      ],
+      "log": "patch-5-check.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0005-usb4-add-configuration-packet-codec.patch"
+      ],
+      "log": "patch-5-apply.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--check",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0006-iommu-apple-reject-invalid-dma-reservations.patch"
+      ],
+      "log": "patch-6-check.log"
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/home/frank/usb4-test-work/usb4-full-build-20261030/bootloader/patches/0006-iommu-apple-reject-invalid-dma-reservations.patch"
+      ],
+      "log": "patch-6-apply.log"
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "log": "diff-check.log"
+    },
+    {
+      "argv": [
+        "make",
+        "O=/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox",
+        "sandbox_defconfig"
+      ],
+      "log": "sandbox-config.log"
+    },
+    {
+      "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/source/scripts/config",
+        "--file",
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox/.config",
+        "-e",
+        "APPLE_DART",
+        "-e",
+        "APPLE_MBOX",
+        "-e",
+        "USB4_CFG_CODEC"
+      ],
+      "log": "sandbox-enable.log"
+    },
+    {
+      "argv": [
+        "make",
+        "O=/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox",
+        "olddefconfig"
+      ],
+      "log": "sandbox-olddefconfig.log"
+    },
+    {
+      "argv": [
+        "make",
+        "O=/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox",
+        "-j4"
+      ],
+      "log": "sandbox-build.log"
+    },
+    {
+      "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox/u-boot",
+        "-T",
+        "-c",
+        "ut dm apple_dart*"
+      ],
+      "log": "test-apple_dart.log"
+    },
+    {
+      "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox/u-boot",
+        "-T",
+        "-c",
+        "ut dm iommu*"
+      ],
+      "log": "test-iommu.log"
+    },
+    {
+      "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox/u-boot",
+        "-T",
+        "-c",
+        "ut dm pci*"
+      ],
+      "log": "test-pci.log"
+    },
+    {
+      "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox/u-boot",
+        "-T",
+        "-c",
+        "ut dm apple_mbox*"
+      ],
+      "log": "test-apple_mbox.log"
+    },
+    {
+      "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/sandbox/u-boot",
+        "-T",
+        "-c",
+        "ut dm usb4_cfg*"
+      ],
+      "log": "test-usb4_cfg.log"
+    },
+    {
+      "argv": [
+        "make",
+        "O=/tmp/asahi-universal-boot-20261031/repro-six-final/apple",
+        "CROSS_COMPILE=aarch64-linux-gnu-",
+        "apple_m1_defconfig"
+      ],
+      "log": "apple-config.log"
+    },
+    {
+      "argv": [
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/source/scripts/config",
+        "--file",
+        "/tmp/asahi-universal-boot-20261031/repro-six-final/apple/.config",
+        "-e",
+        "NVME_PCI",
+        "-e",
+        "CMD_BOOTMENU",
+        "-e",
+        "USB4_CFG_CODEC",
+        "--set-val",
+        "BOOTDELAY",
+        "10"
+      ],
+      "log": "apple-enable.log"
+    },
+    {
+      "argv": [
+        "make",
+        "O=/tmp/asahi-universal-boot-20261031/repro-six-final/apple",
+        "CROSS_COMPILE=aarch64-linux-gnu-",
+        "olddefconfig"
+      ],
+      "log": "apple-olddefconfig.log"
+    },
+    {
+      "argv": [
+        "make",
+        "O=/tmp/asahi-universal-boot-20261031/repro-six-final/apple",
+        "CROSS_COMPILE=aarch64-linux-gnu-",
+        "-j4"
+      ],
+      "log": "apple-build.log"
+    }
+  ],
+  "installed": false,
+  "hardware_validated": false,
+  "thunderbolt_boot_implemented": false,
+  "source_date_epoch": "1786361677",
+  "apple_image_sha256": "bdf6c3d70992f4771a663d110578f4c762828b4dfd8396852db2ffa4ad04666d",
+  "apple_config_sha256": "efbd31d1d546aef33931b7e533348632fda9710c8269a2c668b814ad59f3ed3e",
+  "status": "software-validation-passed"
+}

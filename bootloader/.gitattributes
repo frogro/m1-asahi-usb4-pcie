@@ -1,0 +1,4 @@
+# Unified-diff context deliberately prefixes tabs and blank lines with a space.
+patches/*.patch -whitespace
+# Preserve raw sandbox transcripts, including CRLF and terminal escapes.
+validation/*.log -text -whitespace

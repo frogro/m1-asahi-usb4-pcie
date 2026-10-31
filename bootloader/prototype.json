@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "base_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "status": "software-tested-development-only",
+  "hardware_tested": false,
+  "thunderbolt_boot_implemented": false,
+  "patches": [
+    {
+      "file": "patches/0001-iommu-resolve-pci-map-without-ofnode.patch",
+      "sha256": "6304abc0a6d29986c87c883a82993851c61eb44b14c873066f22cf91941d3fa9"
+    },
+    {
+      "file": "patches/0002-iommu-apple-usb4-dart-prototype.patch",
+      "sha256": "ccc5e62020c67d172b10b05a56f898f3fdd4192de5114b554365d6484a46198e"
+    },
+    {
+      "file": "patches/0003-iommu-validate-pci-map-ranges.patch",
+      "sha256": "7985915272c86bd320095f86244601427c23725fec220c13b4e67c726d3b31ba"
+    },
+    {
+      "file": "patches/0004-mailbox-apple-bound-full-queue-waits.patch",
+      "sha256": "433b6772d8638c07aa493aba01f03030a43eec08e7ff3e1d063a7db696dc09f8"
+    },
+    {
+      "file": "patches/0005-usb4-add-configuration-packet-codec.patch",
+      "sha256": "843b4acd83d6b3d198216e1fc19cabb17a99f318b8a6a9e1a5c969c7e9730760"
+    },
+    {
+      "file": "patches/0006-iommu-apple-reject-invalid-dma-reservations.patch",
+      "sha256": "1d5d5cf02d7d071879151558e07c00ef230ee7d3e3fdf5dfa7260c2c17e24bb5"
+    }
+  ],
+  "linux_hardware_reference": {
+    "file": "consolidated/20261030/patches/0001-iommu-apple-dart-retain-tested-USB4-stream-and-lifet.patch",
+    "facts": [
+      "USB4 stream-enable bank at 0xf8",
+      "two 32-bit SID selection registers",
+      "64 streams",
+      "TTBR base 0x400",
+      "no bypass"
+    ]
+  }
+}

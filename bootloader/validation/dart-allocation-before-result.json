@@ -1,0 +1,12 @@
+[
+  {
+    "case": "map_reject",
+    "returncode": 7,
+    "expected_failure": true
+  },
+  {
+    "case": "map_exhaust",
+    "returncode": 7,
+    "expected_failure": true
+  }
+]

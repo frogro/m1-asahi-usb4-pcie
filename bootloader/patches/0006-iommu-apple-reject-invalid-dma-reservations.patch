@@ -1,0 +1,175 @@
+diff --git a/drivers/iommu/apple_dart.c b/drivers/iommu/apple_dart.c
+index de50c8f1..2352c36f 100644
+--- a/drivers/iommu/apple_dart.c
++++ b/drivers/iommu/apple_dart.c
+@@ -127,14 +127,22 @@ static dma_addr_t apple_dart_map(struct udevice *dev, void *addr, size_t size)
+ 	phys_size_t psize, off;
+ 	int i, idx;
+ 
++	/* Zero is outside our IOVA aperture and denotes a failed mapping. */
++	if (!size || size - 1 > (phys_addr_t)-1 - (phys_addr_t)addr)
++		return 0;
+ 	if (priv->bypass)
+ 		return (phys_addr_t)addr;
+ 
+ 	paddr = ALIGN_DOWN((phys_addr_t)addr, DART_PAGE_SIZE);
+ 	off = (phys_addr_t)addr - paddr;
++	/* Bound before adding or rounding, including alignment overflow. */
++	if (size > priv->dvaend - priv->dvabase - off)
++		return 0;
+ 	psize = ALIGN(size + off, DART_PAGE_SIZE);
+ 
+ 	dva = io_lmb_alloc(&priv->io_lmb, psize, DART_PAGE_SIZE);
++	if (!dva)
++		return 0;
+ 
+ 	idx = dva / DART_PAGE_SIZE;
+ 	for (i = 0; i < psize / DART_PAGE_SIZE; i++) {
+@@ -158,6 +166,10 @@ static void apple_dart_unmap(struct udevice *dev, dma_addr_t addr, size_t size)
+ 
+ 	if (priv->bypass)
+ 		return;
++	/* Reject failed mappings and ranges outside the page-table aperture. */
++	if (!size || addr < priv->dvabase || addr >= priv->dvaend ||
++	    size > priv->dvaend - addr)
++		return;
+ 
+ 	dva = ALIGN_DOWN(addr, DART_PAGE_SIZE);
+ 	psize = size + (addr - dva);
+@@ -234,8 +246,10 @@ static int apple_dart_probe(struct udevice *dev)
+ 		return ret;
+ 	ret = io_lmb_add(&priv->io_lmb, priv->dvabase,
+ 			 priv->dvaend - priv->dvabase);
+-	if (ret)
+-		return -EINVAL;
++	if (ret) {
++		io_lmb_teardown(&priv->io_lmb);
++		return ret;
++	}
+ 
+ 	/* Disable translations. */
+ 	for (sid = 0; sid < priv->nsid; sid++)
+@@ -263,11 +277,21 @@ static int apple_dart_probe(struct udevice *dev)
+ 	nl1 = DIV_ROUND_UP(nl2, DART_PAGE_SIZE / sizeof(u64));
+ 
+ 	priv->l2 = memalign(DART_PAGE_SIZE, nl2 * DART_PAGE_SIZE);
++	if (!priv->l2) {
++		io_lmb_teardown(&priv->io_lmb);
++		return -ENOMEM;
++	}
+ 	memset(priv->l2, 0, nl2 * DART_PAGE_SIZE);
+ 	flush_dcache_range((unsigned long)priv->l2,
+ 			   (unsigned long)priv->l2 + nl2 * DART_PAGE_SIZE);
+ 
+ 	priv->l1 = memalign(DART_PAGE_SIZE, nl1 * DART_PAGE_SIZE);
++	if (!priv->l1) {
++		free(priv->l2);
++		priv->l2 = NULL;
++		io_lmb_teardown(&priv->io_lmb);
++		return -ENOMEM;
++	}
+ 	memset(priv->l1, 0, nl1 * DART_PAGE_SIZE);
+ 	l2 = (phys_addr_t)priv->l2;
+ 	for (i = 0; i < nl2; i++) {
+diff --git a/test/dm/apple_dart.c b/test/dm/apple_dart.c
+index 0ad6cb1c..f0b5f441 100644
+--- a/test/dm/apple_dart.c
++++ b/test/dm/apple_dart.c
+@@ -2,6 +2,7 @@
+ /* Register-level tests; no ACIO firmware or actual DMA is emulated. */
+ 
+ #include <dm.h>
++#include <iommu.h>
+ #include <dm/device-internal.h>
+ #include <dm/test.h>
+ #include <dm/uclass.h>
+@@ -76,3 +77,89 @@ static int dm_test_apple_dart_t8103_bypass(struct unit_test_state *uts)
+ }
+ 
+ DM_TEST(dm_test_apple_dart_t8103_bypass, UTF_SCAN_FDT);
++
++/* These mappings program tables only: no peripheral performs actual DMA. */
++static int dm_test_apple_dart_map_reject(struct unit_test_state *uts)
++{
++	struct udevice *dev;
++	const struct iommu_ops *ops;
++	u32 *regs = map_sysmem(0x05004000, 0x4000);
++
++	sandbox_set_enable_memio(true);
++	memset(regs, 0, 0x4000);
++	ut_assertok(uclass_get_device_by_name(UCLASS_IOMMU,
++					    "apple-dart@5004000", &dev));
++	ops = device_get_ops(dev);
++	writel(0, &regs[0x20 / 4]);
++	ut_asserteq(0, ops->map(dev, (void *)0x100000, 0));
++	ut_asserteq(0, readl(&regs[0x20 / 4]));
++	ut_asserteq(0, ops->map(dev, (void *)0x100000, (size_t)-1));
++	ut_asserteq(0, ops->map(dev, (void *)(uintptr_t)-16, 32));
++	ut_asserteq(0, ops->map(dev, (void *)0x100000, 1ULL << 32));
++	ut_asserteq(0, readl(&regs[0x20 / 4]));
++	ut_assertok(device_remove(dev, DM_REMOVE_NORMAL));
++	unmap_sysmem(regs);
++	return 0;
++}
++DM_TEST(dm_test_apple_dart_map_reject, UTF_SCAN_FDT);
++
++static int dm_test_apple_dart_map_exhaust(struct unit_test_state *uts)
++{
++	struct udevice *dev;
++	const struct iommu_ops *ops;
++	u32 *regs = map_sysmem(0x05004000, 0x4000);
++	/* The entire supported IOVA aperture, excluding the two guard pages. */
++	size_t aperture = (1ULL << 32) - 2 * 16384;
++	dma_addr_t first, again;
++
++	sandbox_set_enable_memio(true);
++	memset(regs, 0, 0x4000);
++	ut_assertok(uclass_get_device_by_name(UCLASS_IOMMU,
++					    "apple-dart@5004000", &dev));
++	ops = device_get_ops(dev);
++	first = ops->map(dev, (void *)0x4000, aperture);
++	ut_asserteq(16384, first);
++	writel(0, &regs[0x20 / 4]);
++	ut_asserteq(0, ops->map(dev, (void *)0x100000, 16384));
++	/* Exhaustion must not install a mapping at reserved IOVA zero. */
++	ut_asserteq(0, readl(&regs[0x20 / 4]));
++	ops->unmap(dev, first, aperture);
++	again = ops->map(dev, (void *)0x4000, aperture);
++	ut_asserteq(first, again);
++	ops->unmap(dev, again, aperture);
++	ut_assertok(device_remove(dev, DM_REMOVE_NORMAL));
++	unmap_sysmem(regs);
++	return 0;
++}
++DM_TEST(dm_test_apple_dart_map_exhaust, UTF_SCAN_FDT);
++
++static int dm_test_apple_dart_unmap_bounds(struct unit_test_state *uts)
++{
++	struct udevice *dev;
++	const struct iommu_ops *ops;
++	u32 *regs = map_sysmem(0x05004000, 0x4000);
++	dma_addr_t addr, again;
++
++	sandbox_set_enable_memio(true);
++	memset(regs, 0, 0x4000);
++	ut_assertok(uclass_get_device_by_name(UCLASS_IOMMU,
++					    "apple-dart@5004000", &dev));
++	ops = device_get_ops(dev);
++	addr = ops->map(dev, (void *)0x100123, 17000);
++	ut_assert(addr != 0);
++	ut_asserteq(0x123, addr & 0x3fff);
++	writel(0, &regs[0x20 / 4]);
++	ops->unmap(dev, 0, 16384);
++	ops->unmap(dev, (dma_addr_t)-16, 32);
++	ops->unmap(dev, addr, (size_t)-1);
++	ops->unmap(dev, addr, 0);
++	ut_asserteq(0, readl(&regs[0x20 / 4]));
++	ops->unmap(dev, addr, 17000);
++	again = ops->map(dev, (void *)0x100123, 17000);
++	ut_asserteq(addr, again);
++	ops->unmap(dev, again, 17000);
++	ut_assertok(device_remove(dev, DM_REMOVE_NORMAL));
++	unmap_sysmem(regs);
++	return 0;
++}
++DM_TEST(dm_test_apple_dart_unmap_bounds, UTF_SCAN_FDT);

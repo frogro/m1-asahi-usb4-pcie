@@ -1,0 +1,104 @@
+Subject: [PATCH 3/3] iommu: validate PCI map tuples and avoid range-end wrap
+
+Reject truncated iommu-map tuples before reading their four cells. Compare
+requester ID offsets with lengths so a range ending at 2^32 still matches.
+Propagate property-read errors rather than silently proceeding without DART.
+
+The two added tests fail in both live and flat tree modes before the fix and
+pass afterwards. This is a software-tested boot prototype, not TB boot
+support.
+
+---
+
+--- a/drivers/iommu/iommu-uclass.c
++++ b/drivers/iommu/iommu-uclass.c
+@@ -31,6 +31,9 @@
+ 
+ 	if (len <= 0)
+ 		return 0;
++	/* Each PCI map tuple has RID, phandle, output SID and range length. */
++	if (len % (4 * sizeof(u32)))
++		return -EINVAL;
+ 
+ 	iommu_map = malloc(len);
+ 	if (!iommu_map)
+@@ -40,7 +43,7 @@
+ 	ret = dev_read_u32_array(parent, "iommu-map", iommu_map, count);
+ 	if (ret < 0) {
+ 		free(iommu_map);
+-		return 0;
++		return ret;
+ 	}
+ 
+ 	iommu_map_mask = dev_read_u32_default(parent, "iommu-map-mask", ~0);
+@@ -52,7 +55,7 @@
+ 		phandle = iommu_map[i + 1];
+ 		length = iommu_map[i + 3];
+ 
+-		if (rid < rid_base || rid >= rid_base + length)
++		if (rid < rid_base || rid - rid_base >= length)
+ 			continue;
+ 
+ 		ret = uclass_get_device_by_phandle_id(UCLASS_IOMMU, phandle,
+--- a/test/dm/iommu.c
++++ b/test/dm/iommu.c
+@@ -140,3 +140,59 @@
+ }
+ 
+ DM_TEST(dm_test_iommu_pci_unmapped_no_ofnode, UTF_SCAN_FDT);
++
++/* Exercise host properties as seen by endpoints without their own FDT node. */
++static int check_pci_iommu_map(struct unit_test_state *uts, int cells,
++			      u32 length, int expected)
++{
++	struct udevice *dev, *host, *iommu;
++	u32 saved[4], changed[4];
++	ofnode node;
++	int ret;
++
++	ut_assertok(uclass_get_device(UCLASS_P2SB, 0, &dev));
++	iommu = dev->iommu;
++	ut_assertnonnull(iommu);
++	for (host = dev->parent; host; host = host->parent) {
++		if (dev_read_size(host, "iommu-map") > 0)
++			break;
++	}
++	ut_assertnonnull(host);
++	ut_asserteq(sizeof(saved), dev_read_size(host, "iommu-map"));
++	memcpy(saved, ofnode_get_property(dev_ofnode(host), "iommu-map", NULL),
++	       sizeof(saved));
++	memcpy(changed, saved, sizeof(saved));
++	changed[3] = cpu_to_fdt32(length);
++	ut_assertok(ofnode_write_prop(dev_ofnode(host), "iommu-map", changed,
++				      cells * sizeof(u32), true));
++	node = dev_ofnode(dev);
++	dev_set_ofnode(dev, ofnode_null());
++	dev->iommu = NULL;
++	ret = dev_iommu_enable(dev);
++	/* Restore the fixture before asserting the outcome. */
++	dev_set_ofnode(dev, node);
++	ut_assertok(ofnode_write_prop(dev_ofnode(host), "iommu-map", saved,
++				      sizeof(saved), true));
++	ut_asserteq(expected, ret);
++	if (!expected)
++		ut_asserteq_ptr(iommu, dev->iommu);
++	else
++		ut_assertnull(dev->iommu);
++
++	return 0;
++}
++
++static int dm_test_iommu_pci_truncated_map(struct unit_test_state *uts)
++{
++	return check_pci_iommu_map(uts, 3, 1, -EINVAL);
++}
++
++DM_TEST(dm_test_iommu_pci_truncated_map, UTF_SCAN_FDT);
++
++static int dm_test_iommu_pci_range_end_wrap(struct unit_test_state *uts)
++{
++	/* Base 0x10 plus length 0xfffffff0 ends exactly at 2^32. */
++	return check_pci_iommu_map(uts, 4, 0xfffffff0, 0);
++}
++
++DM_TEST(dm_test_iommu_pci_range_end_wrap, UTF_SCAN_FDT);

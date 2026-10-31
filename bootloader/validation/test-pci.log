@@ -1,0 +1,56 @@
+Bloblist at 100 not found (err=-2)
+pinctrl_select_state_full() sandbox_serial serial: pinctrl_select_state_full: uclass_get_device_by_phandle_id: err=-19
+
+
+U-Boot 2026.07-gb33034a515a0-dirty (Aug 10 2026 - 11:34:37 +0000)
+
+Reset Status: WARM Reset Status: COLD
+Model: sandbox
+DRAM:  256 MiB
+Core:  311 devices, 107 uclasses, devicetree: board, universal payload active
+WDT:   Not starting wdt-gpio-toggle
+WDT:   Not starting wdt-gpio-level
+WDT:   Not starting wdt@0
+NAND:  4100 MiB
+MMC:   Can't map file 'mmc1.img': Invalid argument
+   sandbox_mmc_probe() mmc1: Unable to map file 'mmc1.img'
+Can't map file 'mmc1.img': Invalid argument
+   sandbox_mmc_probe() mmc1: Unable to map file 'mmc1.img'
+           mmc_probe() mmc1 - probe failed: -1
+mmc2: 2 (SD)Can't map file 'mmc1.img': Invalid argument
+   sandbox_mmc_probe() mmc1: Unable to map file 'mmc1.img'
+, mmc0: 0 (SD)
+Loading Environment from nowhere... OK
+In:    serial
+Out:   serial,vidconsole
+Err:   serial,vidconsole
+Model: sandbox
+Net:   eth0: eth@10002000, eth5: eth@10003000, eth3: sbe5, eth6: eth@10004000, eth8: phy-test-eth, eth4: dsa-test-eth, eth2: lan0, eth7: lan1
+[?25h
+Test: pci_addr_flat: pci.c (flat tree)
+Test: pci_addr_live: pci.c
+Test: pci_base: pci.c
+Test: pci_base: pci.c (flat tree)
+Test: pci_bus_to_phys: pci.c
+Test: pci_bus_to_phys: pci.c (flat tree)
+Test: pci_busdev: pci.c
+Test: pci_busdev: pci.c (flat tree)
+Test: pci_cap: pci.c
+Test: pci_cap: pci.c (flat tree)
+Test: pci_drvdata: pci.c
+Test: pci_drvdata: pci.c (flat tree)
+Test: pci_ea: pci.c
+Test: pci_ea: pci.c (flat tree)
+Test: pci_ep_base: pci_ep.c
+Test: pci_ep_base: pci_ep.c (flat tree)
+Test: pci_mixed: pci.c
+Test: pci_mixed: pci.c (flat tree)
+Test: pci_on_bus: pci.c
+Test: pci_on_bus: pci.c (flat tree)
+Test: pci_phys_to_bus: pci.c
+Test: pci_phys_to_bus: pci.c (flat tree)
+Test: pci_region_multi: pci.c
+Test: pci_region_multi: pci.c (flat tree)
+Test: pci_swapcase: pci.c
+Test: pci_swapcase: pci.c (flat tree)
+Tests run: 14, 104 ms, average: 7 ms, failures: 0

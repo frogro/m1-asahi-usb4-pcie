@@ -1,0 +1,30 @@
+{
+  "scope": "QEMU generic PCIe NVMe and USB storage only",
+  "apple_usb4_tested": false,
+  "installed": false,
+  "firmware_sha256": "5f026904732638595e82b6ad6307b8dac54c14d0804535448a0aaf6fad9b99d5",
+  "proof_sha256": "1482c33f078053daab612a77f8fd236724e457645571fb5e28786cbd6a5171c4",
+  "proof_bytes": 5242903,
+  "tests": [
+    {
+      "storage": "nvme",
+      "passed": [
+        "GPT-and-FAT-readable",
+        "multi-page-file-SHA256-matched",
+        "EFI-payload-loaded-from-emulated-disk-and-returned"
+      ],
+      "transcript": "qemu-nvme.log"
+    },
+    {
+      "storage": "usb",
+      "passed": [
+        "missing-NVMe-returned-to-prompt",
+        "GPT-and-FAT-readable",
+        "multi-page-file-SHA256-matched",
+        "EFI-payload-loaded-from-emulated-disk-and-returned"
+      ],
+      "transcript": "qemu-usb.log"
+    }
+  ],
+  "status": "passed"
+}
