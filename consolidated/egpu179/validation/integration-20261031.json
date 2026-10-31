@@ -38,5 +38,7 @@
   "ucsi_rebind": "completed; alternate mode remained inactive; no visual validation",
   "ucsi_rebind_dart_fault": "0x83000402 stream3 address0; also present in historical Test179/190",
   "watchdog": "systemd PID1 verified, timeout30, runtime-only",
-  "internal_boot_arm_metadata": "updated with backup; no reboot armed; SanDisk absent"
+  "internal_boot_arm_metadata": "updated with backup; no reboot armed; SanDisk absent",
+  "boot_preflight_control_cases": 7,
+  "automatic_ac_suspend": "disabled with saved previous settings"
 }

@@ -51,7 +51,7 @@ A UCSI child-driver rebind after GPU initialization completed without a command 
 
 The historical overlay helper only applied the diagnostic DT; native static DT patches replace it. The historical TTM scope helper operated on synthetic structures and did not touch hardware. Neither is an omitted runtime initialization like the Test55 prefetch strobe.
 
-The installed internal boot-arm helper had a stale initramfs hash. Its expected metadata was updated from the verified booted Yotta files, with a backup, and it gained a check-only option. It still requires the SanDisk and checks its actual file hashes before arming. The SanDisk was absent, so its current contents were not reverified. The original m1n1 boot blob hash and empty GRUB next_entry were unchanged. No kernel was copied internally and no reboot was armed.
+The installed internal boot-arm helper had a stale initramfs hash. Its expected metadata was updated from the verified booted Yotta files, with a backup, and it gained a check-only option plus release, root and PCI-parameter validation for the direct Yotta entry. Seven checks against the captured configuration and deliberately invalid variants passed; the existing SanDisk menu-chain path is preserved. It still requires the SanDisk and checks its actual file hashes before arming. The SanDisk was absent, so its current contents were not reverified. The original m1n1 boot blob hash and empty GRUB next_entry were unchanged. No kernel was copied internally and no reboot was armed.
 
 ### Deliberately excluded
 
@@ -60,3 +60,5 @@ No ACK-timeout suppression/classification patch, speculative USB-C reset policy,
 ## Recovery during unattended checks
 
 During active tests, an Apple hardware watchdog with a renewable lease protected the system. Afterwards ownership was handed to systemd PID1 and verified, with 30-second runtime/reboot watchdog settings for this boot and panic reboot enabled; no expiring test lease remains active. The verified original internal Ubuntu boot selection remains the fallback. The Yotta root controller is never unbound. No system sleep or physical-disconnect test is performed while the operator is away.
+
+The desktop AC automatic-suspend policy was changed from suspend-after-two-hours to nothing, with the old settings saved locally, to keep the unattended machine reachable. This is a desktop policy change, not a change to driver suspend support. Native Ethernet is configured for automatic connection without per-user restrictions, and SSH is enabled.
