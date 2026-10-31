@@ -1,0 +1,15 @@
+{
+  "kernel": "7.2.0-1001-asahi-arm",
+  "device_name": "Ash Creek",
+  "generation": 3,
+  "rx_lanes": 2,
+  "tx_lanes": 2,
+  "rx_speed_gbps": 20,
+  "tx_speed_gbps": 20,
+  "authorized": 1,
+  "journal_phase3": true,
+  "journal_connected": true,
+  "external_nvme_io_tested": false,
+  "journal_sha256": "b67178e31ea4ba0d4fc26cc7c38abdc41b47f16592e514911579ac7566d98ec4",
+  "dwc3_snapshot": "aborted: GSNPSID was zero, not a valid controller snapshot"
+}

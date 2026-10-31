@@ -1,0 +1,267 @@
+--- a/include/apple_cd321x.h
++++ b/include/apple_cd321x.h
+@@ -5,6 +5,7 @@
+ 
+ struct apple_cd321x_status {
+ 	u32 status, data_status, eudo;
++	u32 tbt_device_mode, tbt_enter_vdo;
+ 	u8 usb4_mode;
+ };
+ 
+--- a/lib/apple_cd321x.c
++++ b/lib/apple_cd321x.c
+@@ -33,7 +33,7 @@
+ {
+ 	struct apple_cd321x_status result = {};
+ 	u8 buf[9];
+-	u8 first_data[5];
++	u8 first_data[5], first_tbt[9];
+ 	int ret;
+ 
+ 	if (!read || !status)
+@@ -63,6 +63,21 @@
+ 		result.usb4_mode = buf[0];
+ 		result.eudo = get_unaligned_le32(buf + 1);
+ 	}
++	if (result.data_status & BIT(16)) {
++		if (result.data_status & BIT(23))
++			return -EPROTONOSUPPORT;
++		/* Intel VID status layout matches Linux tipd: 1+4+2+2 bytes. */
++		ret = read_block(read, ctx, 0x59, first_tbt, 9);
++		if (ret)
++			return ret;
++		ret = read_block(read, ctx, 0x59, buf, 9);
++		if (ret)
++			return ret;
++		if (memcmp(first_tbt, buf, 9))
++			return -EAGAIN;
++		result.tbt_enter_vdo = (u32)get_unaligned_le16(buf + 5) << 16;
++		result.tbt_device_mode = 1 | (u32)get_unaligned_le16(buf + 7) << 16;
++	}
+ 	ret = read_block(read, ctx, 0x5f, buf, 5);
+ 	if (ret)
+ 		return ret;
+--- a/cmd/apple_cd321x.c
++++ b/cmd/apple_cd321x.c
+@@ -43,6 +43,8 @@
+ 	if (s.data_status & BIT(23))
+ 		printf("USB4 mode=%02x EUDO=%08x\n", s.usb4_mode, s.eudo);
+ 	puts("Status only: no PHY setup, tunnel or disk access performed.\n");
++	if (s.data_status & BIT(16))
++		printf("TBT device_mode=%08x enter_vdo=%08x\n", s.tbt_device_mode, s.tbt_enter_vdo);
+ 	return CMD_RET_SUCCESS;
+ }
+ 
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -383,7 +383,9 @@
+ 	ret = load_config(node, &hw, &after);
+ 	if (ret)
+ 		goto fail;
+-	if (before.data_status != after.data_status || before.eudo != after.eudo) {
++	if (before.data_status != after.data_status || before.eudo != after.eudo ||
++	    before.tbt_device_mode != after.tbt_device_mode ||
++	    before.tbt_enter_vdo != after.tbt_enter_vdo) {
+ 		ret = -EAGAIN;
+ 		goto fail;
+ 	}
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -10,6 +10,8 @@
+ int apple_nhi_m1_set_cable(const struct apple_cd321x_status *status);
+ int apple_nhi_m1_link_metadata(const u8 *drom, unsigned int len,
+ 			      u32 status, u32 eudo, u32 *cable);
++int apple_nhi_m1_tbt_metadata(const u8 *drom, unsigned int len,
++                            u32 status, u32 device_mode, u32 *cable);
+ int apple_nhi_m1_control_check(void);
+ int apple_nhi_m1_control_read(struct udevice *dart);
+ typedef int (*apple_nhi_read_fn)(void *context, unsigned int port,
+--- a/cmd/apple_nhi_m1_inventory.c
++++ b/cmd/apple_nhi_m1_inventory.c
+@@ -125,18 +125,14 @@
+ /* Validate the exported revision-1 DROM without exposing its device UID.
+  * The diagnostic is restricted to the measured J274 lane pair 1/2.
+  */
+-int apple_nhi_m1_link_metadata(const u8 *d, unsigned int len,
+-			      u32 status, u32 eudo, u32 *cable)
+-{
+-	u32 crc = ~0U, stored, seen = 0, pair = 0, result = 1;
++static int validate_link_drom(const u8 *d, unsigned int len)
++{
++	u32 crc = ~0U, stored, seen = 0, pair = 0;
+ 	unsigned int total, pos, i, bit, n, port;
+ 	u8 uid_crc = 255;
+ 
+-	if (!d || !cable || len < 22 || len > 4096 || d[13] != 1)
++	if (!d || len < 22 || len > 4096 || d[13] != 1)
+ 		return -EINVAL;
+-	if (!(status & 1) || !(status & (1U << 23)) || status & (1U << 16) ||
+-	    ((eudo >> 21) & 7) < 2 || ((eudo >> 21) & 7) > 3)
+-		return -EPROTONOSUPPORT;
+ 	total = 13 + ((d[14] | d[15] << 8) & 4095);
+ 	if (total < 22 || total > len || len - total > 3)
+ 		return -ERANGE;
+@@ -172,11 +168,48 @@
+ 		}
+ 	}
+ 	if (seen != 0xfe || pair != 6) return -EPROTO;
+-	if (status & 2) result |= 2;
+-	if ((eudo >> 19) & 3) result |= 4;
+-	if (((eudo >> 21) & 7) == 3) result |= 16;
+-	*cable = result;
+ 	return 0;
++}
++
++int apple_nhi_m1_link_metadata(const u8 *d, unsigned int len,
++                              u32 status, u32 eudo, u32 *cable)
++{
++ u32 result = 1;
++ int ret;
++ if (!cable) return -EINVAL;
++ if (!(status & 1) || !(status & (1U << 23)) || status & (1U << 16) ||
++     ((eudo >> 21) & 7) < 2 || ((eudo >> 21) & 7) > 3)
++  return -EPROTONOSUPPORT;
++ ret = validate_link_drom(d, len);
++ if (ret) return ret;
++ if (status & 2) result |= 2;
++ if ((eudo >> 19) & 3) result |= 4;
++ if (((eudo >> 21) & 7) == 3) result |= 16;
++ *cable = result;
++ return 0;
++}
++
++/* Linux tipd/core.c -> thunderbolt/apple.c TBT cable mapping. */
++int apple_nhi_m1_tbt_metadata(const u8 *d, unsigned int len,
++                             u32 status, u32 device_mode, u32 *cable)
++{
++ u32 result = (1U << 10) | 1, speed = (status >> 25) & 7;
++ int ret;
++ if (!cable) return -EINVAL;
++ if (!(status & 1) || !(status & (1U << 16)) || status & (1U << 23) ||
++     (device_mode & 0xffff) != 1 || speed < 1 || speed > 3)
++  return -EPROTONOSUPPORT;
++ ret = validate_link_drom(d, len);
++ if (ret) return ret;
++ if (status & 2) result |= 2;
++ if (status & (1U << 2)) {
++  result |= 4;
++  if (!(status & (1U << 20))) result |= 8;
++ }
++ if (device_mode & (1U << 16)) result |= 1U << 9;
++ if (speed == 3) result |= 16;
++ *cable = result;
++ return 0;
+ }
+ 
+ /* USB4 root-router LOWRES sequence from Linux thunderbolt/tmu.c:
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -66,7 +66,11 @@
+  drom = ofnode_get_property(ofnode_path("/soc/cio@501ac0000/nhi@f00000"),
+                             "apple,thunderbolt-drom", &len);
+  if (!drom || len < 0) return -ENOENT;
+- ret = apple_nhi_m1_link_metadata(drom, len, status->data_status,
++ if (status->data_status & BIT(16))
++  ret = apple_nhi_m1_tbt_metadata(drom, len, status->data_status,
++                                 status->tbt_device_mode, &diagnostic_cable);
++ else
++  ret = apple_nhi_m1_link_metadata(drom, len, status->data_status,
+                                   status->eudo, &diagnostic_cable);
+  if (ret) return ret;
+  diagnostic_cable_valid = true;
+@@ -290,7 +294,7 @@
+  if (ret) return ret;
+  ret = diagnostic_read(ring, 0, 2, info->apple + 1, 1, &value);
+  if (ret) return ret;
+- if ((value & 0x1f) != diagnostic_cable) return -EIO;
++ if ((value & 0x61f) != diagnostic_cable) return -EIO;
+  apple_boot_trace("cable-info-readback-verified");
+  printf("NHI-CABLE-INFO PASS value=%#x\n", value);
+  if (post_cable) {
+--- a/test/dm/apple_cd321x.c
++++ b/test/dm/apple_cd321x.c
+@@ -7,7 +7,7 @@
+ #include <test/ut.h>
+ 
+ struct status_fake {
+-	bool usb4, wrong_vendor, wrong_mode, changed;
++	bool usb4, tbt, changed_tbt, wrong_vendor, wrong_mode, changed;
+ 	int calls, fault_call, transport;
+ 	u8 bad_length;
+ };
+@@ -23,6 +23,9 @@
+ 	static const u8 usb_data[] = { 5, 0x73, 0, 0, 0, 0 };
+ 	static const u8 owc_data[] = { 5, 0x11, 0, 0xc0, 0x16, 0 };
+ 	static const u8 usb4[] = { 9, 7, 0, 0xe0, 0x67, 0x26, 0, 0, 0, 0 };
++	/* Synthetic TB3 status/Intel VDO vector, not a hardware capture. */
++	static const u8 tbt_data[] = { 5, 1, 0, 1, 6, 0 };
++	static const u8 tbt_vid[] = { 9, 1, 0, 0, 0, 0, 0x12, 0x34, 1, 0 };
+ 	const u8 *data;
+ 	size_t len;
+ 
+@@ -43,8 +46,12 @@
+ 		len = sizeof(usb_status);
+ 		break;
+ 	case 0x5f:
+-		data = f->usb4 ? owc_data : usb_data;
++		data = f->tbt ? tbt_data : f->usb4 ? owc_data : usb_data;
+ 		len = sizeof(usb_data);
++		break;
++	case 0x59:
++		data = tbt_vid;
++		len = sizeof(tbt_vid);
+ 		break;
+ 	case 0x24:
+ 		data = usb4;
+@@ -62,6 +69,8 @@
+ 		buf[1] = 'B';
+ 	if (f->changed && reg == 0x5f && f->calls > 4)
+ 		buf[1] ^= 2;
++	if (f->changed_tbt && reg == 0x59 && f->calls == 6)
++		buf[8] ^= 1;
+ 	if (f->calls == f->fault_call)
+ 		buf[0] = f->bad_length;
+ 	return 0;
+@@ -170,3 +179,42 @@
+ 
+ DM_TEST(dm_test_cd321x_command_args, 0);
+ #endif
++
++static int dm_test_cd321x_tbt(struct unit_test_state *uts)
++{
++ struct status_fake f = { .tbt = true };
++ struct apple_cd321x_status s;
++ ut_assertok(apple_cd321x_snapshot(status_read, &f, &s));
++ ut_asserteq(7, f.calls);
++ ut_asserteq(0x06010001, s.data_status);
++ ut_asserteq(0x00010001, s.tbt_device_mode);
++ ut_asserteq(0x34120000, s.tbt_enter_vdo);
++ ut_asserteq(0, s.eudo);
++ return 0;
++}
++DM_TEST(dm_test_cd321x_tbt, 0);
++
++static int dm_test_cd321x_tbt_faults(struct unit_test_state *uts)
++{
++ struct apple_cd321x_status s, expected;
++ struct status_fake f;
++ int call, kind;
++ memset(&expected, 0xa5, sizeof(expected));
++ for (call = 1; call <= 7; call++) {
++  for (kind = 0; kind < 2; kind++) {
++   f = (struct status_fake){ .tbt = true, .fault_call = call,
++        .bad_length = 255, .transport = kind ? -ETIMEDOUT : 0 };
++   s = expected;
++   ut_asserteq(kind ? -ETIMEDOUT : -EPROTO,
++              apple_cd321x_snapshot(status_read, &f, &s));
++   ut_assertok(memcmp(&s, &expected, sizeof(s)));
++   ut_asserteq(call, f.calls);
++  }
++ }
++ f = (struct status_fake){ .tbt = true, .changed_tbt = true };
++ s = expected;
++ ut_asserteq(-EAGAIN, apple_cd321x_snapshot(status_read, &f, &s));
++ ut_assertok(memcmp(&s, &expected, sizeof(s)));
++ return 0;
++}
++DM_TEST(dm_test_cd321x_tbt_faults, 0);

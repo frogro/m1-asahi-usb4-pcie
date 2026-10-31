@@ -1,0 +1,13 @@
+{
+  "probe": 33,
+  "base_probe": 32,
+  "m1_build": true,
+  "sandbox_tests": 62,
+  "sandbox_failures": 0,
+  "transport_metadata_cases": 207,
+  "transport_failures": 0,
+  "patch_reconstruction": true,
+  "hardware_pending": true,
+  "ram_only": true,
+  "external_ssd_io": false
+}

@@ -1,0 +1,1 @@
+NHI combined-link production/codec mock: 207 cases, zero failures; no hardware DMA

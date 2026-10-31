@@ -1,0 +1,10 @@
+{
+  "include/apple_cd321x.h": "e985747fdb856f27b0310479d2c2a74245f14fa24695bb9c0acb5b0cb13c4bc6",
+  "lib/apple_cd321x.c": "c44acff7e218430d76c9ec017b04584fedab87e7f751215fd4a52efcc094bce0",
+  "cmd/apple_cd321x.c": "2f1e49072c6f46bb56dcb17246ad0d97fc691b01137ae11e6f8856c68301a9e4",
+  "cmd/apple_atc_m1.c": "cbfc8f6e3fed190cb0da0336df8b8eb228085978185ab92f59fbf6cac870f818",
+  "include/apple_nhi_m1.h": "2f59d10c875997ba34a91bce32e1bfd22fc9700de5e9772a6337884a1644379c",
+  "cmd/apple_nhi_m1_inventory.c": "cddf875904a7428e75bfaef41ccd16440e8690870ee214aca6dcfef76bbe2bb1",
+  "cmd/apple_nhi_m1_ring.c": "4ae77ddefef073ca177e7f7243027ad7617bae15d3c68c916a4c2cf21f110037",
+  "test/dm/apple_cd321x.c": "f57b2a7369a9a458c9eecea14bebf855e98bbe8dfd8c0d017921adea8e969b9f"
+}

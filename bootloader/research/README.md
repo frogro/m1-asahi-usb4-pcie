@@ -495,3 +495,9 @@ CIO controls. Probe32 restored those controls, but Phase2 still stalled. Both
 runs returned to stock Ubuntu with matching internal NVMe hashes. See
 [DWC3 comparison](dwc3-core-comparison-20261031.md). This is diagnostic
 instrumentation, not a link fix or an enabled xHCI DMA path.
+
+### TB3 comparison
+
+[Probe33](tbt-comparison-20261031.md) adds the previously missing TB3 cable
+metadata path for a Yottamaster comparison, with 62 sandbox and 207 transport/
+metadata cases passing. Hardware outcome is pending; this is not TB SSD boot.
