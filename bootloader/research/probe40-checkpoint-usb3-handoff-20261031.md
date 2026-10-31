@@ -104,3 +104,34 @@ Commands documented for other TI TPS controller variants must not be assumed
 compatible with Apple's CD321x firmware. No speculative PD-register writes
 were made. Prioritize identifying an evidenced CD321x policy mechanism before
 another hardware probe for this alternative.
+
+## Paired cable comparison on the corrected Linux kernel
+
+Both measurements now use `7.2.12-usb4sd4-egpu2` on the internal root,
+with the same OWC and Mac port. Its original boot bundle was restored by
+the initramfs and verified; GRUB next_entry is empty.
+
+The initial custom-kernel boot reached the OWC USB4 router but failed the
+PCIe host probe with -110. After the requested physical reconnect, the
+PCIe tunnel and NVMe namespace became available automatically. This startup
+failure remains distinct from the successful reconnect reference.
+
+| Measurement | USB4 cable after reconnect | USB3 cable |
+| --- | --- | --- |
+| Transport | PCIe NVMe | native USB UAS |
+| Link | two 20 Gb/s lanes | 10000 Mb/s, Gen2x1 |
+| CD321x data status in driver journal | 0x16c00013 | 0x71 |
+| Logical sector size | 512 bytes | 512 bytes |
+| First 64 MiB SHA-256 | identical | identical |
+
+The matching hash is
+`aa2d018770bac11609b35427f57593fc8c80ba1ab315cf2563f9cae8b9a150da`.
+All target volumes remained unmounted and reads did not modify disk data.
+The USB4 snapshot also captured the existing guarded 17-register PHY
+allowlist. Raw journals and comparison JSON are retained locally under
+`usb3-policy-investigation` alongside the other bootloader evidence.
+
+This establishes a consistent read view across the two cable-selected
+transports. It is not a software-forced USB3 test, a same-cable handover,
+or a successful cold USB4 root boot. The status values report negotiated
+state and must not be treated as a discovered writable policy switch.
