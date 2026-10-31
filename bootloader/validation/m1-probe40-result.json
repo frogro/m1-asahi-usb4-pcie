@@ -1,0 +1,177 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "ab60655f5462c185af2b1f8be41004dda0cd0a891cde97a010c8dadfb0353143",
+  "records": [
+    {
+      "ms": 21937,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 21939,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 21987,
+      "delta": 50,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 22009,
+      "delta": 72,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 22013,
+      "delta": 76,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 22016,
+      "delta": 79,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 22020,
+      "delta": 83,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 22029,
+      "delta": 92,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 22032,
+      "delta": 95,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 22045,
+      "delta": 108,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 22048,
+      "delta": 111,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 22109,
+      "delta": 172,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 22109,
+      "delta": 172,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 22113,
+      "delta": 176,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 22116,
+      "delta": 179,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 22119,
+      "delta": 182,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 22126,
+      "delta": 189,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22129,
+      "delta": 192,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22262,
+      "delta": 325,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 22265,
+      "delta": 328,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 22269,
+      "delta": 332,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22272,
+      "delta": 335,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 22272,
+      "delta": 335,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 22325,
+      "delta": 388,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 27347,
+      "delta": 5410,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 27360,
+      "delta": 5423,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 27360,
+      "delta": 5423,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 77,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 87,
+    "rings_to_cable_submit": 146,
+    "cable_submit_to_link_return": 5082
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 40,
+  "base_probe": 39,
+  "return_errno": -110,
+  "control_sent": 61,
+  "control_received": 61,
+  "dart_raw_status": "0xc020000",
+  "dart_error_active": false,
+  "lane_states": [
+    7
+  ],
+  "phy_pipe_registers_match_linux": 17,
+  "dwc3_held_reset": true,
+  "xhci_started": false,
+  "internal_nvme_before_after": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "ubuntu_return_verified": true,
+  "conclusion": "TB-only controller policy reproduces all 17 selected Linux steady-state PHY/PIPE values, but remains Phase2; host activation alone is not the missing link step.",
+  "fallback_status": "Stock Ubuntu returned automatically; SSH, kernel, original boot.bin hash and empty GRUB next_entry verified",
+  "automatic_return_verified": true,
+  "installed_boot_hash_unchanged": true,
+  "grub_next_entry_empty": true
+}
