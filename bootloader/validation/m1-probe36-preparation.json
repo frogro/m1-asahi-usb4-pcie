@@ -1,0 +1,13 @@
+{
+  "probe": 36,
+  "base_probe": 35,
+  "delta": "Read each capability once into locals and log the same six guard inputs; no acceptance or MMIO write changes",
+  "m1_build": true,
+  "extracted_sanitizer_cases": 33,
+  "source_contracts": 4,
+  "patch_reconstruction": true,
+  "config_unchanged": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "hardware_pending": true
+}

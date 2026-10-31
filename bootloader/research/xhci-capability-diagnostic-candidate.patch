@@ -1,0 +1,28 @@
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -1326,16 +1326,19 @@
+                      struct xhci_hcor *hcor, struct xhci_ctrl **retained)
+ {
+  struct xhci_ctrl *ctrl;
+- u32 cap;
++ u32 cap, slots_ports, scratch, dboff, rtsoff, pages;
+  int ret;
+  if (!dev || !hccr || !hcor || !retained || *retained || m1_diag_attempted)
+   return -EPERM;
+  cap = HC_LENGTH(xhci_readl(&hccr->cr_capbase));
+- if (!xhci_m1_caps_valid(cap, xhci_readl(&hccr->cr_hcsparams1),
+-                         xhci_readl(&hccr->cr_hcsparams2),
+-                         xhci_readl(&hccr->cr_dboff),
+-                         xhci_readl(&hccr->cr_rtsoff),
+-                         xhci_readl(&hcor->or_pagesize)))
++ slots_ports = xhci_readl(&hccr->cr_hcsparams1);
++ scratch = xhci_readl(&hccr->cr_hcsparams2);
++ dboff = xhci_readl(&hccr->cr_dboff);
++ rtsoff = xhci_readl(&hccr->cr_rtsoff);
++ pages = xhci_readl(&hcor->or_pagesize);
++ printf("M1-XHCI caps length=%#x slots_ports=%#x scratch=%#x dboff=%#x rtsoff=%#x pages=%#x\n",
++        cap, slots_ports, scratch, dboff, rtsoff, pages);
++ if (!xhci_m1_caps_valid(cap, slots_ports, scratch, dboff, rtsoff, pages))
+   return -EPROTO;
+  if (xhci_readl(&hcor->or_usbcmd) & CMD_RUN ||
+      !(xhci_readl(&hcor->or_usbsts) & STS_HALT))

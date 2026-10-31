@@ -1,0 +1,206 @@
+{
+  "scope": "Host action and message-consumption times, not firmware emission times",
+  "log_sha256": "1bfaf212628af07b7494da7ec1c4bd80f2443ba18394819cada6eb5b736430b8",
+  "records": [
+    {
+      "ms": 21177,
+      "delta": 0,
+      "event": "phy-sequence-begin"
+    },
+    {
+      "ms": 21179,
+      "delta": 2,
+      "event": "phy-sequence-return"
+    },
+    {
+      "ms": 21265,
+      "delta": 88,
+      "event": "acio-preflight-complete"
+    },
+    {
+      "ms": 21287,
+      "delta": 110,
+      "event": "acio-domains-on"
+    },
+    {
+      "ms": 21291,
+      "delta": 114,
+      "event": "acio-reset-ready"
+    },
+    {
+      "ms": 21294,
+      "delta": 117,
+      "event": "m3-start-write"
+    },
+    {
+      "ms": 21298,
+      "delta": 121,
+      "event": "rtkit-boot-return"
+    },
+    {
+      "ms": 21307,
+      "delta": 130,
+      "event": "rtkit-ap-on-return"
+    },
+    {
+      "ms": 21310,
+      "delta": 133,
+      "event": "firmware-state-poll-return"
+    },
+    {
+      "ms": 21323,
+      "delta": 146,
+      "event": "rc-tunables-begin"
+    },
+    {
+      "ms": 21326,
+      "delta": 149,
+      "event": "rc-tunables-return"
+    },
+    {
+      "ms": 21386,
+      "delta": 209,
+      "event": "nhi-dart-probe-begin"
+    },
+    {
+      "ms": 21386,
+      "delta": 209,
+      "event": "nhi-dart-probe-return"
+    },
+    {
+      "ms": 21390,
+      "delta": 213,
+      "event": "nhi-tunables-begin"
+    },
+    {
+      "ms": 21393,
+      "delta": 216,
+      "event": "nhi-tunables-return"
+    },
+    {
+      "ms": 21396,
+      "delta": 219,
+      "event": "nhi-control-rings-started"
+    },
+    {
+      "ms": 21403,
+      "delta": 226,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21406,
+      "delta": 229,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21538,
+      "delta": 361,
+      "event": "lane-unlock-verified"
+    },
+    {
+      "ms": 21541,
+      "delta": 364,
+      "event": "cable-info-submit"
+    },
+    {
+      "ms": 21545,
+      "delta": 368,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21548,
+      "delta": 371,
+      "event": "rtkit-message-consumed"
+    },
+    {
+      "ms": 21548,
+      "delta": 371,
+      "event": "cable-info-readback-verified"
+    },
+    {
+      "ms": 21551,
+      "delta": 374,
+      "event": "dwc3-host-begin"
+    },
+    {
+      "ms": 21568,
+      "delta": 391,
+      "event": "dwc3-core-init-begin"
+    },
+    {
+      "ms": 21768,
+      "delta": 591,
+      "event": "dwc3-core-init-return"
+    },
+    {
+      "ms": 21777,
+      "delta": 600,
+      "event": "dwc3-host-return"
+    },
+    {
+      "ms": 21826,
+      "delta": 649,
+      "event": "late-pipe-begin"
+    },
+    {
+      "ms": 21838,
+      "delta": 661,
+      "event": "late-pipe-return"
+    },
+    {
+      "ms": 21852,
+      "delta": 675,
+      "event": "xhci-start-begin"
+    },
+    {
+      "ms": 21852,
+      "delta": 675,
+      "event": "xhci-start-return"
+    },
+    {
+      "ms": 21852,
+      "delta": 675,
+      "event": "link-observation-return"
+    },
+    {
+      "ms": 21865,
+      "delta": 688,
+      "event": "rtkit-shutdown-begin"
+    },
+    {
+      "ms": 21868,
+      "delta": 691,
+      "event": "rtkit-shutdown-return"
+    }
+  ],
+  "dropped": 0,
+  "milliseconds": {
+    "phy_sequence": 2,
+    "phy_return_to_m3_start": 115,
+    "m3_start_to_firmware_state_return": 16,
+    "firmware_state_to_rings": 86,
+    "rings_to_cable_submit": 145,
+    "cable_submit_to_link_return": 311
+  },
+  "linux_seconds_cable_write_to_first_remote_request": 0.463635,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "remote_router_read_pass": false,
+  "reset_observed": true,
+  "probe": 35,
+  "base_probe": 34,
+  "return_errno": -71,
+  "dwc3_core_init": 0,
+  "usb_dart_preflight": "passed twice; exact bypass; valid error bits clear",
+  "xhci_start": "capability guard rejected before allocation/reset/RUN; rejected value not logged",
+  "control_sent": 41,
+  "control_received": 41,
+  "internal_nvme_before_after": true,
+  "ubuntu_return_verified": true,
+  "returned_kernel": "7.2.0-1001-asahi-arm",
+  "installed_boot_bundle_unchanged": true,
+  "grub_next_entry_empty": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "external_pcie_tunnel": false
+}
