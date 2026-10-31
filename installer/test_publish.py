@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 from test_releases import fixture
 
 spec=importlib.util.spec_from_file_location('publisher',Path(__file__).parents[1]/'build/publish-installer.py')
@@ -13,6 +14,16 @@ pub=importlib.util.module_from_spec(spec);spec.loader.exec_module(pub)
 
 
 class PublishTests(unittest.TestCase):
+    def test_unpublished_draft_can_be_verified_before_publication(self):
+        release = dict(tag_name='kernel-build-12-1', draft=True, id=3)
+        with patch.object(pub, 'api', return_value=[release]):
+            self.assertEqual(pub.find_release('kernel-build-12-1'), release)
+
+    def test_missing_release_is_not_replaced_by_another_build(self):
+        with patch.object(pub, 'api', return_value=[dict(tag_name='kernel-build-11-1')]):
+            with self.assertRaisesRegex(RuntimeError, 'not found'):
+                pub.find_release('kernel-build-12-1')
+
     def create(self, td):
         d=Path(td);r,m,run=fixture();v=m['release'];archive=m['archive']['name']
         stage=d/'stage';stage.mkdir()

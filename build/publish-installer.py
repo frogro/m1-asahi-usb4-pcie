@@ -27,6 +27,20 @@ def api(path):
     return json.loads(gh('api', 'repos/' + REPO + '/' + path))
 
 
+def find_release(tag):
+    # The by-tag REST endpoint omits unpublished drafts. The authenticated
+    # listing includes them, allowing verification before publication.
+    for page in range(1, 101):
+        batch = api(f'releases?per_page=100&page={page}')
+        matches = [r for r in batch if r['tag_name'] == tag]
+        require(len(matches) <= 1, 'Ambiguous release identity')
+        if matches:
+            return matches[0]
+        if len(batch) < 100:
+            raise RuntimeError('Build release not found: ' + tag)
+    raise RuntimeError('Release listing incomplete')
+
+
 def build_manifest(run, release, directory):
     require(run.get('status') == 'completed' and run.get('conclusion') == 'success'
             and run.get('head_branch') == 'main' and run.get('event') == 'workflow_dispatch'
@@ -78,7 +92,7 @@ def main():
     run = api(f'actions/runs/{a.run}')
     require(run.get('status') == 'completed' and run.get('conclusion') == 'success', 'Build not finished successfully')
     tag = f"kernel-build-{a.run}-{run['run_attempt']}"
-    release = api('releases/tags/' + tag)
+    release = find_release(tag)
     source = api('contents/build/full-kernel.sh?ref=' + run['head_sha'])
     script = base64.b64decode(source['content']).decode()
     require(re.search(r'^base=' + BASE + r'$', script, re.M), 'Kernel base requires renewed installer validation')
