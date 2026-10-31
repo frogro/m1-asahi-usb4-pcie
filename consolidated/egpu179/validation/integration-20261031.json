@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-31",
+  "running_kernel": "7.2.12-usb4sd4-egpu1",
+  "new_candidate": "7.2.12-usb4sd4-egpu2",
+  "patch_count": 43,
+  "native_hook_fresh_boot": "pending",
+  "installed_release_file_hashes": {
+    "matched": 8626,
+    "missing": 0,
+    "different": 0
+  },
+  "ordered_tunnel_software_cycles": 2,
+  "gpu_values_per_check": 1048576,
+  "direct_storage_read_per_cycle": 1073741824,
+  "all_four_drivers_rebound": true,
+  "reboots_or_oops_during_cycles": 0,
+  "remaining_teardown_diagnostics": [
+    "SMU/gfxoff timeout",
+    "JPEG/VCN power-gating timeout",
+    "UCSI ENODEV after PCI disconnect"
+  ],
+  "source_replay": "passed twice on full pinned source",
+  "native_host_object": "compiled",
+  "baseline_enabled_config_options": 12501,
+  "preexisting_config_features_lost": 0,
+  "local_evidence_sha256": {
+    "ordered-cycles.jsonl": "29fdfe5e362b757d3de59c2b49610a42a2e24ebae23d70c70b060e571ef1294b",
+    "ordered-cycles-journal.txt": "98e59d39458b4fb389d1aa7f9821e7b31852ee054cccdfad50e3b3c88864fa8c",
+    "first-success-compute.txt": "e65072ea0d7735ed59e46e2338c6db515533c1e97b16af4042d9cd741f39211c",
+    "prefwindow-enabled-result.txt": "a684ba10bde2859800518fc33c5c101a404dda43f4a992b744e43f278c892d48",
+    "prefwindow-reauthorize-final.txt": "50ab6fc734eec3f9a63bc401010f418628f66965b575ec4ebef7b04ae65fbf41",
+    "post-cycle-ring-msi.txt": "129839664e50b7cc1dc66dae00f41c3355c5ba990748fe0cb1cbe9aba236606c"
+  }
+}

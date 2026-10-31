@@ -37,7 +37,7 @@ The current Yotta installation contains a local dracut module that authorizes th
 
 ### Module and configuration integrity
 
-The prepared configuration retains all 12,501 previously enabled options; only release metadata and the added PCIe host option differ. All four Radeon functions use MSI interrupts after initialization, despite legacy `of_irq_parse_pci` warnings. The global TTM diagnostic parameter is absent.
+The prepared configuration retains all 12,501 previously enabled options; only release metadata and the added PCIe host option differ. All four Radeon functions use MSI interrupts after initialization, despite legacy `of_irq_parse_pci` warnings. The global TTM diagnostic parameter is absent. All 8,626 installed module, Image and board-DTB files match the previous successful GitHub release archive byte-for-byte. The read-only `build/check-runtime-prerequisites.py` inventories the actual command line, module parameters, BAR mapping attributes and driver bindings; it never writes sysfs or resets hardware.
 
 ### Initial-probe disconnect
 
