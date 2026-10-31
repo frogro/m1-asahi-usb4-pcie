@@ -1,0 +1,22 @@
+[
+  {
+    "case": "reference",
+    "expected": "PASS",
+    "passed": true
+  },
+  {
+    "case": "missing",
+    "expected": "FAIL",
+    "passed": true
+  },
+  {
+    "case": "modified",
+    "expected": "FAIL",
+    "passed": true
+  },
+  {
+    "case": "duplicated",
+    "expected": "FAIL",
+    "passed": true
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "probe": 48,
+  "run_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe48-pciec-reference/hv-run-20261031T235115Z",
+  "hardware_result": "All 43 PCIe-C reference tuples validated; cold preparation succeeded, USB4 still stops in Phase2",
+  "pciec_ready": "0x3",
+  "pciec_reads": 48,
+  "pciec_writes": 114,
+  "generated_groups": [
+    "debug",
+    "fabric",
+    "port0",
+    "config"
+  ],
+  "saved_reference_groups": [
+    "oe-fabric"
+  ],
+  "phase2_observed": true,
+  "phase3_observed": false,
+  "lane_states": [
+    7
+  ],
+  "nhi_sent": 81,
+  "nhi_received": 81,
+  "return_errno": -110,
+  "dart_status": "0x5020000",
+  "dart_error_active": false,
+  "remote_router_read_pass": false,
+  "phy_snapshot_matches": 61,
+  "power_samples": 12,
+  "power_samples_stable": true,
+  "internal_nvme_hashes_match": true,
+  "reset_observed": true,
+  "automatic_return_verified": true,
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "boot_bundle_unchanged": true,
+  "boot_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+  "grub_next_entry_empty": true,
+  "external_disk_access": false,
+  "uart_sha256": "ba35a08cd86b664183bdd325348a940da569d2f9a96463772e9476789216ac17",
+  "conclusion": "Native PCIe-C readiness alone does not resolve the Phase2 stall; no external router or boot proven",
+  "next_step": "Probe49 compares all seven used PHY/ACIO/NHI tunable arrays at actual boot-stage handoff against working Linux reference; no new MMIO sequence"
+}

@@ -1,0 +1,28 @@
+{
+  "probe": 49,
+  "base_probe": 48,
+  "purpose": "Compare all seven used PHY, ACIO and NHI tunable lists as handed to U-Boot against saved working Linux DT",
+  "groups": 7,
+  "reference_triples": 509,
+  "command_tests_passed": 4,
+  "uboot_binary_unchanged": true,
+  "new_source_changes": false,
+  "phy_initialization": false,
+  "acio_initialization": false,
+  "nhi_rings": false,
+  "ram_only": true,
+  "external_disk_io": false,
+  "external_pcie_tunnel": false,
+  "bootcommand_bytes": 7159,
+  "hardware_pending": true,
+  "payload_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe49-tunable-audit",
+  "artifact_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "102b512a60ff5413708ea11af815af74172d47d2a15803b825cd9c4ee6639112",
+    "u-boot-nodtb.bin": "68539c135b7e009327e0ee6854889ea84cf3bcdef4807b0d8881772ceebc8425",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "bootcommand.txt": "abecab01a3c3173c7e025d9d652b81d3e14dd252824b5b13e7c7e25c4cf43b21",
+    "m1n1-uboot-probe-hv.bin": "47ee53ac7225db793384b6d5ba8a02e2dd5d139c9670d4036ce1967b27b7da43",
+    "run-hv-once.py": "47986e902c2b487c04aba9192f3732fb2eca73fe66203e5a28df5b983449ba31"
+  }
+}

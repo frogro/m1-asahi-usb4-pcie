@@ -1,0 +1,8 @@
+{
+  "expected_register_count": 61,
+  "equal_register_count": 61,
+  "differences": {},
+  "linux_sha256": "4a1a25a2bd459eeb8f56ec87baaa40896311525232dacae54ddf6fc7311a9ccf",
+  "uart_sha256": "ba35a08cd86b664183bdd325348a940da569d2f9a96463772e9476789216ac17",
+  "note": "Connected Linux versus end-of-training U-Boot. Differences alone are not proof of missing configuration; no candidate write is generated."
+}

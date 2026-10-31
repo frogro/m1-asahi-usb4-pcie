@@ -21,3 +21,26 @@ and duplicated generated lists despite valid fallback, malformed fallback,
 and enabled/wrong hardware nodes. Rejections occur before resource mapping.
 These tests do not emulate actual boot-stage generation or establish hardware
 success. The unchanged cold-initialization logic retains prior Probe45 evidence.
+
+## Hardware result
+
+All 43 triples passed validation. The boot stage supplied debug, fabric, port0
+and config/rc; only oe-fabric used the saved reference. Native PCIe-C cold
+preparation performed 48 reads and 114 writes and returned success with
+PORT_STATUS=0x3. It completed before lane unlock and cable submission.
+
+This was insufficient to establish a USB4 link: both lanes remained in state 7
+(TB_PORT_UNPLUGGED in the Linux reference), firmware reported Phase2 without
+Phase3, and no remote router was read. NHI answered 81/81 control requests;
+the result was -110. All 61 sampled PHY/PIPE/USB2 registers still matched
+working Linux. Twelve CD321x power-state samples remained identical.
+
+Both internal control hashes matched. The planned reset and automatic return
+to stock Ubuntu were verified over SSH, with the original boot bundle hash
+and empty GRUB next_entry. No external SSD was accessed.
+
+The next comparison is the complete set of seven PHY/ACIO/NHI tunable arrays
+at handoff. The register snapshot samples only selected locations. Probe49
+will hash all 509 reference triples and print differing lists, without new
+PHY/ACIO initialization. This is a remaining evidence gap, not an established
+root cause.
