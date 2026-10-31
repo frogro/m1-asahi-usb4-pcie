@@ -70,3 +70,21 @@ The existing internal NVMe before/after hash check and planned reset remain.
 The configured 60-second watchdog and host runner are not a guarantee of recovery
 from every hardware hang. Installed boot.bin, GRUB default and external SSD data
 are unchanged. After the test, verify SSH, running kernel and original boot hash.
+
+## Hardware result
+
+All four queries completed on their first status poll. The NVM sector-size
+query reports unsupported (0x02000025), exactly as in the working Linux trace.
+Buffer parameters and both DP resource results also match that trace. There
+were 81 transmitted and 81 received control messages, no active NHI DART error,
+and xHCI startup/stop completed. Both lanes nevertheless stayed in state 7
+through the five-second window; firmware again logged Phase2 without Phase3.
+No remote router, external tunnel or SSD access was reached.
+
+Internal NVMe hashes matched before and after. The planned reset completed;
+stock Ubuntu 7.2.0-1001-asahi-arm returned over SSH. Original boot.bin hash
+8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60 and empty
+GRUB next_entry were verified. This is a negative counterprobe, not a boot fix.
+Do not repeat unchanged. The next evidence needed is broader PHY/clock state
+comparison against a verified live custom Linux connection, not further router
+queries. See [result](../validation/m1-probe42-result.json).

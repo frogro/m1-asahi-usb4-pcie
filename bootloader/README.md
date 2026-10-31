@@ -241,3 +241,26 @@ response and tested Probe34 correction are recorded in
 is prepared with checked USB DART bypass, fresh buffers and normal core/RUN/port
 power setup. M1 build, 63 sandbox tests and 99 extracted-function cases pass.
 Hardware validation remains pending; no bootloader installation is performed.
+
+## OWC USB4 link-start checkpoint, Probe42
+
+[Probe41](research/owc-usb4-probe41-20261031.md) reproduced the Phase2 stall
+with OWC USB4 despite native USB host operation. No external router or SSD was
+read. [Probe42](research/router-query-probe42-20261031.md) adds the missing
+Linux host-router capability queries as a bounded counterprobe. Its prepared
+M1 build and 67 sandbox tests pass; hardware completion is recorded separately.
+Neither preparation nor successful capability queries establish Thunderbolt boot.
+
+Targeted production-function tests can also be compiled independently:
+
+```sh
+cc -std=c11 -O1 -fsanitize=address,undefined -Wall -Wextra -Werror \
+  bootloader/research/probe42-query-test.c -o /tmp/probe42-query-test
+/tmp/probe42-query-test
+cc -std=c11 -O1 -fsanitize=address,undefined -Wall -Wextra -Werror \
+  bootloader/research/probe42-write-guard-test.c -o /tmp/probe42-write-guard-test
+/tmp/probe42-write-guard-test
+```
+
+These are frozen extracts of the tested functions plus injected I/O; they
+check bounded operation handling and the write allowlist, not real hardware.

@@ -1,0 +1,63 @@
+{
+  "probe": 42,
+  "return_errno": -110,
+  "control_sent": 81,
+  "control_received": 81,
+  "dart_raw_status": "0x4020000",
+  "dart_error_active": false,
+  "queries": [
+    {
+      "opcode": "0x25",
+      "input": "0x0",
+      "completion": "02000025",
+      "polls": 1
+    },
+    {
+      "opcode": "0x33",
+      "input": "0x0",
+      "completion": "00000033",
+      "polls": 1
+    },
+    {
+      "opcode": "0x10",
+      "input": "0x5",
+      "completion": "00000010",
+      "polls": 1
+    },
+    {
+      "opcode": "0x10",
+      "input": "0x6",
+      "completion": "00000010",
+      "polls": 1
+    }
+  ],
+  "buffer_parameters": [
+    "00070001",
+    "00040002",
+    "000f0003",
+    "00460004",
+    "00340005"
+  ],
+  "query_replies_match_saved_working_linux": true,
+  "queries_complete": true,
+  "phase2_observed": true,
+  "phase3_observed": false,
+  "connected_observed": false,
+  "lane_states": [
+    7
+  ],
+  "remote_router_read_pass": false,
+  "internal_hashes_match": true,
+  "xhci_start_pass": true,
+  "xhci_stop_pass": true,
+  "ram_only": true,
+  "external_ssd_io": false,
+  "reset_observed": true,
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "automatic_return_verified": true,
+  "original_boot_hash_unchanged": true,
+  "grub_next_entry_empty": true,
+  "log_sha256": "86625d9739f4453915e973c57c985c63dd3e4974478e072a06a9c34766c539cf",
+  "linux_trace_sha256": "de25ac73ae3b11a4828f838cae05cb769ebae2efb7f955e23abba7ef89138ea8",
+  "conclusion": "All four host queries complete with Linux-equivalent replies; Phase2 stall persists. Do not repeat unchanged."
+}
