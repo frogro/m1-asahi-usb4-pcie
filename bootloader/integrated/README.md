@@ -87,8 +87,14 @@ the old script that hashed one internal file and loaded named test artifacts.
 
 `grub.cfg` and `grub-bootstrap.cfg` are this Mac's installation-specific menu
 examples, deliberately separate from the U-Boot transport. Do not reuse their
-filesystem UUIDs on another installation. They retain the internal Ubuntu
-menu and SanDisk menu alongside external desktop/text choices.
+filesystem UUIDs on another installation. The current two-entry menu offers
+`Ubuntu Asahi` (external desktop preferred, existing internal kernel as load
+fallback) and `Googlebooks`. The independent ESP holds the canonical
+`EFI/Asahi/menu.cfg`; both EFI copies load that configuration.
+Googlebooks retains its original internal kernel/initramfs and OWC partition
+identity. The original Apple `Ubuntu` entry remains independent recovery.
+Earlier larger menus described below are historical test configurations.
+Removing the visible SanDisk entry does not remove U-Boot USB boot support.
 
 ## Deferred kernel findings (boot work has priority)
 
@@ -129,7 +135,7 @@ U-Boot took normal bootflow, and the independent Asahi ESP GRUB loaded
 kernel, initramfs and root from SanDisk. Linux reported the expected
 `20261101-efi-rc1` marker, USB root and zero failed system units.
 
-The independent Asahi ESP now holds a standalone GRUB menu (example
+At that test stage, the independent Asahi ESP held a standalone GRUB menu (example
 `independent-esp-grub.cfg`) with internal Ubuntu, USB SanDisk and TB Samsung
 choices. Only GRUB is stored there, not a kernel or initramfs. Its previous
 BOOTAA64.EFI is backed up on the same ESP; the original Ubuntu ESP/bundle
@@ -161,8 +167,8 @@ an additional file; the original remains available. Initial hardware tests used 
 independent Asahi bootloader. After the USB4 and independent USB3 acceptances,
 rc3 was installed in the independent Asahi entry with verified rollback copies.
 The original Apple Ubuntu default and its bundle remain unchanged. The external
-menu example now uses the additional selected-root initramfs for both Samsung
-entries; generate it for the actual enclosure, not by copying these UUIDs.
+menu example uses the additional selected-root initramfs for external Ubuntu;
+generate it for the actual enclosure, not by copying these UUIDs.
 
 ## rc3 independent USB3 comparison
 
@@ -189,3 +195,14 @@ return to the original internal Ubuntu. The user observed its GRUB menu and
 text console. rc3 remains installed in the independent Asahi entry, and the
 test return/restore timers are disabled. A guarded rollback helper is stored
 with the internal backup directory; no automatic rollback remains armed.
+
+## Current two-entry menu packaging
+
+Build the installation-specific EFI menu loader with `build-menu-efi.py`, using
+an ARM64 GRUB module directory. It embeds `grub-bootstrap.cfg` directly with
+`grub-mkimage`; it does not depend on a standalone tar/memdisk configuration.
+The initial standalone packaging for this menu landed at the GRUB prompt on
+hardware and in QEMU. The corrected EFI automatically displayed both entries
+in QEMU and consumed the one-shot selection. See
+[menu evidence](../research/two-entry-menu-20261101.md) for hardware status.
+This changes GRUB packaging/configuration only, not U-Boot or any kernel.

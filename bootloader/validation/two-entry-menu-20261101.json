@@ -1,0 +1,48 @@
+{
+  "installed": true,
+  "visible_entries": [
+    "Ubuntu Asahi",
+    "Googlebooks"
+  ],
+  "targets": [
+    {
+      "path": "/mnt/asahi-menu-esp/EFI/BOOT/BOOTAA64.EFI",
+      "sha256": "a213895de02109eb35781a551c5d0fa9c0a71ae740d0055a93cc7e0f7699bef7",
+      "backup": "/var/lib/asahi-two-entry-menu-20261101/asahi-efi-before.bin"
+    },
+    {
+      "path": "/mnt/asahi-menu-boot/grub/grub.cfg",
+      "sha256": "17a550706e7cc9149ae732c1e5de67c726583a5f04f359e87efdddb79466fa5b",
+      "backup": "/var/lib/asahi-two-entry-menu-20261101/external-grub-before.cfg"
+    },
+    {
+      "path": "/mnt/asahi-menu-ext-esp/EFI/BOOT/BOOTAA64.EFI",
+      "sha256": "a213895de02109eb35781a551c5d0fa9c0a71ae740d0055a93cc7e0f7699bef7",
+      "backup": "/var/lib/asahi-two-entry-menu-20261101/external-efi-before.bin"
+    },
+    {
+      "path": "/mnt/asahi-menu-esp/EFI/Asahi/menu.cfg",
+      "sha256": "17a550706e7cc9149ae732c1e5de67c726583a5f04f359e87efdddb79466fa5b",
+      "backup": null
+    }
+  ],
+  "original_ubuntu_unchanged": true,
+  "uboot_unchanged": true,
+  "googlebooks_kernel_initrd_unchanged": true,
+  "backup_directory": "/var/lib/asahi-two-entry-menu-20261101",
+  "hardware_test": {
+    "result": "passed",
+    "user_confirmation": "Zweiermen\u00fc und Googlebooks sichtbar",
+    "owc_connection": "direct Mac USB-C, USB UAS 10000 Mb/s confirmed before reboot",
+    "dock_googlebooks_boot": "not validated: first attempt stopped at GRUB packaging fault",
+    "ubuntu_new_menu_boot": "not retested in this turn; previous external desktop parameters unchanged"
+  },
+  "efi_correction": "Initial standalone memdisk config unreadable, reproduced in QEMU; direct embedded early normal dispatch verified in QEMU.",
+  "qemu": {
+    "initial_efi": "reproduced minimal prompt; embedded memdisk configuration unreadable",
+    "fixed_efi": "automatic two-entry menu; Ubuntu default and Googlebooks next_entry verified",
+    "next_entry_consumed": true,
+    "scope": "ARM64 EFI menu dispatch only, not Apple hardware or OS boot"
+  },
+  "owc_path": "Initial dock test stopped in GRUB; subsequent test uses OWC direct Mac USB-C at USB 10000 Mb/s."
+}
