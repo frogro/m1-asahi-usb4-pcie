@@ -1,5 +1,5 @@
 {
-  "utc": "2026-11-01T16:42:50.919173+00:00",
+  "utc": "2026-11-01T16:46:29.257739+00:00",
   "status": "Native USB4 PCIe tunnel and Samsung NVMe enumeration passed. NVMe read attempt v15 sent; return/result pending SSH or local display confirmation.",
   "scope": "J274 port1 with Fanxiang MP400 (ASM2464PD) and Samsung 970 EVO Plus; existing integrated U-Boot plus bounded diagnostic hooks. Not a USB4 boot release.",
   "logger": {
@@ -60,7 +60,8 @@
       "result": "pending, no success claim",
       "candidate_sha256": "44e7fc2e0a4e8f719c10afdb61b16e39dbb62635137da0805b1224f1f45e2a14",
       "EFI_boot_property_removed": true,
-      "recovery": "Original Apple Ubuntu boot target unchanged; one-shot Asahi Linux used; automatic restore service armed. Last confirmed restoration after v14."
+      "recovery": "Original Apple Ubuntu boot target unchanged; one-shot Asahi Linux used; automatic restore service armed. Last confirmed restoration after v14.",
+      "user_recovery": "User manually selected original Ubuntu and confirmed successful login; SSH still unreachable at .99/.67 at 16:45 UTC. Read result and restore service completion not verified."
     }
   },
   "source_provenance": [
@@ -73,6 +74,7 @@
   "production_integration": false,
   "warning": "diagnostic-only.patch replaces main_loop with bounded test/reset and adds diagnostic FAT/RAM logging. Never include it wholesale in installer or production bootloader.",
   "next": [
+    "Recover SSH after user-confirmed Ubuntu login; inspect /var/lib/usb4-mp400-diagnostic/usb4-mp400-link-v15.log and verify normal Asahi boot.bin restored.",
     "Finish endpoint discovery",
     "Read NVMe identity and GPT through PCIe with existing bounded read-only engine",
     "Load EFI/GRUB and verify OS handover",
