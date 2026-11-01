@@ -83,3 +83,9 @@ Both later egpu3 boots bound all four Radeon drivers, but all Radeon display
 connectors read disconnected. This is a recorded system finding, not a claim
 that dual-monitor graphics passed every reboot. No new GPU or audio patch
 was installed to hide or change this observation.
+
+A fourth TB-root start also reached SSH on egpu3, and `grub2-common` succeeded
+there. The following ordinary reboot to the original Apple default did not
+return on either network address and HDMI stayed black. Recovery was requested;
+shutdown versus firmware/next-boot failure is not yet localized. The repeated
+boot/shutdown sequence therefore does **not** have an all-passed result.

@@ -39,6 +39,15 @@
       "integration_marker": "20261101-efi-rc1",
       "failed_units": 0,
       "note": "Older system: missing AVD firmware and PCIe probe failures; not newest kernel acceptance."
+    },
+    {
+      "id": "95bbc33d-f2b7-4569-a031-462350c34ec1",
+      "root": "TB Samsung",
+      "kernel": "7.2.12-usb4sd4-egpu3",
+      "ssh_verified": true,
+      "grub2_common_service": "passed",
+      "next_restart": "ordinary restart to default Ubuntu: HDMI black and SSH unavailable; manual recovery requested",
+      "failure_phase": "unknown: no shutdown/next-boot log available yet"
     }
   ],
   "audio_module_installed": false,
@@ -49,8 +58,10 @@
     "Known PCIe reset release timeouts before later successful enumeration on egpu3",
     "grub2-common.service failed on latest Yotta boot; diagnosis pending",
     "Radeon display connectors disconnected at boots2/3, despite all four drivers bound",
-    "SanDisk older userspace lacks remote passwordless sudo; local restart requested"
+    "SanDisk older userspace lacks remote passwordless sudo; local restart requested",
+    "After fourth TB-root start, ordinary reboot to default OS lost both SSH addresses and HDMI remained black; not yet localized to shutdown, firmware or next kernel."
   ],
   "installed_bundle_sha256": "7dd9bc657620925bf4aa796efb91ac29c570cf4cbf1ddab612ef6dfe9cf5cc47",
-  "original_ubuntu_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60"
+  "original_ubuntu_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+  "usb_without_tb_attached": "Pending: prepare from internal Ubuntu; user instructed to keep Yotta attached until root is verified internal."
 }

@@ -53,7 +53,7 @@
   ],
   "upstream_source": "https://github.com/AsahiLinux/u-boot",
   "no_m1n1_source_modifications": true,
-  "hardware_result": "three external TB root boots, one internal Ubuntu and one USB-A SanDisk root boot passed using the same integrated U-Boot",
+  "hardware_result": "four external TB root starts, one internal Ubuntu and one USB-A SanDisk root start passed; subsequent ordinary restart from fourth TB boot stalled, diagnosis pending",
   "confirmed_hardware": [
     "TB3 Samsung root with unchanged egpu3 kernel",
     "both Linux ports enabled",
@@ -68,6 +68,7 @@
     "NetworkManager-wait-online timeout",
     "Radeon USB-C display absent on second boot; diagnosis pending",
     "SanDisk retains older egpu1 image and missing AVD firmware; not modified in this bootloader test",
-    "grub2-common service failure under investigation"
+    "grub2-common service failure under investigation",
+    "Black screen/no SSH after fourth TB-root shutdown: phase not yet determined; must not be assumed a kernel or U-Boot fault."
   ]
 }
