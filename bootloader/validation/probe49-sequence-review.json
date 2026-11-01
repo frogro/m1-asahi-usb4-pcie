@@ -1,0 +1,36 @@
+{
+  "scope": "Bounded source review after Probe49; not a proof of full behavioral equivalence",
+  "checks": [
+    {
+      "area": "Cold PHY bootstrap",
+      "finding": "Linux probe_finalize also asserts DWC3 reset, powers inherited PHY state down, then selects dummy PIPE mux. No missing bootstrap step established."
+    },
+    {
+      "area": "USB4 core sequence",
+      "finding": "The inspected M1 power-up, post-tunable, clock, lane and reset-release sequence is represented in the prototype. This manual review does not establish all timing equivalence."
+    },
+    {
+      "area": "PIPE late switching",
+      "finding": "Linux USB4 path applies RX-detect override, lock, mux change, removes override and unlocks. Prototype already implements these, and the delayed placement was tested earlier."
+    },
+    {
+      "area": "RTKit readiness",
+      "finding": "Linux waits for endpoint map and IOP power acknowledgement then sets AP ON. Prototype boot waits for IOP ON and caller explicitly waits for AP ON before firmware-ready/tunables. No omitted AP ON established."
+    },
+    {
+      "area": "Remaining gap",
+      "finding": "Input lists and selected final register values do not cover every transient state, timing or inherited cable/peer condition. U-Boot polls firmware messages while Linux processes them asynchronously; causal significance not established."
+    }
+  ],
+  "new_hardware_change_justified": false,
+  "next_probe_armed": false,
+  "source_sha256": {
+    "/tmp/asahi-universal-boot-20261031/phy-candidate/source/lib/apple_atc_m1.c": "c60ff19f8a9e03317495aaa3e2f70217908f00371f1e9249e695fec4b7bab0f0",
+    "/tmp/asahi-universal-boot-20261031/phy-candidate/source/cmd/apple_acio_m1.c": "848303e8c292500e0aa6c364fcf51462155f951602f8eacb7fd3da275230de1a",
+    "/tmp/asahi-universal-boot-20261031/phy-candidate/source/cmd/apple_nhi_m1_ring.c": "0d12b7a7c691090448cdf989875ceed3832b265eb895b2d7dc49ba0e6f051298",
+    "/tmp/asahi-universal-boot-20261031/phy-candidate/source/arch/arm/mach-apple/rtkit.c": "07722f367daf0729d06ef0db8b9eff262369791c712d14126d19c06fcd1ccd33",
+    "/mnt/android-build/Codex/egpu-integration-audit-20261031/linux/drivers/phy/apple/atc.c": "4c50dfc1aadce391a76afec36e07a0b7d48eb75b3faef49d9e49c2049c01e12b",
+    "/mnt/android-build/Codex/egpu-integration-audit-20261031/linux/drivers/thunderbolt/apple.c": "be7644f444b3e0dfbb0b732d7b0fb8d377e18cfe118059c3db93378c8557c58b",
+    "/mnt/android-build/Codex/egpu-integration-audit-20261031/linux/drivers/soc/apple/rtkit.c": "94e50eebb77369b8d0cb54a98f6b5cac0c1cf1448a64b80583f1260c55309c32"
+  }
+}

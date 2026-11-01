@@ -1,0 +1,73 @@
+{
+  "probe": 49,
+  "run_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe49-tunable-audit/hv-run-20261031T235603Z",
+  "result": "PASS: all seven used PHY/ACIO/NHI handoff lists match saved working Linux byte-for-byte",
+  "groups": [
+    {
+      "label": "phy-common-a",
+      "bytes": 132,
+      "triples": 11,
+      "sha256": "406e3a1b4a4049d827f7e02fbfb74e661b0a486ce3bc83f919e63983e7c4f31f",
+      "matches_linux": true
+    },
+    {
+      "label": "phy-axi2af",
+      "bytes": 120,
+      "triples": 10,
+      "sha256": "f252de1c201e3151001039a22d4614a2fc575c006b8692e46994500208d4bea4",
+      "matches_linux": true
+    },
+    {
+      "label": "phy-common-b",
+      "bytes": 1092,
+      "triples": 91,
+      "sha256": "53a084cdbaeb6b4f89739b774a172b67bff8999759fe7806928ec2c5c69dcde1",
+      "matches_linux": true
+    },
+    {
+      "label": "phy-lane0-cio",
+      "bytes": 852,
+      "triples": 71,
+      "sha256": "4e394a693e3bdae439596cccb5c1fad4a83746d17f641a31014f1a4af07f40c8",
+      "matches_linux": true
+    },
+    {
+      "label": "phy-lane1-cio",
+      "bytes": 852,
+      "triples": 71,
+      "sha256": "39626e0c59706277fed4d4ccf7ceccc9cda269c33b8026e58a92edec3abcdd36",
+      "matches_linux": true
+    },
+    {
+      "label": "acio-rc",
+      "bytes": 348,
+      "triples": 29,
+      "sha256": "e81d62bf3f1ce8c60d7ed34ce687828e5129fefe05bba050cb23d55b24b99bbb",
+      "matches_linux": true
+    },
+    {
+      "label": "nhi",
+      "bytes": 2712,
+      "triples": 226,
+      "sha256": "c8480492535d74a6e258b1a6efe7cbdc71d79052c43a79f4dde59d443c535cba",
+      "matches_linux": true
+    }
+  ],
+  "total_triples": 509,
+  "missing_groups": [],
+  "differing_groups": [],
+  "new_link_test_performed": false,
+  "new_phy_or_acio_initialization": false,
+  "runner_legacy_false_fields_mean_not_run": true,
+  "internal_nvme_hashes_match": true,
+  "reset_observed": true,
+  "automatic_return_verified": true,
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "boot_bundle_unchanged": true,
+  "boot_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+  "grub_next_entry_empty": true,
+  "external_disk_access": false,
+  "uart_sha256": "d0e7adede2953ca3a7432f6094f234840dff3d06d6d388ecce5dfa59c2eeb9df",
+  "conclusion": "No missing or altered calibration entries in the seven consumed lists; this does not establish identical transient hardware state or external link-up",
+  "next_step": "Continue source/sequence audit of power-reset, PHY-to-ACIO handoff and runtime events; no new probe armed until a specific difference is identified"
+}
