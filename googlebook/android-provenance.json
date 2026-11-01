@@ -1,0 +1,90 @@
+[
+  {
+    "source": "0001-android-dm-default-key.patch",
+    "source_sha256": "e78c845304ee40c2c09d713dbe705fbe7a531a3af31a3e69a7bd4f3ba4abb807",
+    "ported": "0001-android-dm-default-key-asahi7.patch",
+    "ported_sha256": "30d062804a7cdcd394d6032976fb55ab1a3ad79b29c81018aa127ed6a45a8bba",
+    "changes": [
+      "Declare skip-flag clone before bio_crypt_clone, after new Linux 7 submit helpers.",
+      "Preserve skip flag in blk_crypto_alloc_enc_bio before its new bulk page allocation."
+    ],
+    "reverse_dry_run": true
+  },
+  {
+    "source": "0003-android-dm-bow.patch",
+    "source_sha256": "f63c484498480f94cee081ee5f0b7de7f78c61734801328850151e45f2630bd9",
+    "ported": "0003-android-dm-bow-asahi7.patch",
+    "ported_sha256": "6591c132b2071c6eccee091656b636dcc196ef433645ebb64b3c36c81e3b2b22",
+    "changes": [],
+    "reverse_dry_run": true
+  },
+  {
+    "source": "0004-android-cgroup-cap-sys-nice.patch",
+    "source_sha256": "889a297467beeda31aad699cb0a1d09bd9c70f43c3b1779a01482bbbb0132846",
+    "ported": "0004-android-cgroup-cap-sys-nice-asahi7.patch",
+    "ported_sha256": "f52c26cc43cfb6f11b399c015dc2312e1bb6cb36b70f832c0f6ea25868ed463b",
+    "changes": [],
+    "reverse_dry_run": true
+  },
+  {
+    "source": "0007-android-memfd-ashmem-shim.patch",
+    "source_sha256": "c7703edd5403b48396482f91b014e4bef0bf0f2795e56c22200129a81970176f",
+    "ported": "0007-android-memfd-ashmem-shim-asahi7.patch",
+    "ported_sha256": "75028a703dd0853a42f536ea53b17f0ee9c0cd5d2751b89e22aa49bda62961ad",
+    "changes": [],
+    "reverse_dry_run": true
+  },
+  {
+    "source": "0008-android-shmem-ashmem-ioctl.patch",
+    "source_sha256": "e66ac4919fe40c28769e25b19cb267ccb0aeaa8333d8dad4a0b044119b72669c",
+    "ported": "0008-android-shmem-ashmem-ioctl-asahi7.patch",
+    "ported_sha256": "cf94ac8b6e399b8f751d18cecd7b6b0b4bca20e2ce701a0f822827b4ae871f41",
+    "changes": [
+      "Retain Linux 7 mmap_prepare; add ashmem ioctl hooks without replacing mmap operations."
+    ],
+    "reverse_dry_run": true
+  },
+  {
+    "source": "0011-android-uid-stats-6.18.55.patch",
+    "source_sha256": "765fa475ad3ce66afede07851f5f6201e8d5f7265260391b88f00abc617c6d88",
+    "ported": "0011-android-uid-stats-6.18.55-asahi7.patch",
+    "ported_sha256": "bd4b87785ceef90d866c583d9fd8e047f99226c2ab081aae6451121f2c5a65ea",
+    "changes": [],
+    "reverse_dry_run": true
+  },
+  {
+    "source": "0012-android-cpufreq-times-6.18.55.patch",
+    "source_sha256": "7c8e97c2148f14e566ff371af2a661422b7aedc4ca1a4e79b18ae11631bee6cc",
+    "ported": "0012-android-cpufreq-times-6.18.55-asahi7.patch",
+    "ported_sha256": "4562c264456468c61fca2f40eb242ac4054ed9e152e659a12903ff29bf1366ed",
+    "changes": [
+      "Insert cpufreq_times header while retaining new Linux 7 pgalloc/uaccess includes."
+    ],
+    "reverse_dry_run": true
+  },
+  {
+    "source": "0013-android-dm-user-incfs.patch",
+    "source_sha256": "2f72ba3e16a449c7ffcc3fc20faba8102b1f11ec16047775766681f985c546a4",
+    "ported": "0013-android-dm-user-incfs-asahi7.patch",
+    "ported_sha256": "cf76d86482133cbe3558a950f9e7586992b86ae92d1625061f6b37b212e02503",
+    "changes": [],
+    "reverse_dry_run": true
+  },
+  {
+    "ported": "0014-linux7-explicit-headers.patch",
+    "ported_sha256": "883823c742287dd94fbd31ae5946607aa23c763ab99597925d265c1ea9ce834d",
+    "reverse_dry_run": true,
+    "changes": [
+      "Linux 7 API/header compatibility; compile checked, hardware test pending."
+    ]
+  },
+  {
+    "ported": "0015-incfs-linux7-vfs.patch",
+    "ported_sha256": "ec0d43fa12b8a5378721f5ba47346af350109d44446d2840cb8a1a904b0cdf93",
+    "reverse_dry_run": true,
+    "changes": [
+      "Linux 7 API/header compatibility; compile checked, hardware test pending."
+    ],
+    "upstream": "https://android.googlesource.com/kernel/common/+/721ad43cbf3c182a07edf6a2a8127c587313f6a7/fs/incfs/"
+  }
+]

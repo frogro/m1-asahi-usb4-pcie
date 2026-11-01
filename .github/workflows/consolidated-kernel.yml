@@ -1,4 +1,4 @@
-name: Consolidated M1 kernel (build only)
+name: Googlebook Asahi kernel (build only)
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +10,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: consolidated-m1-full-build
+  group: googlebook-m1-full-build
   cancel-in-progress: false
 jobs:
   kernel:
@@ -44,7 +44,7 @@ jobs:
       - name: Full Image, modules and DTBs
         env:
           INCLUDE_EGPU: ${{ inputs.include_egpu }}
-        run: build/full-kernel.sh
+        run: googlebook/build-kernel.sh
       - name: Save outputs to a draft release (no Actions artifacts)
         if: always() && steps.release_prepare.outcome == 'success'
         env:
