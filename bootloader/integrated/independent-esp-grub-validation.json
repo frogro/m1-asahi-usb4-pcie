@@ -1,0 +1,12 @@
+{
+  "installed": true,
+  "purpose": "Optional independent GRUB menu for new Asahi ESP only; no kernel or initramfs internally",
+  "remaining": "Inspect actual fallback-selected ESP and existing files, back up, then test without Yotta from confirmed internal root. Do not alter original Ubuntu ESP.",
+  "sha256": "599aecd11a470f4270012874148bdf43c27c0e07aafd40a001c7a6a170f268cd",
+  "one_shot_menu": true,
+  "installed_path": "Asahi independent ESP 44FD-1525 /EFI/BOOT/BOOTAA64.EFI",
+  "backup": "same ESP /backup-integration-usb/BOOTAA64.EFI",
+  "original_ubuntu_unchanged": true,
+  "user_confirmed_yotta_disconnected": true,
+  "status": "hardware passed without Yotta"
+}

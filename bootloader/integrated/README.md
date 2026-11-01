@@ -75,8 +75,8 @@ The same installed bundle passed three TB-root starts, an internal stock Ubuntu
 start via its existing GRUB menu, and a SanDisk USB-A start via its existing
 GRUB menu. See `hardware-validation.json` for boot IDs and kernel differences.
 The USB comparison used kernel/initramfs and root from SanDisk, while the first
-EFI/GRUB stage still came from the TB SSD. A cold start with no TB device
-attached remains untested. The original Apple Ubuntu default and bundle are
+EFI/GRUB stage still came from the TB SSD. A subsequent start with the TB SSD physically disconnected also passed;
+see the independent USB acceptance below. The original Apple Ubuntu default and bundle are
 unchanged. The independent Asahi entry was selected only for the next boot.
 
 Both later egpu3 boots bound all four Radeon drivers, but all Radeon display
@@ -89,3 +89,24 @@ there. The following ordinary reboot to the original Apple default did not
 return on either network address and HDMI stayed black. Recovery was requested;
 shutdown versus firmware/next-boot failure is not yet localized. The repeated
 boot/shutdown sequence therefore does **not** have an all-passed result.
+
+## Independent USB3 acceptance
+
+Boot `cbc184c2-98e9-4c4b-babd-1674e4de8e9c` started SanDisk on the Mac USB-A
+port with Yottamaster physically disconnected. The unchanged integrated
+U-Boot took normal bootflow, and the independent Asahi ESP GRUB loaded
+kernel, initramfs and root from SanDisk. Linux reported the expected
+`20261101-efi-rc1` marker, USB root and zero failed system units.
+
+The independent Asahi ESP now holds a standalone GRUB menu (example
+`independent-esp-grub.cfg`) with internal Ubuntu, USB SanDisk and TB Samsung
+choices. Only GRUB is stored there, not a kernel or initramfs. Its previous
+BOOTAA64.EFI is backed up on the same ESP; the original Ubuntu ESP/bundle
+remain unchanged. The SanDisk retains older egpu1 kernel/firmware and is not
+a current-kernel regression acceptance. Native USB4 boot remains next work.
+
+The earlier black-screen return is now localized past GRUB: the original
+internal stock 7.2.0 kernel and userspace began, and that journal ends at
+4.9 seconds, near an ACIO AT-register timeout. This does not establish the
+root cause or exclude retained hardware state. Manual original-Ubuntu
+recovery succeeded.

@@ -48,6 +48,17 @@
       "grub2_common_service": "passed",
       "next_restart": "ordinary restart to default Ubuntu: HDMI black and SSH unavailable; manual recovery requested",
       "failure_phase": "unknown: no shutdown/next-boot log available yet"
+    },
+    {
+      "id": "cbc184c2-98e9-4c4b-babd-1674e4de8e9c",
+      "root": "USB-A SanDisk",
+      "root_uuid": "a2220ec6-aada-4bda-8049-ca5638794afd",
+      "kernel": "7.2.12-usb4sd4-egpu1",
+      "integration_marker": "20261101-efi-rc1",
+      "yotta_physically_disconnected": true,
+      "failed_units": 0,
+      "path": "Apple Asahi Linux -> integrated U-Boot standard bootflow -> internal independent GRUB -> SanDisk kernel/initramfs/root",
+      "ssh_verified": true
     }
   ],
   "audio_module_installed": false,
@@ -63,5 +74,15 @@
   ],
   "installed_bundle_sha256": "7dd9bc657620925bf4aa796efb91ac29c570cf4cbf1ddab612ef6dfe9cf5cc47",
   "original_ubuntu_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
-  "usb_without_tb_attached": "Pending: prepare from internal Ubuntu; user instructed to keep Yotta attached until root is verified internal."
+  "usb_without_tb_attached": "PASSED: Yotta physically disconnected; root SanDisk at USB-A; unchanged integrated U-Boot marker verified.",
+  "default_return_failure_analysis": {
+    "failed_boot_id": "56823eaf-a6c4-4765-bb6b-d388130acebd",
+    "next_kernel": "7.2.0-1001-asahi-arm",
+    "root": "internal Ubuntu",
+    "journal_end_monotonic_seconds": 4.900889,
+    "last_firmware_warning": "thunderbolt-apple-acio 381ac0000.cio: lane_init.c:936: Timeout reading AT register",
+    "conclusion": "Default OS kernel and userspace started; failure occurred after GRUB. Root cause and any relation to retained hardware state remain open.",
+    "manual_recovery_boot_id": "5d2faa17-edea-4c64-b4d8-deed83dbd63a"
+  },
+  "current_system": "SanDisk egpu1 USB root; no further automatic reboot armed by this test"
 }

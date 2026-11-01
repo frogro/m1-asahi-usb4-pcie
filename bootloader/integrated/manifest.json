@@ -53,7 +53,7 @@
   ],
   "upstream_source": "https://github.com/AsahiLinux/u-boot",
   "no_m1n1_source_modifications": true,
-  "hardware_result": "four external TB root starts, one internal Ubuntu and one USB-A SanDisk root start passed; subsequent ordinary restart from fourth TB boot stalled, diagnosis pending",
+  "hardware_result": "Four TB-root starts, one internal Ubuntu, USB-A boot via TB GRUB, and independent USB-A boot with Yotta physically disconnected passed. One intervening return to stock internal kernel stalled after kernel/userspace startup.",
   "confirmed_hardware": [
     "TB3 Samsung root with unchanged egpu3 kernel",
     "both Linux ports enabled",
@@ -61,7 +61,8 @@
     "user observed two monitors",
     "Existing internal Ubuntu GRUB and stock kernel boot",
     "Existing USB-A SanDisk GRUB, kernel/initramfs and USB root boot",
-    "One-shot menu selection consumed correctly"
+    "One-shot menu selection consumed correctly",
+    "Independent USB-A SanDisk boot with TB SSD physically disconnected, using internal GRUB and external kernel/initramfs/root"
   ],
   "kernel_findings_deferred": [
     "PCIe tunnel reset release timeouts recovered by normal enumeration",
