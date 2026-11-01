@@ -1,0 +1,467 @@
+{
+  "utc": "2026-11-01T00:15:01.009485+00:00",
+  "scope": "Read-only source/configuration/log audit; no new hardware test",
+  "source_base": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "worktree_modified": true,
+  "sources": {
+    "common/board_r.c": {
+      "sha256": "a86ea04102c6bbb88170632c446b2e097d5f559e6ea36f0f67f6a9620b8985b9",
+      "anchors": {
+        "static int initr_dm(void)": [
+          255
+        ],
+        "INITCALL(pci_init);": [
+          680,
+          727
+        ],
+        "INITCALL(stdio_add_devices);": [
+          729
+        ],
+        "INITCALL(board_late_init);": [
+          758
+        ],
+        "INITCALL(run_main_loop);": [
+          776
+        ]
+      }
+    },
+    "common/main.c": {
+      "sha256": "a85fd514652b4a49367caed3c430b76e8b8492cd108e9c8ec4ea0573fbb19a25",
+      "anchors": {
+        "static void run_preboot_environment_command(void)": [
+          24
+        ],
+        "s = bootdelay_process();": [
+          71
+        ],
+        "if (cli_process_fdt(&s))": [
+          72
+        ]
+      }
+    },
+    "common/autoboot.c": {
+      "sha256": "179625c07838953173edc3e4b65c4e5efc6eeef330dabff57017c18ae98657ff",
+      "anchors": {
+        "const char *bootdelay_process(void)": [
+          452
+        ],
+        "ofnode_conf_read_int(\"bootdelay\", bootdelay)": [
+          468
+        ]
+      }
+    },
+    "common/cli.c": {
+      "sha256": "50705dacfb4b5c6377e955180c91eaf1a0773dcad8a701e11374bd0d144a2ac6",
+      "anchors": {
+        "bool cli_process_fdt(const char **cmdp)": [
+          226
+        ]
+      }
+    },
+    "common/stdio.c": {
+      "sha256": "aa18e0278f32b4f629f9ec4c51055cda0cb2ba9d2b0e36affc501bded4117ec9",
+      "anchors": {
+        "int stdio_add_devices(void)": [
+          298
+        ]
+      }
+    },
+    "common/console.c": {
+      "sha256": "a56972db6f24bb806ae59dafe992d8d97d526e89f711c2c630859a3dbd24ee55",
+      "anchors": {
+        "int console_init_r(void)": [
+          1109,
+          1193
+        ]
+      }
+    },
+    "arch/arm/mach-apple/board.c": {
+      "sha256": "c09cd83263ca52372ed7bf731c9601a8a5e11371cfbfbb1b3ca21d748fdc566a",
+      "anchors": {
+        "static char *asahi_esp_devpart(void)": [
+          855
+        ],
+        "int board_late_init(void)": [
+          927
+        ]
+      }
+    },
+    "board/apple/mac/mac.env": {
+      "sha256": "1f2af38941c70c437f94e8b61612a1fa1066f048729d492444d7e13179387579",
+      "anchors": {
+        "stdin=": [
+          1
+        ],
+        "boot_targets=": [
+          4
+        ]
+      }
+    },
+    "board/apple/mac/probe50.env": {
+      "sha256": "e8a16fec29b9d2d6778981e78942bc58eefae79469a1bcb3f255a3b989eb0d55",
+      "anchors": {
+        "stdin=": [
+          1
+        ],
+        "boot_targets=": [
+          4
+        ]
+      }
+    },
+    "drivers/core/device.c": {
+      "sha256": "1694c0bf9fd57300c85f48cdc6cc1dd9a7306224cb2880b6d12449bf57f9aadb",
+      "anchors": {
+        "int device_probe(struct udevice *dev)": [
+          485
+        ]
+      }
+    },
+    "drivers/core/root.c": {
+      "sha256": "d96d1c0343473da2d1665ed8125601e603bcb4070015fc6a9e3edb925bc89c48",
+      "anchors": {
+        "static int dm_scan_fdt_node(": [
+          196
+        ],
+        "int dm_autoprobe(void)": [
+          325
+        ]
+      }
+    },
+    "drivers/pci/pci-uclass.c": {
+      "sha256": "b7c9f0395bd4efd6f4f924140da1012430225f22c8a14e39128932fc8cf8b742",
+      "anchors": {
+        "int pci_init(void)": [
+          1957
+        ]
+      }
+    },
+    "drivers/pci/pcie_apple.c": {
+      "sha256": "2549697acfc02497d92fa61d109e53481ec5a44be8876d5a50bf9828eb67af25",
+      "anchors": {
+        "static int apple_pcie_probe(": [
+          335
+        ],
+        "static const struct udevice_id apple_pcie_of_match[]": [
+          391
+        ]
+      }
+    },
+    "drivers/nvme/nvme-uclass.c": {
+      "sha256": "b7ed000ecd0c1622da08d446cd667e6b184a3c18c32a1d3d55188ce0b72000c2",
+      "anchors": {
+        "static int nvme_bootdev_hunt(": [
+          24
+        ]
+      }
+    },
+    "drivers/nvme/nvme.c": {
+      "sha256": "c276768a3969fd786d725ebbdbeecf3b5daf6647b20a8a1fd131150eb589c7b6",
+      "anchors": {
+        "int nvme_scan_namespace(void)": [
+          699
+        ]
+      }
+    },
+    "drivers/usb/host/usb_bootdev.c": {
+      "sha256": "bb58fb5b871c6b4d74de919aacb1a51756f367b797c697115b01f9fede48fa63",
+      "anchors": {
+        "static int usb_bootdev_hunt(": [
+          22
+        ]
+      }
+    },
+    "drivers/usb/host/usb-uclass.c": {
+      "sha256": "ec5ea2f0d0cad2e7cd418a6d2211764c45486e59c7877427b85c957e753bd7f4",
+      "anchors": {
+        "int usb_init(void)": [
+          383
+        ],
+        "int usb_stop(void)": [
+          181
+        ]
+      }
+    },
+    "drivers/usb/host/xhci-dwc3.c": {
+      "sha256": "65b59bccdc4e40e31b20511aaa16e4e217fc0c8193dc0c974ae0dbc48740951f",
+      "anchors": {
+        "static void dwc3_phy_reset(": [
+          37
+        ],
+        "void dwc3_core_soft_reset(": [
+          54
+        ],
+        "static int xhci_dwc3_probe(": [
+          175
+        ],
+        "int dwc3_m1_diag_init_preserve_phy(": [
+          122
+        ]
+      }
+    },
+    "drivers/usb/host/xhci-pci.c": {
+      "sha256": "8f1adfa7d80123b65efaa5e0df520864e203322c78f018b0dd748e7865d9a723",
+      "anchors": {
+        "static int xhci_pci_init(": [
+          21
+        ]
+      }
+    },
+    "drivers/phy/phy-apple-atc.c": {
+      "sha256": "5a85824167b5fd831a9a40a07f64b004ad024716193c533e9f02a67676f94be5",
+      "anchors": {
+        "static const struct phy_ops apple_atcphy_ops": [
+          11
+        ],
+        "static const struct reset_ops apple_atcphy_reset_ops": [
+          29
+        ]
+      }
+    },
+    "common/usb_storage.c": {
+      "sha256": "fe8f7bcfc769a9e3719372f0c19d61e0943edafdb252effe2885b0c71949b796",
+      "anchors": {
+        "static int usb_stor_probe_device(": [
+          189
+        ]
+      }
+    },
+    "drivers/block/blk-uclass.c": {
+      "sha256": "bf99404fbc9ee7c6145e3fb55b49d52ee1f2d9e61202141b9452681a496ec9a1",
+      "anchors": {
+        "static int blk_post_probe(": [
+          829
+        ]
+      }
+    },
+    "cmd/usb.c": {
+      "sha256": "00a1629ca916e4732c4a66a2b95a8480116f01026b04e08d87ea38f99ec7b08d",
+      "anchors": {
+        "static void do_usb_start(void)": [
+          563
+        ],
+        "static int do_usb(": [
+          602
+        ]
+      }
+    },
+    "cmd/nvme.c": {
+      "sha256": "ec6701bd9948635e0b31a5ccf2763113b23aa29d22738a87bb4c65d42423b5cd",
+      "anchors": {
+        "static int do_nvme(": [
+          14
+        ]
+      }
+    },
+    "cmd/pci.c": {
+      "sha256": "d119838a8c427ebb976cafcf1365a237cb5a3709d604a735367251e530833662",
+      "anchors": {
+        "static int do_pci(": [
+          493
+        ]
+      }
+    },
+    "cmd/bootflow.c": {
+      "sha256": "fbb05a2d8e44c02a143c44913c0370f8f65b15665bc05fd4a47bdca374d8249c",
+      "anchors": {
+        "flags |= BOOTFLOWIF_HUNT;": [
+          202
+        ]
+      }
+    },
+    "cmd/bootmeth.c": {
+      "sha256": "5bf33b97bf76a022aec5c609a9c7dbf0fc2dfece7f7161c63faee32cd7689dd4",
+      "anchors": {
+        "static int do_bootmeth_order(": [
+          92
+        ]
+      }
+    },
+    "cmd/apple_atc_m1.c": {
+      "sha256": "d8fe84c2db3f2ed27a58164ffb0a5b30b57928106d72cfa647a4467bc4f44a7a",
+      "anchors": {
+        "static int do_atcm1(": [
+          410
+        ],
+        "if (ret || !device_active(usb))": [
+          481
+        ]
+      }
+    },
+    "boot/bootdev-uclass.c": {
+      "sha256": "3c61ba20b288483ab1706fe6917103f65b6ecd9fcc7448b887cc42553e5f93c7",
+      "anchors": {
+        "int bootdev_hunt(": [
+          812
+        ]
+      }
+    },
+    "boot/bootstd-uclass.c": {
+      "sha256": "1a13787e798d8d95479546a9b52ec72c85ba3451b70902a5dfb26f8031edf815",
+      "anchors": {
+        "const char *targets = env_get(\"boot_targets\");": [
+          116
+        ]
+      }
+    },
+    "boot/bootmeth-uclass.c": {
+      "sha256": "f1fc610d935185c2e017d8213405d7596c81bcbb4f9a3d6c6daa9fd65b23cea6",
+      "anchors": {
+        "static int on_bootmeths(": [
+          469
+        ]
+      }
+    },
+    "boot/bootmeth_efi.c": {
+      "sha256": "0bffd6056bb29bcf8c6b5bcc7919ff7dfd2e2b40845161e9be4fd84c80e187ec",
+      "anchors": {
+        "#define EFI_DIRNAME": [
+          28
+        ]
+      }
+    },
+    "boot/bootmeth_efi_mgr.c": {
+      "sha256": "c8ec112a62ad94f39516f821e7aa24ffecaad18e9da52d645119985b3a30d93c",
+      "anchors": {
+        "static int efi_mgr_read_bootflow(": [
+          48
+        ]
+      }
+    },
+    "env/nowhere.c": {
+      "sha256": "05518d0d3bbba3ce68082c48aaceb3f9ec35890ec48a1964686c19ad68b52359",
+      "anchors": {
+        "static int env_nowhere_load(void)": [
+          29
+        ]
+      }
+    },
+    "lib/efi_loader/efi_setup.c": {
+      "sha256": "b472050b6884b6b2abffadf1332c350cd29005d3e92a2429b1b874de30dbb51e",
+      "anchors": {
+        "int efi_init_early(void)": [
+          187
+        ],
+        "efi_status_t efi_init_obj_list(void)": [
+          236
+        ]
+      }
+    },
+    "lib/efi_loader/efi_variable.c": {
+      "sha256": "32593f9cadb979400f7d4784f2bc7e5034d15555c8975fd51c265c4eac27bc71",
+      "anchors": {
+        "efi_status_t efi_init_variables(void)": [
+          602
+        ]
+      }
+    },
+    "lib/efi_loader/efi_var_file.c": {
+      "sha256": "748a748604c44d4c341931e0febd1f772b2e5aa4c0b877bab9f4d9258a48f1b8",
+      "anchors": {
+        "fs_write(EFI_VAR_FILE_NAME": [
+          75
+        ],
+        "fs_read(EFI_VAR_FILE_NAME": [
+          117
+        ]
+      }
+    },
+    "lib/efi_driver/efi_block_device.c": {
+      "sha256": "d089a70a7e90b3916be45604dbf5cbfcd195698f747d4b96f3a9014f62e30131",
+      "anchors": {
+        "static int efi_block_device_create(void)": [
+          235
+        ]
+      }
+    },
+    "drivers/watchdog/wdt-uclass.c": {
+      "sha256": "24fd16f57d3aeb0320b23a691c5639575c176045af317cbc49baa507ae9ea911",
+      "anchors": {
+        "static void wdt_cyclic(": [
+          55
+        ]
+      }
+    },
+    "drivers/watchdog/apple_wdt.c": {
+      "sha256": "98146d7c6e06bb4f7b2383b81536c21e8755804b23b40dea2ebe8089f49828a7",
+      "anchors": {
+        "static int apple_wdt_start(": [
+          31
+        ]
+      }
+    },
+    "drivers/power/domain/apple-pmgr.c": {
+      "sha256": "cb7cc90c5d78d7f974f4666144bc085747671c1f680e8e5d8ac551bbda15ff2c",
+      "anchors": {
+        "#define APPLE_PMGR_WAS_CLKGATED": [
+          18
+        ],
+        "#define APPLE_PMGR_WAS_PWRGATED": [
+          19
+        ]
+      }
+    }
+  },
+  "frozen_configurations": {
+    "probe49-tunable-audit": {
+      "sha256": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+      "values": {
+        "CONFIG_PREBOOT": "\"usb start\"",
+        "CONFIG_ENV_SOURCE_FILE": "\"\"",
+        "CONFIG_BOOTCOMMAND": "\"bootflow scan -b\"",
+        "CONFIG_BOOTDELAY": "10",
+        "CONFIG_PCI_INIT_R": "y",
+        "CONFIG_SYS_EARLY_PCI_INIT": "not enabled",
+        "CONFIG_ENV_IS_NOWHERE": "y",
+        "CONFIG_EFI_VARIABLE_FILE_STORE": "y",
+        "CONFIG_DM_KEYBOARD": "y",
+        "CONFIG_SYS_CONSOLE_IS_IN_ENV": "y",
+        "CONFIG_WATCHDOG_TIMEOUT_MSECS": "60000",
+        "CONFIG_BOOTCOUNT_LIMIT": "not enabled",
+        "CONFIG_BOOT_RETRY": "not enabled"
+      },
+      "bootcmd_from_fdt": "echo UBOOT-PROBE49 TUNABLE-HANDOFF-AUDIT; setenv probe_internal FAIL; nvme scan; if load nvme 0:5 ${loadaddr} /config-7.2.0-1001-asahi-arm 80000; then if hash sha256 ${loadaddr} ${filesize} probe_digest; then if test \"${probe_digest}\" = \"ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9\"; then setenv probe_internal PASS; fi; fi; fi; echo INTERNAL-NVME-BEFORE ${probe_internal}; if test \"${probe_internal}\" = \"PASS\"; then if fdt addr ${fdtcontroladdr}; then setenv probe_audit PASS; echo TUNABLE-AUDIT BEGIN phy-common-a; if fdt get addr probe_addr /soc/phy@503000000 apple,tunable-common-a; then if fdt get size probe_size /soc/phy@503000000 apple,tunable-common-a; then echo TUNABLE-AUDIT SIZE phy-common-a ${probe_size}; if hash sha256 ${probe_addr} ${probe_size} probe_sum; then echo TUNABLE-AUDIT SHA256 phy-common-a ${probe_sum}; if test \"${probe_sum}\" = \"406e3a1b4a4049d827f7e02fbfb74e661b0a486ce3bc83f919e63983e7c4f31f\"; then echo TUNABLE-AUDIT MATCH phy-common-a; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISMATCH phy-common-a; fdt print /soc/phy@503000000 apple,tunable-common-a; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT HASH-ERROR phy-common-a; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT SIZE-ERROR phy-common-a; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISSING phy-common-a; fi; echo TUNABLE-AUDIT END phy-common-a; echo TUNABLE-AUDIT BEGIN phy-axi2af; if fdt get addr probe_addr /soc/phy@503000000 apple,tunable-axi2af; then if fdt get size probe_size /soc/phy@503000000 apple,tunable-axi2af; then echo TUNABLE-AUDIT SIZE phy-axi2af ${probe_size}; if hash sha256 ${probe_addr} ${probe_size} probe_sum; then echo TUNABLE-AUDIT SHA256 phy-axi2af ${probe_sum}; if test \"${probe_sum}\" = \"f252de1c201e3151001039a22d4614a2fc575c006b8692e46994500208d4bea4\"; then echo TUNABLE-AUDIT MATCH phy-axi2af; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISMATCH phy-axi2af; fdt print /soc/phy@503000000 apple,tunable-axi2af; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT HASH-ERROR phy-axi2af; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT SIZE-ERROR phy-axi2af; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISSING phy-axi2af; fi; echo TUNABLE-AUDIT END phy-axi2af; echo TUNABLE-AUDIT BEGIN phy-common-b; if fdt get addr probe_addr /soc/phy@503000000 apple,tunable-common-b; then if fdt get size probe_size /soc/phy@503000000 apple,tunable-common-b; then echo TUNABLE-AUDIT SIZE phy-common-b ${probe_size}; if hash sha256 ${probe_addr} ${probe_size} probe_sum; then echo TUNABLE-AUDIT SHA256 phy-common-b ${probe_sum}; if test \"${probe_sum}\" = \"53a084cdbaeb6b4f89739b774a172b67bff8999759fe7806928ec2c5c69dcde1\"; then echo TUNABLE-AUDIT MATCH phy-common-b; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISMATCH phy-common-b; fdt print /soc/phy@503000000 apple,tunable-common-b; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT HASH-ERROR phy-common-b; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT SIZE-ERROR phy-common-b; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISSING phy-common-b; fi; echo TUNABLE-AUDIT END phy-common-b; echo TUNABLE-AUDIT BEGIN phy-lane0-cio; if fdt get addr probe_addr /soc/phy@503000000 apple,tunable-lane0-cio; then if fdt get size probe_size /soc/phy@503000000 apple,tunable-lane0-cio; then echo TUNABLE-AUDIT SIZE phy-lane0-cio ${probe_size}; if hash sha256 ${probe_addr} ${probe_size} probe_sum; then echo TUNABLE-AUDIT SHA256 phy-lane0-cio ${probe_sum}; if test \"${probe_sum}\" = \"4e394a693e3bdae439596cccb5c1fad4a83746d17f641a31014f1a4af07f40c8\"; then echo TUNABLE-AUDIT MATCH phy-lane0-cio; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISMATCH phy-lane0-cio; fdt print /soc/phy@503000000 apple,tunable-lane0-cio; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT HASH-ERROR phy-lane0-cio; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT SIZE-ERROR phy-lane0-cio; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISSING phy-lane0-cio; fi; echo TUNABLE-AUDIT END phy-lane0-cio; echo TUNABLE-AUDIT BEGIN phy-lane1-cio; if fdt get addr probe_addr /soc/phy@503000000 apple,tunable-lane1-cio; then if fdt get size probe_size /soc/phy@503000000 apple,tunable-lane1-cio; then echo TUNABLE-AUDIT SIZE phy-lane1-cio ${probe_size}; if hash sha256 ${probe_addr} ${probe_size} probe_sum; then echo TUNABLE-AUDIT SHA256 phy-lane1-cio ${probe_sum}; if test \"${probe_sum}\" = \"39626e0c59706277fed4d4ccf7ceccc9cda269c33b8026e58a92edec3abcdd36\"; then echo TUNABLE-AUDIT MATCH phy-lane1-cio; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISMATCH phy-lane1-cio; fdt print /soc/phy@503000000 apple,tunable-lane1-cio; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT HASH-ERROR phy-lane1-cio; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT SIZE-ERROR phy-lane1-cio; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISSING phy-lane1-cio; fi; echo TUNABLE-AUDIT END phy-lane1-cio; echo TUNABLE-AUDIT BEGIN acio-rc; if fdt get addr probe_addr /soc/cio@501ac0000 apple,tunable-rc; then if fdt get size probe_size /soc/cio@501ac0000 apple,tunable-rc; then echo TUNABLE-AUDIT SIZE acio-rc ${probe_size}; if hash sha256 ${probe_addr} ${probe_size} probe_sum; then echo TUNABLE-AUDIT SHA256 acio-rc ${probe_sum}; if test \"${probe_sum}\" = \"e81d62bf3f1ce8c60d7ed34ce687828e5129fefe05bba050cb23d55b24b99bbb\"; then echo TUNABLE-AUDIT MATCH acio-rc; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISMATCH acio-rc; fdt print /soc/cio@501ac0000 apple,tunable-rc; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT HASH-ERROR acio-rc; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT SIZE-ERROR acio-rc; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISSING acio-rc; fi; echo TUNABLE-AUDIT END acio-rc; echo TUNABLE-AUDIT BEGIN nhi; if fdt get addr probe_addr /soc/cio@501ac0000/nhi@f00000 apple,tunable-nhi; then if fdt get size probe_size /soc/cio@501ac0000/nhi@f00000 apple,tunable-nhi; then echo TUNABLE-AUDIT SIZE nhi ${probe_size}; if hash sha256 ${probe_addr} ${probe_size} probe_sum; then echo TUNABLE-AUDIT SHA256 nhi ${probe_sum}; if test \"${probe_sum}\" = \"c8480492535d74a6e258b1a6efe7cbdc71d79052c43a79f4dde59d443c535cba\"; then echo TUNABLE-AUDIT MATCH nhi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISMATCH nhi; fdt print /soc/cio@501ac0000/nhi@f00000 apple,tunable-nhi; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT HASH-ERROR nhi; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT SIZE-ERROR nhi; fi; else setenv probe_audit FAIL; echo TUNABLE-AUDIT MISSING nhi; fi; echo TUNABLE-AUDIT END nhi; echo TUNABLE-AUDIT RESULT ${probe_audit}; else echo TUNABLE-AUDIT FDT-ERROR; fi; fi; setenv probe_internal FAIL; nvme scan; if load nvme 0:5 ${loadaddr} /config-7.2.0-1001-asahi-arm 80000; then if hash sha256 ${loadaddr} ${filesize} probe_digest; then if test \"${probe_digest}\" = \"ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9\"; then setenv probe_internal PASS; fi; fi; fi; echo INTERNAL-NVME-AFTER ${probe_internal}; echo NO-PHY-OR-ACIO-INITIALIZATION; echo EXTERNAL-DISK-NOT-ACCESSED; echo NO-EXTERNAL-PCIE-TUNNEL; echo RESET-IN-10-SECONDS; sleep 10; reset",
+      "bootdelay_from_fdt": "0"
+    },
+    "probe50-handoff-power": {
+      "sha256": "5991bb1e2750c4c958b64d9b8372c0c58b04e4c224f49610e1b255d662c7e79a",
+      "values": {
+        "CONFIG_PREBOOT": "\"\"",
+        "CONFIG_ENV_SOURCE_FILE": "\"probe50\"",
+        "CONFIG_BOOTCOMMAND": "\"bootflow scan -b\"",
+        "CONFIG_BOOTDELAY": "10",
+        "CONFIG_PCI_INIT_R": "y",
+        "CONFIG_SYS_EARLY_PCI_INIT": "not enabled",
+        "CONFIG_ENV_IS_NOWHERE": "y",
+        "CONFIG_EFI_VARIABLE_FILE_STORE": "y",
+        "CONFIG_DM_KEYBOARD": "y",
+        "CONFIG_SYS_CONSOLE_IS_IN_ENV": "y",
+        "CONFIG_WATCHDOG_TIMEOUT_MSECS": "60000",
+        "CONFIG_BOOTCOUNT_LIMIT": "not enabled",
+        "CONFIG_BOOT_RETRY": "not enabled"
+      },
+      "bootcmd_from_fdt": "echo UBOOT-PROBE50 HANDOFF-POWER; if handoffpd before; then setenv probe_internal FAIL; nvme scan; if load nvme 0:5 ${loadaddr} /config-7.2.0-1001-asahi-arm 80000; then if hash sha256 ${loadaddr} ${filesize} probe_digest; then if test \"${probe_digest}\" = \"ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9\"; then setenv probe_internal PASS; fi; fi; fi; echo INTERNAL-NVME-BEFORE ${probe_internal}; if test \"${probe_internal}\" = \"PASS\"; then echo EXPLICIT-USB-START-BEGIN; if usb start; then echo EXPLICIT-USB-START-PASS; else echo EXPLICIT-USB-START-FAIL; fi; echo EXPLICIT-USB-START-END; handoffpd after; setenv probe_internal FAIL; nvme scan; if load nvme 0:5 ${loadaddr} /config-7.2.0-1001-asahi-arm 80000; then if hash sha256 ${loadaddr} ${filesize} probe_digest; then if test \"${probe_digest}\" = \"ce51016af2472bd22173f61a89c8b62d9f2223dcead57a2a968d80b3de598dc9\"; then setenv probe_internal PASS; fi; fi; fi; echo INTERNAL-NVME-AFTER ${probe_internal}; fi; else echo HANDOFF-PREFLIGHT-FAILED-NO-USB-START; fi; echo NO-EXPLICIT-ATC-ACIO-NHI-OR-PCIEC-INIT; echo NO-EXTERNAL-SECTOR-READ-COMMAND; echo USB-ENUMERATION-MAY-OCCUR; echo RESET-IN-10-SECONDS; sleep 10; reset",
+      "bootdelay_from_fdt": "0"
+    }
+  },
+  "observed_logs": {
+    "/mnt/android-build/Codex/asahi-bootloader-20261031/tunable-audit-probe49/guest-uart.log": {
+      "sha256": "d0e7adede2953ca3a7432f6094f234840dff3d06d6d388ecce5dfa59c2eeb9df"
+    },
+    "/mnt/android-build/Codex/asahi-bootloader-20261031/handoff-power-probe50/guest-uart.log": {
+      "sha256": "a970095c06425a7df9fc64191fa46f6175aa7abd66fb8a12864c3b45dbfadd2f"
+    }
+  },
+  "findings": [
+    "PCI initialization precedes preboot",
+    "board_late_init scans NVMe and reads internal ESP partitions before bootcmd",
+    "bootflow can initialize USB even with empty preboot",
+    "FDT bootcmd overrides environment selected command after preboot",
+    "ordinary DWC3 USB startup pulses PHY/core resets; unchanged PMGR does not exclude these effects",
+    "usb start shell return zero is insufficient success evidence",
+    "atcm1 currently requires active USB; removing initial USB start alone does not provide a valid cold-path comparison",
+    "ENV_IS_NOWHERE differs from EFI file variable store",
+    "no generic usb4 start command or automatic TB tunnel integration exists in this build"
+  ],
+  "next_test_design": "Separate early DWC3 reset and current explicit ATC reset sequence; implement an unprobed-controller entry deliberately before attempting an A/B hardware test",
+  "new_probe_prepared": false
+}
