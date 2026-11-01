@@ -1,0 +1,23 @@
+{
+  "status": "diagnostic snapshot, not production patch",
+  "base": "bootloader/integrated/manifest.json ten patches at integrated version 20261101-efi-rc1",
+  "apply": "Apply diagnostic-only.patch only to a disposable source directory named source alongside these tests. Never install its boot image as the default.",
+  "tests": "test-preflight-v13.py needs preflight-tests/snapshot.h copied from usb4-snapshot.h; tests create their own other output directories. test-query-v12.py only verifies existing query function.",
+  "kernel_changes": false,
+  "production_manifest_changed": false,
+  "candidate_hashes": {
+    "boot-persist.bin": "fbe5dda80b79171116c3cc1681b1c551dbf38c62554514e333e4d652ac8a0972",
+    "boot-router-v15.bin": "44e7fc2e0a4e8f719c10afdb61b16e39dbb62635137da0805b1224f1f45e2a14",
+    "boot-router-v12.bin": "ef389d9c66ebb9ca8a8db5b2c92c28ba108827be0f915e0604b02a238a686294",
+    "boot-router-v10.bin": "ffc2277b953d8b70ba77fd584af6177a886ec11d82e988f0210e0bacc97e6440",
+    "boot-router-v14.bin": "bedc7dfd376d8c4f4cd1703f6b454091389cffb79c2913facf82c33998f08a5b",
+    "boot-router-v11.bin": "4c06b900febf0427b9bc76e0394a19007e869b2eb8771bf4d8d995763afc2e1a",
+    "boot-shutdown.bin": "db41aa242d2e53ebb5c4ac13f5e99e180631dbf105bae70abab876e2c8108338",
+    "boot-handoff.bin": "84649680dd54ef97d8a10700d11e6306e942ae82c14036d5ff09ef90ba6abcae",
+    "boot-router-v13.bin": "4531de39a18bf2dd202a77fdc370d6040b6077da8f39e158990e73259a3f74e4",
+    "boot-usb4check.bin": "7994fdccf70239b657eb01e03c6e58a2624a4fe1f402a68d1d976fb2fc333a22",
+    "boot-inventory-v9.bin": "33aa0e0a3022f731a97a8bc5492c91a100ce180185be57d62b0a5405d9b2370b",
+    "boot-logonly.bin": "bc1af92480ab49ac22af0a4b9bbf7b5b6ab0d0a6226eb2e4a02654f2e339496b",
+    "boot-auto-handoff.bin": "0ebd0e935294b254f3af50a114d4d82919a046b8b9be7e768b3b2e9803e21fdf"
+  }
+}

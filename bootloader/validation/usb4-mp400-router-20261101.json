@@ -1,0 +1,247 @@
+{
+  "utc": "2026-11-01T16:42:50.919173+00:00",
+  "status": "Native USB4 PCIe tunnel and Samsung NVMe enumeration passed. NVMe read attempt v15 sent; return/result pending SSH or local display confirmation.",
+  "scope": "J274 port1 with Fanxiang MP400 (ASM2464PD) and Samsung 970 EVO Plus; existing integrated U-Boot plus bounded diagnostic hooks. Not a USB4 boot release.",
+  "logger": {
+    "control": "Direct reset lost file in log-only control; EFI-to-Linux handoff showed correct ESP and successful write/readback.",
+    "fix": "Normal internal Apple NVMe shutdown before diagnostic reset made log persistent; control and v8..v13 recovered.",
+    "production_status": "Diagnostic-local; not a global reset patch"
+  },
+  "hardware": {
+    "v8": {
+      "result": "USB4 CL0 both lanes, router read passed",
+      "header": "2463174c 000101c0 00000000 00000000 2000000a",
+      "ret": 0
+    },
+    "v9": {
+      "result": "Unconfigured remote router header read, first adapter read timeout",
+      "enabled": 0,
+      "ret": -110
+    },
+    "v10": {
+      "result": "USB4 setup passed; complete adapter headers; overlong PCIe capability read rejected then timed out",
+      "CS5": "83000000",
+      "CS6": "03000000",
+      "detail": "A two-DWORD read at PCIe capability9 exceeded its one-DWORD register block. Error packet observed, transport did not decode as synchronous error."
+    },
+    "v11": {
+      "result": "One-DWORD capability reads, inventory and dynamic path preflight passed",
+      "remote_pcie_port": 3,
+      "unused_port": 4,
+      "ret": 0
+    },
+    "v12": {
+      "result": "USB4 buffer allocation query passed",
+      "host_max_pcie_credits": 70,
+      "remote_max_pcie_credits": 64,
+      "ret": 0
+    },
+    "v13": {
+      "result": "Four HopID8 path entries programmed and verified, then originals restored",
+      "protocol_adapters_enabled": false,
+      "diagnostic_lane_credits": 6,
+      "ret": 0,
+      "restore_ret": 0
+    },
+    "v14": {
+      "result": "PCIe link up, Samsung NVMe endpoint discovered through USB4, then adapters disabled and paths restored",
+      "ret": 0,
+      "nvme_count": 1,
+      "bdf": "03:00.0",
+      "pci_id": "a808144d",
+      "bridges": [
+        "00:00.0 Apple 1010:106b",
+        "01:00.0 ASMedia 2463:1b21",
+        "02:00.0 ASMedia 2463:1b21"
+      ],
+      "boot_id": "b284a276-d0fa-4879-95a7-f70ec1e6e58b"
+    },
+    "v15": {
+      "result": "pending, no success claim",
+      "candidate_sha256": "44e7fc2e0a4e8f719c10afdb61b16e39dbb62635137da0805b1224f1f45e2a14",
+      "EFI_boot_property_removed": true,
+      "recovery": "Original Apple Ubuntu boot target unchanged; one-shot Asahi Linux used; automatic restore service armed. Last confirmed restoration after v14."
+    }
+  },
+  "source_provenance": [
+    "Asahi U-Boot integrated ten-patch base",
+    "Linux drivers/thunderbolt/switch.c: tb_switch_configure",
+    "Linux drivers/thunderbolt/usb4.c: usb4_switch_setup/configuration_valid/credits_init",
+    "Linux drivers/thunderbolt/path.c: preserve USB4 protocol adapter IFC/ISE/credit fields",
+    "Linux drivers/thunderbolt/tunnel.c: PCIe flow control and min6 credits"
+  ],
+  "production_integration": false,
+  "warning": "diagnostic-only.patch replaces main_loop with bounded test/reset and adds diagnostic FAT/RAM logging. Never include it wholesale in installer or production bootloader.",
+  "next": [
+    "Finish endpoint discovery",
+    "Read NVMe identity and GPT through PCIe with existing bounded read-only engine",
+    "Load EFI/GRUB and verify OS handover",
+    "Extract production changes without diagnostic hooks; retain TB3/USB/internal fallback"
+  ],
+  "linux_fault_separate": {
+    "kernel": "7.2.0-1001-asahi-arm",
+    "fault": "tb_tunnel_pci Oops followed by atcphy_mux_set warning on custom diagnostic handoff DT",
+    "source_match": "Missing dev_is_pci check already covered by consolidated kernel patch0006; do not count stock kernel as clean USB4 system reference."
+  },
+  "external_storage_writes": false,
+  "usb_start_caveat": "USB storage enumeration may read device and partition metadata; no external filesystem writes issued.",
+  "m1n1": "Unmodified release binary SHA256 2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69; source not accessed",
+  "fallback": "Original Ubuntu boot.bin SHA validated before v15 deployment; normal integrated backup retained, automatic restore armed. Post-v15 restoration is not yet confirmed.",
+  "evidence": {
+    "v11.log": "851e97c541c385e7980162b82bea90ee0ce6e9977ff169ff70ffd21ce179abbc",
+    "v12.log": "3f397a3a898f9a64a68be199a3b561d9b790a49e9f8dcc10186ec83c27fc0bcd",
+    "v14.log": "9a87d4c101fa5d34142183525491057cb9ba258226482709ecca723a8b770b63",
+    "diagnostic-only.patch": "7d8a48678707cec8f129d1fbf3ea232d41b176902d224cc1f667a11804104cb6",
+    "v13.log": "0661836857bc5fd0d590ea574948793a204e679484e1635ee8a56a6c7f1251f3",
+    "v8.log": "941fa528a4902ef09031d0500e3bc16529bd66d34846e2440f60893c3d10caef",
+    "v9.log": "aecb675fb458a9636c86ed8ad8dec9f4d11a6dc80208f43e1e02ecdf7cec537a",
+    "v10.log": "774f002e0735781f0df2f35cb5732cf6df3a02bc593f54021cce4ed968ccb288"
+  },
+  "diagnostic_patch_apply_check": "passed on clean reconstructed integrated ten-patch source",
+  "candidate_bundles": {
+    "router-v15-preparation": {
+      "sha256": "44e7fc2e0a4e8f719c10afdb61b16e39dbb62635137da0805b1224f1f45e2a14",
+      "remote_writes": "Volatile router/path/PCIe/NVMe-controller setup only; no storage write commands",
+      "purpose": "Native USB4 NVMe identify and MBR/GPT reads with bounded DART DMA; EFI boot property explicitly removed and verified absent",
+      "tests": {
+        "passed": true,
+        "summary": "CASES 33 PASS; transaction failure injection 20",
+        "ASan": true,
+        "UBSan": true
+      },
+      "endpoint_sequence_tests": {
+        "passed": true,
+        "summary": "CASES 29 PASS; transactions 13; bounded NVMe read callback sequenced before adapter shutdown",
+        "ASan": true,
+        "UBSan": true
+      }
+    },
+    "router-v12-preparation": {
+      "sha256": "ef389d9c66ebb9ca8a8db5b2c92c28ba108827be0f915e0604b02a238a686294",
+      "remote_writes": "USB4 router CS1..5; CS25/26 only for read-only BUFFER_ALLOC operation 0x33",
+      "purpose": "USB4 v1 router registration and read-only adapter inventory; no PCIe path or NVMe operations",
+      "tests": {
+        "passed": true,
+        "summary": "CASES 33 PASS; transaction failure injection 20",
+        "ASan": true,
+        "UBSan": true
+      },
+      "query_tests": {
+        "passed": true,
+        "summary": "QUERY FAULT TESTS: 2615 cases, zero failures",
+        "ASan": true,
+        "UBSan": true
+      },
+      "guard_tests": {
+        "passed": true,
+        "summary": "CASES 4865 PASS",
+        "ASan": true,
+        "UBSan": true
+      }
+    },
+    "router-v14-preparation": {
+      "sha256": "bedc7dfd376d8c4f4cd1703f6b454091389cffb79c2913facf82c33998f08a5b",
+      "remote_writes": "USB4 router setup, BUFFER_ALLOC query, HopID8 paths, PCIe adapter enable/disable and bridge bus numbering",
+      "purpose": "Enumerate PCIe endpoints over USB4; no endpoint DMA or storage I/O; protocol adapters disabled and paths restored before reset",
+      "tests": {
+        "passed": true,
+        "summary": "CASES 33 PASS; transaction failure injection 20",
+        "ASan": true,
+        "UBSan": true
+      },
+      "endpoint_tests": {
+        "passed": true,
+        "summary": "CASES 27 PASS; transactions 12; no endpoint DMA callbacks",
+        "ASan": true,
+        "UBSan": true
+      },
+      "path_tests": {
+        "passed": true,
+        "summary": "CASES 57 PASS; full programming/restore transactions 25",
+        "ASan": true,
+        "UBSan": true,
+        "scope": "actual path plan, programming, verification and rollback; injected before/after transfer failures; protocol-adapter credit/IFC/ISE preserved"
+      }
+    },
+    "router-v10-preparation": {
+      "sha256": "ffc2277b953d8b70ba77fd584af6177a886ec11d82e988f0210e0bacc97e6440",
+      "remote_writes": "USB4 router CS1..5 only",
+      "purpose": "USB4 v1 router registration and read-only adapter inventory; no PCIe path or NVMe operations",
+      "tests": {
+        "passed": true,
+        "summary": "CASES 33 PASS; transaction failure injection 20",
+        "ASan": true,
+        "UBSan": true
+      }
+    },
+    "router-v11-preparation": {
+      "sha256": "4c06b900febf0427b9bc76e0394a19007e869b2eb8771bf4d8d995763afc2e1a",
+      "remote_writes": "USB4 router CS1..5 only",
+      "purpose": "USB4 v1 router registration and read-only adapter inventory; no PCIe path or NVMe operations",
+      "tests": {
+        "passed": true,
+        "summary": "CASES 33 PASS; transaction failure injection 20",
+        "ASan": true,
+        "UBSan": true
+      }
+    },
+    "router-v13-preparation": {
+      "sha256": "4531de39a18bf2dd202a77fdc370d6040b6077da8f39e158990e73259a3f74e4",
+      "remote_writes": "USB4 router setup, BUFFER_ALLOC query, HopID8 paths on discovered adapters, restored before reset",
+      "purpose": "Program/readback/restore single-hop USB4 PCIe paths; no PCIe adapter enable and no external NVMe I/O",
+      "tests": {
+        "passed": true,
+        "summary": "CASES 33 PASS; transaction failure injection 20",
+        "ASan": true,
+        "UBSan": true
+      },
+      "path_tests": {
+        "passed": true,
+        "summary": "CASES 57 PASS; full programming/restore transactions 25",
+        "ASan": true,
+        "UBSan": true,
+        "scope": "actual path plan, programming, verification and rollback; injected before/after transfer failures; protocol-adapter credit/IFC/ISE preserved"
+      }
+    }
+  },
+  "archive_tests": {
+    "all_passed": true,
+    "results": [
+      {
+        "test": "test-router-v10.py",
+        "returncode": 0,
+        "summary": "CASES 33 PASS; transaction failure injection 20"
+      },
+      {
+        "test": "test-router-write-v10.py",
+        "returncode": 0,
+        "summary": "CASES 265 PASS"
+      },
+      {
+        "test": "test-preflight-v13.py",
+        "returncode": 0,
+        "summary": "CASES 37 PASS; transaction failure injection 26"
+      },
+      {
+        "test": "test-query-v12.py",
+        "returncode": 0,
+        "summary": "QUERY FAULT TESTS: 2615 cases, zero failures"
+      },
+      {
+        "test": "test-credit-guard-v12.py",
+        "returncode": 0,
+        "summary": "CASES 4865 PASS"
+      },
+      {
+        "test": "test-paths-v15.py",
+        "returncode": 0,
+        "summary": "CASES 57 PASS; full programming/restore transactions 25"
+      },
+      {
+        "test": "test-endpoint-v15.py",
+        "returncode": 0,
+        "summary": "CASES 29 PASS; transactions 13; bounded NVMe read callback sequenced before adapter shutdown"
+      }
+    ]
+  }
+}

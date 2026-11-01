@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "summary": "CASES 57 PASS; full programming/restore transactions 25",
+  "ASan": true,
+  "UBSan": true,
+  "scope": "actual path plan, programming, verification and rollback; injected before/after transfer failures; protocol-adapter credit/IFC/ISE preserved"
+}

@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "summary": "CASES 29 PASS; transactions 13; bounded NVMe read callback sequenced before adapter shutdown",
+  "ASan": true,
+  "UBSan": true
+}

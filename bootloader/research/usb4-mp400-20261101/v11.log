@@ -1,0 +1,416 @@
+USB4CHECK BEGIN native integrated U-Boot; bounded router setup, no PCIe paths or NVMe IO
+starting USB...
+USB XHCI 1.10
+USB XHCI 1.10
+USB XHCI 1.00
+Device NOT ready
+   Request Sense returned 02 3A 00
+Device NOT ready
+   Request Sense returned 02 3A 00
+Bus usb@382280000: 8 USB Device(s) found
+Bus usb@502280000: 1 USB Device(s) found
+Bus xhci_pci: 3 USB Device(s) found
+       scanning usb for storage devices... 1 Storage Device(s) found
+USB4CHECK USB-start result=0
+ACIO preflight PD 0x458=0x300
+ACIO preflight PD 0x460=0x300
+ACIO preflight PD 0x468=0x300
+ACIO preflight PD 0x450=0x300
+PCIEC-M1 resource debug start=0x520200000 size=0x4000
+PCIEC-M1 using generated apple,tunable-debug
+PCIEC-M1 property apple,tunable-debug present=1 len=12 expected=12
+PCIEC-M1 resource fabric start=0x520004000 size=0x4000
+PCIEC-M1 using generated apple,tunable-fabric
+PCIEC-M1 property apple,tunable-fabric present=1 len=324 expected=324
+PCIEC-M1 resource port0 start=0x521000000 size=0x8000
+PCIEC-M1 using generated apple,tunable
+PCIEC-M1 property apple,tunable present=1 len=12 expected=12
+PCIEC-M1 resource oe-fabric start=0x520008000 size=0x4000
+PCIEC-M1 generated apple,tunable-oe-fabric absent; checking saved Linux reference u-boot,probe-pciec-oe-fabric
+PCIEC-M1 property apple,tunable-oe-fabric present=1 len=120 expected=120
+PCIEC-M1 resource config start=0x530000000 size=0x10000000
+PCIEC-M1 using generated apple,tunable-rc
+PCIEC-M1 property apple,tunable-rc present=1 len=48 expected=48
+PCIEC-M1 preflight PASS: 5 fixed resources, 43 exact Linux tunables; no MMIO
+ATC-M1 port=1 mode=USB4 swapped=0 validated=5 groups
+USB4-HOST policy validated; native USB role present
+CD321X-POWER-SAMPLE ms=15746 status=108280ef power=000d system=00 plug=1 connection=1 source_sink=0 opmode=3
+DWC3-SNAPSHOT before-remove reg[0xc110]=0x30c11004
+DWC3-SNAPSHOT before-remove reg[0xc11c]=0x1908
+DWC3-SNAPSHOT before-remove reg[0xc120]=0x33313130
+DWC3-SNAPSHOT before-remove reg[0xc12c]=0xa416802
+DWC3-SNAPSHOT before-remove reg[0xc140]=0x4020800a
+DWC3-SNAPSHOT before-remove reg[0xc144]=0x2092486
+DWC3-SNAPSHOT before-remove reg[0xc14c]=0x10420086
+DWC3-SNAPSHOT before-remove reg[0xc200]=0x102400
+DWC3-SNAPSHOT before-remove reg[0xc2c0]=0x1021102
+DWC3-SNAPSHOT before-remove reg[0xc630]=0xa87f020
+DWC3-SNAPSHOT before-remove reg[0xcd38]=0x0
+DWC3-SNAPSHOT before-remove reg[0xcd3c]=0x0
+DWC3-SNAPSHOT before-remove reg[0xcd40]=0x3c20060c
+DWC3-SNAPSHOT before-remove command=0x1 status=0x10
+ATC-M1 selected DWC3 halted; other USB hosts untouched
+NHI link metadata PASS: DROM lane pair 1/2 verified, cable=0x11
+ATC-M1 stage=1
+ATC-M1 stage=2
+ATC-M1 stage=3
+ATC-M1 stage=13
+USB2-ROLE signal old=0x1c1000f new=0x1c1700f
+USB2-ROLE signal old=0x1c1700f new=0x1c1700f
+ATC-M1 stage=4
+ATC-M1 stage=5
+ATC-M1 stage=6
+ATC-M1 stage=7
+ATC-M1 stage=14
+ATC-M1 released DWC3: command=0x0 status=0x801
+ATC-M1 PHY retained for ACIO; xHCI remains halted
+ATC-SNAPSHOT before-acio core[0x8]=0x11833fef
+ATC-SNAPSHOT before-acio core[0x48]=0x0
+ATC-SNAPSHOT before-acio core[0x4c]=0x0
+ATC-SNAPSHOT before-acio core[0x1b0]=0x15570cff
+ATC-SNAPSHOT before-acio core[0x2a00]=0x2022
+ATC-SNAPSHOT before-acio core[0x20000]=0x1b
+ATC-SNAPSHOT before-acio core[0x20004]=0x3
+ATC-SNAPSHOT before-acio core[0x20008]=0x1
+ATC-SNAPSHOT before-acio core[0x9010]=0x53600000
+ATC-SNAPSHOT before-acio core[0x10010]=0x53600000
+ATC-SNAPSHOT before-acio pipe[0x0]=0x0
+ATC-SNAPSHOT before-acio pipe[0x4]=0x16
+ATC-SNAPSHOT before-acio pipe[0xc]=0x22
+ATC-SNAPSHOT before-acio pipe[0x10]=0x0
+ATC-SNAPSHOT before-acio pipe[0x14]=0x0
+ATC-SNAPSHOT before-acio pipe[0x1c]=0x1
+ATC-SNAPSHOT before-acio pipe[0x20]=0x9332
+USB2-SNAPSHOT before-acio control=0x102 reset=0x4 signal=0x1c1700f misc=0x8c0813
+DWC3-SNAPSHOT before-acio reg[0xc110]=0x30c12004
+DWC3-SNAPSHOT before-acio reg[0xc11c]=0x1908
+DWC3-SNAPSHOT before-acio reg[0xc120]=0x33313130
+DWC3-SNAPSHOT before-acio reg[0xc12c]=0xa416802
+DWC3-SNAPSHOT before-acio reg[0xc140]=0x4020800a
+DWC3-SNAPSHOT before-acio reg[0xc144]=0x2092486
+DWC3-SNAPSHOT before-acio reg[0xc14c]=0x10420086
+DWC3-SNAPSHOT before-acio reg[0xc200]=0x102400
+DWC3-SNAPSHOT before-acio reg[0xc2c0]=0x1021102
+DWC3-SNAPSHOT before-acio reg[0xc630]=0xa87f020
+DWC3-SNAPSHOT before-acio reg[0xcd38]=0x0
+DWC3-SNAPSHOT before-acio reg[0xcd3c]=0x0
+DWC3-SNAPSHOT before-acio reg[0xcd40]=0x3c20060c
+DWC3-SNAPSHOT before-acio command=0x0 status=0x1
+ACIO preflight PD 0x458=0x300
+ACIO preflight PD 0x460=0x300
+ACIO preflight PD 0x468=0x300
+ACIO preflight PD 0x450=0x300
+ACIO power PD 0x448=0x20ff
+ACIO PCIe-C reset-before-power PASS
+ACIO power PD 0x458=0x3ff
+ACIO power PD 0x460=0x2ff
+ACIO power PD 0x468=0x2ff
+ACIO power PD 0x450=0x3ff
+ACIO reset status=0x4 ret=0
+ACIO M3 start
+ACIO SRAM ep=1 iova=1000ae00 size=4000 ret=0
+ACIO RTKit boot ret=0
+ACIO-SYSLOG INIT entries=8 size=80
+ACIO SRAM ep=2 iova=1000ee04 size=1000 ret=0
+ACIO RTKit AP-on ret=0
+ACIO firmware state=0x1000000 ret=0
+ACIO M3 READY PASS; no NHI/tunnel/DMA
+ACIO NHI HOP_COUNT raw=0xc count=12
+NHI-READONLY PASS; no configuration, rings or DMA
+ACIO RC tunables applied count=29 written=16 skipped=13
+ACIO-MBOX before-nhi tx=0x28801 rx=0x8a01
+NHI DART config=0x10000 params2=0x10033
+NHI DART initial TCR[0]=0x80080
+NHI DART initial TCR[1]=0x80080
+NHI DART initial TCR[2]=0x80080
+NHI DART initial TCR[3]=0x80080
+NHI DART initial TCR[4]=0x80080
+NHI DART initial TCR[5]=0x80080
+NHI DART initial TCR[6]=0x80080
+NHI DART initial TCR[7]=0x80080
+NHI DART initial TCR[8]=0x80080
+NHI DART initial TCR[9]=0x80080
+NHI DART initial TCR[10]=0x80080
+NHI DART initial TCR[11]=0x80080
+NHI DART initial TCR[12]=0x80080
+NHI DART initial TCR[13]=0x80080
+NHI DART initial TCR[14]=0x80080
+NHI DART initial TCR[15]=0x80080
+NHI DART initial tables empty; no inherited mapping
+NHI DART stream1 translation enabled; all other streams disabled
+ACIO NHI tunables applied count=226 written=145 skipped=81
+NHI-TUNABLES PASS; all rings remain disabled
+ACIO-SYSLOG main.c:60: #ACIO FW IS READY# FW_VERSION_STRING=AppleCIOFirmware-480~10483__2026-10-07-21:
+ACIO-SYSLOG main.c:61: FW state=1
+NHI host vendor/device=200005ac max-port=7 upstream=7 version=20 enabled=0
+NHI capability offset=0x1b id=0x3 vsec=0x20 length=1 next=0x35 raw=43200335 2b6f0000
+NHI capability offset=0x35 id=0x5 vsec=0x0 length=202 next=0xff raw=ca0005ff 00000000
+NHI capability offset=0xff id=0x5 vsec=0x1 length=49 next=0x130 raw=00010500 00310130
+NHI capability offset=0x130 id=0x5 vsec=0x2 length=66 next=0x172 raw=00020500 00420172
+NHI capability offset=0x172 id=0x5 vsec=0x3 length=4 next=0x176 raw=00030500 00040176
+NHI capability offset=0x176 id=0x5 vsec=0x4 length=74 next=0x1c0 raw=00040500 004a01c0
+NHI capability offset=0x1c0 id=0x5 vsec=0x5 length=49 next=0x0 raw=00050500 00310000
+NHI unsolicited rx=10 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000005 d7df61d9
+NHI-EVENT-ACK SENT route=0 port=5 unplug=0 count=1
+NHI-HOST-CONFIG PASS; root enabled, no cable-info or tunnel writes
+NHI unsolicited rx=12 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000006 c48f922d
+NHI-EVENT-ACK SENT route=0 port=6 unplug=0 count=2
+NHI adapter port=1 type=000001 header=200005ac 00080709 01000001 80100000 8ae00000 0000b016 00000000 00000000
+NHI adapter port=2 type=000001 header=200005ac 00080709 01000001 00200000 8ae00000 0000b016 00000000 00000000
+NHI adapter port=3 type=100101 header=200005ac 00080109 01100101 80300000 0ae00000 00004008 00000000 00000000
+NHI adapter port=4 type=200101 header=200005ac 00080109 01200101 80400000 0ae00000 00004008 00000000 00000000
+NHI adapter port=5 type=0e0101 header=200005ac 00080209 010e0101 80500000 0ae00000 00004809 00000000 00000000
+NHI adapter port=6 type=0e0101 header=200005ac 00080209 010e0101 80600000 0ae00000 00004809 00000000 00000000
+NHI adapter port=7 type=000002 header=200005ac 00080809 01000002 80700000 0ae00000 0000580b 00000000 00000000
+NHI-HOST-INVENTORY PASS capabilities=7 apple=0x35 null-ports=0x6; ports read-only
+NHI-QUERY opcode=0x25 input=0x0 completion=02000025 polls=1
+NHI-QUERY unsupported opcode=0x25 input=0x0
+NHI-QUERY opcode=0x33 input=0x0 completion=00000033 polls=1
+NHI-QUERY result opcode=0x33 metadata=00000005
+NHI-QUERY buffer[0]=00070001
+NHI-QUERY buffer[1]=00040002
+NHI-QUERY buffer[2]=000f0003
+NHI-QUERY buffer[3]=00460004
+NHI-QUERY buffer[4]=00340005
+NHI-TMU before cap=0x1b control=43200335 interval=00000000
+NHI-TMU PASS LOWRES interval=1000 TD=0
+NHI-QUERY opcode=0x10 input=0x5 completion=00000010 polls=1
+NHI-QUERY result opcode=0x10 metadata=00000005
+NHI-QUERY opcode=0x10 input=0x6 completion=00000010 polls=1
+NHI-QUERY result opcode=0x10 metadata=00000006
+NHI-QUERIES complete before lane unlock and cable submit
+PCIEC-M1 cold prepare ret=0 ready=0x3 reads=48 writes=114; no native DART access, PCI scan or DMA
+PCIEC-PREPARE PASS
+NHI-PORT-UNLOCK PASS lane-pair=1/2
+ACIO-SYSLOG lane_init.c:181: Entering Phase 1. action=0
+ACIO-SYSLOG lane_init.c:78: Lane init parmas = 0x00000011
+NHI-CABLE-INFO PASS value=0x11
+ATC-M1 stage=16
+ATC-M1 released DWC3: command=0x0 status=0x1
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0xf020000
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0xe0b0000
+M1-DWC3 core-init preserve-phy ret=0
+ATC-M1 released DWC3: command=0x0 status=0x1
+ATC-M1 released DWC3: command=0x0 status=0x1
+DWC3-HOST ret=0; xHCI not started
+DWC3-SNAPSHOT host-configured reg[0xc110]=0x30c11004
+DWC3-SNAPSHOT host-configured reg[0xc11c]=0x1908
+DWC3-SNAPSHOT host-configured reg[0xc120]=0x33313130
+DWC3-SNAPSHOT host-configured reg[0xc12c]=0xa416802
+DWC3-SNAPSHOT host-configured reg[0xc140]=0x4020800a
+DWC3-SNAPSHOT host-configured reg[0xc144]=0x2092486
+DWC3-SNAPSHOT host-configured reg[0xc14c]=0x10420086
+DWC3-SNAPSHOT host-configured reg[0xc200]=0x102540
+DWC3-SNAPSHOT host-configured reg[0xc2c0]=0x1021102
+DWC3-SNAPSHOT host-configured reg[0xc630]=0xa87f020
+DWC3-SNAPSHOT host-configured reg[0xcd38]=0xf800f80
+DWC3-SNAPSHOT host-configured reg[0xcd3c]=0xfc00fc0
+DWC3-SNAPSHOT host-configured reg[0xcd40]=0x3c140a10
+DWC3-SNAPSHOT host-configured command=0x0 status=0x1
+ATC-M1 stage=8
+ATC-M1 stage=9
+ATC-M1 stage=10
+ATC-M1 stage=11
+ATC-M1 late PIPE ret=0 stage=12
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0xf020000
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0xe0b0000
+M1-XHCI caps length=0x20 slots_ports=0x200047f scratch=0x1c0000f1 dboff=0x4e0 rtsoff=0x440 pages=0x1
+USB XHCI 1.10
+M1-XHCI port1 power-control=1 status=0x2a0
+M1-XHCI port2 power-control=1 status=0x2a0
+M1-XHCI start ret=0 maps=6 dma_failed=0 command=0x1 status=0x0
+M1-XHCI buffers retained until full reset; no USB enumeration
+M1-XHCI DART0 sid=0 tcr=0x1100 error=0xf020000
+M1-XHCI DART1 sid=1 tcr=0x1100 error=0xe0b0000
+CD321X-POWER-SAMPLE ms=17841 status=108280ef power=000d system=00 plug=1 connection=1 source_sink=0 opmode=3
+ACIO-SYSLOG lane_init.c:343: Entering Phase 2
+ACIO-SYSLOG lane_init.c:396: Entering Phase 3
+ACIO-SYSLOG lane_init.c:882: Got AT register 12. 3 bytes. 0x00 0xf3 0x03
+ACIO-SYSLOG lane_init.c:1024: Entering Connected
+ACIO-SYSLOG high_speed_lane.c:2212: RT Broadcast LOCAL: gen=2, legacy=0, rs_fec=1, usb4=1, l0_en=1, l1_en=1
+ACIO-SYSLOG high_speed_lane.c:2212: RT Broadcast LOCAL: gen=2, legacy=0, rs_fec=1, usb4=1, l0_en=1, l1_en=1
+ACIO-SYSLOG high_speed_lane.c:2219: RT Broadcast REMOTE: gen=2, legacy=0, rs_fec=1, usb4=1, l0_en=1, l1_en=1
+NHI unsolicited rx=62 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000001 1045f6c6
+NHI-EVENT-ACK SENT route=0 port=1 unplug=0 count=3
+NHI lane1 state=2 raw=003c0114 4814001c time-ms=1212
+NHI unsolicited rx=64 sof=0 eof=5 bytes=16 words= 80000000 00000000 00000002 03150532
+NHI-EVENT-ACK SENT route=0 port=2 unplug=0 count=4
+NHI lane2 state=2 raw=003c0128 4814001c time-ms=1251
+NHI-REMOTE-READ PASS route=1 header=2463174c 000101c0 00000000 00000000 2000000a; no external writes
+USB4-ROUTER enumerated upstream=1 route=1 CMUV=0x10 parent-pcie=1 parent-usb3=1
+USB4-ROUTER before CS5=00000000 CS6=03000000
+USB4-ROUTER ready CS6=03000000 polls=1
+USB4-ROUTER-SETUP PASS route=1 CS5=83000000 CS6=03000000 polls=1; no paths
+REMOTE-INVENTORY router=2463174c max-port=4 upstream=1 depth=1 route=00000000:00000001 enabled=1
+REMOTE-INVENTORY port=1 type=000001 max-in=27 max-out=27 header=00000000 00080740 01000001 00100000 44200000 0000d81b 00000000 00000061
+REMOTE-INVENTORY port=2 type=000001 max-in=27 max-out=27 header=00000000 00080740 01000001 00200000 44200000 0000d81b 00000000 00000068
+REMOTE-INVENTORY port=3 type=100102 max-in=8 max-out=8 header=00000000 00080109 01100102 00300000 00000000 00004008 00000000 00000000
+REMOTE-INVENTORY port=4 type=000000 max-in=8 max-out=8 header=00000000 00080109 01000000 00400000 00000000 00004008 00000000 00000000
+REMOTE-INVENTORY cap port=1 offset=0x40 id=3 raw=00000380
+REMOTE-INVENTORY cap port=1 offset=0x80 id=1 raw=003c01c0
+REMOTE-INVENTORY cap port=1 offset=0xc0 id=6 raw=00000600
+REMOTE-INVENTORY cap port=2 offset=0x40 id=3 raw=00000380
+REMOTE-INVENTORY cap port=2 offset=0x80 id=1 raw=003c0100
+REMOTE-INVENTORY cap port=3 offset=0x9 id=4 raw=000e0400
+REMOTE-INVENTORY PASS reads=11; no remote writes, paths or SSD access
+USB4-PREFLIGHT discovered host-pcie=3 host-lane=1 remote-lane=1 remote-pcie=3
+USB4-PREFLIGHT route=0 port=3 cap=0x9 cap-word=000e040a buffers=0ae00000 path8=00000000 00000000 control0=00000000 00000000
+USB4-PREFLIGHT route=0 port=1 cap=0x11 cap-word=003c0114 buffers=4ae00000 path8=00000000 00000000 control0=00040000 00000000
+USB4-PREFLIGHT route=1 port=3 cap=0x9 cap-word=000e0400 buffers=00000000 path8=00000008 00000000 control0=00000000 00000000
+USB4-PREFLIGHT route=1 port=1 cap=0x80 cap-word=003c01c0 buffers=44200000 path8=00000000 00000000 control0=00040000 00000000
+USB4-PREFLIGHT PASS; discovered endpoints and inactive paths; no path writes
+ATC-EXTENDED core[0x8]=0x11833fef
+ATC-EXTENDED core[0x48]=0x0
+ATC-EXTENDED core[0x4c]=0x0
+ATC-EXTENDED core[0x1b0]=0x15570cff
+ATC-EXTENDED core[0x804]=0x0
+ATC-EXTENDED core[0xa00]=0x13c180
+ATC-EXTENDED core[0xa04]=0x2c
+ATC-EXTENDED core[0xa20]=0x652d6a
+ATC-EXTENDED core[0xa74]=0x581f
+ATC-EXTENDED core[0x1014]=0x1fe000
+ATC-EXTENDED core[0x1028]=0x830630
+ATC-EXTENDED core[0x2000]=0x10000000
+ATC-EXTENDED core[0x2200]=0x2000
+ATC-EXTENDED core[0x2208]=0x180001
+ATC-EXTENDED core[0x2214]=0x1e0
+ATC-EXTENDED core[0x2220]=0x11090a2
+ATC-EXTENDED core[0x2224]=0x20086001
+ATC-EXTENDED core[0x2a00]=0x2022
+ATC-EXTENDED core[0x2a20]=0x12b6823
+ATC-EXTENDED core[0x2a38]=0x5400a4
+ATC-EXTENDED core[0x2aa4]=0x1004201
+ATC-EXTENDED core[0x9010]=0x53600000
+ATC-EXTENDED core[0x90f0]=0x0
+ATC-EXTENDED core[0xb000]=0xb01c5
+ATC-EXTENDED core[0xb004]=0x80f001
+ATC-EXTENDED core[0xb02c]=0x2a800052
+ATC-EXTENDED core[0xb030]=0xaae532bf
+ATC-EXTENDED core[0xb034]=0x330790f
+ATC-EXTENDED core[0xb048]=0x24296080
+ATC-EXTENDED core[0xb054]=0x0
+ATC-EXTENDED core[0xb060]=0x42c50
+ATC-EXTENDED core[0xd000]=0x8
+ATC-EXTENDED core[0xd004]=0x8000000
+ATC-EXTENDED core[0xd008]=0x0
+ATC-EXTENDED core[0x10010]=0x53600000
+ATC-EXTENDED core[0x100f0]=0x0
+ATC-EXTENDED core[0x12000]=0xb01c5
+ATC-EXTENDED core[0x12004]=0x80f001
+ATC-EXTENDED core[0x1202c]=0x2a800052
+ATC-EXTENDED core[0x12030]=0xaae532bf
+ATC-EXTENDED core[0x12034]=0x330790f
+ATC-EXTENDED core[0x12048]=0x24296080
+ATC-EXTENDED core[0x12054]=0x0
+ATC-EXTENDED core[0x12060]=0x42c50
+ATC-EXTENDED core[0x14000]=0x8
+ATC-EXTENDED core[0x14004]=0x8000000
+ATC-EXTENDED core[0x14008]=0x0
+ATC-EXTENDED core[0x20000]=0x1b
+ATC-EXTENDED core[0x20004]=0x3
+ATC-EXTENDED core[0x20008]=0x1
+ATC-EXTENDED pipe[0x0]=0x0
+ATC-EXTENDED pipe[0x4]=0x10
+ATC-EXTENDED pipe[0xc]=0x11
+ATC-EXTENDED pipe[0x10]=0x0
+ATC-EXTENDED pipe[0x14]=0x0
+ATC-EXTENDED pipe[0x1c]=0x1
+ATC-EXTENDED pipe[0x20]=0x9332
+ATC-EXTENDED usb2[0x0]=0x102
+ATC-EXTENDED usb2[0x4]=0x4
+ATC-EXTENDED usb2[0x8]=0x41700f
+ATC-EXTENDED usb2[0x1c]=0x8c0813
+NHI-QUIESCE PASS; both control rings stopped, buffers retained
+NHI inventory transport ret=0 sent=127 received=127 DART-error=0x20000
+NHI control buffers and DART retained until mandatory reset
+ACIO-SYSLOG service messages=11 ret=0
+ACIO-MBOX after-nhi tx=0x23301 rx=0x23301
+ACIO RTKit shutdown ret=0
+ACIO-PROBE57 pin41 applied=1 changed=1 before=0087600e written=0087622e readback=0087622f
+ACIO-PROBE56 preserve-start applied=1 before=00000003 written=00000003
+ACIO-PROBE53 adapter applied=1 written=00000006 readback=00000006; adapter diagnostic
+ACIO-PROBE52 start-before valid=1 rc0c=00000003 original-write=00000002 aurora-write=00000003
+ACIO-PROBE52 adapter slot=0 valid=1 reg1008=00000000 mask=00000006 expected=00000006 masked=00000000
+ACIO-PROBE52 adapter slot=1 valid=1 reg1008=00000006 mask=00000006 expected=00000006 masked=00000006
+ACIO diagnostic ret=0; power held until mandatory full reset
+CD321X-POWER-SAMPLE ms=19228 status=108280ef power=000d system=00 plug=1 connection=1 source_sink=0 opmode=3
+M1-XHCI stop ret=0; buffers retained
+ATC-SNAPSHOT after-acio core[0x8]=0x11833fef
+ATC-SNAPSHOT after-acio core[0x48]=0x0
+ATC-SNAPSHOT after-acio core[0x4c]=0x0
+ATC-SNAPSHOT after-acio core[0x1b0]=0x15570cff
+ATC-SNAPSHOT after-acio core[0x2a00]=0x2022
+ATC-SNAPSHOT after-acio core[0x20000]=0x1b
+ATC-SNAPSHOT after-acio core[0x20004]=0x3
+ATC-SNAPSHOT after-acio core[0x20008]=0x1
+ATC-SNAPSHOT after-acio core[0x9010]=0x53600000
+ATC-SNAPSHOT after-acio core[0x10010]=0x53600000
+ATC-SNAPSHOT after-acio pipe[0x0]=0x0
+ATC-SNAPSHOT after-acio pipe[0x4]=0x10
+ATC-SNAPSHOT after-acio pipe[0xc]=0x11
+ATC-SNAPSHOT after-acio pipe[0x10]=0x0
+ATC-SNAPSHOT after-acio pipe[0x14]=0x0
+ATC-SNAPSHOT after-acio pipe[0x1c]=0x1
+ATC-SNAPSHOT after-acio pipe[0x20]=0x9332
+USB2-SNAPSHOT after-acio control=0x102 reset=0x4 signal=0x41700f misc=0x8c0813
+DWC3-SNAPSHOT after-acio reg[0xc110]=0x30c11004
+DWC3-SNAPSHOT after-acio reg[0xc11c]=0x1908
+DWC3-SNAPSHOT after-acio reg[0xc120]=0x33313130
+DWC3-SNAPSHOT after-acio reg[0xc12c]=0xa416802
+DWC3-SNAPSHOT after-acio reg[0xc140]=0x4020800a
+DWC3-SNAPSHOT after-acio reg[0xc144]=0x2092486
+DWC3-SNAPSHOT after-acio reg[0xc14c]=0x10420086
+DWC3-SNAPSHOT after-acio reg[0xc200]=0x102540
+DWC3-SNAPSHOT after-acio reg[0xc2c0]=0x1021102
+DWC3-SNAPSHOT after-acio reg[0xc630]=0xa87f020
+DWC3-SNAPSHOT after-acio reg[0xcd38]=0xf800f80
+DWC3-SNAPSHOT after-acio reg[0xcd3c]=0xfc00fc0
+DWC3-SNAPSHOT after-acio reg[0xcd40]=0x3c140a10
+DWC3-SNAPSHOT after-acio command=0x0 status=0x1
+BOOT-TIMING ms=15850 delta=0 event=phy-sequence-begin
+BOOT-TIMING ms=15900 delta=50 event=phy-sequence-return
+BOOT-TIMING ms=16334 delta=484 event=acio-preflight-complete
+BOOT-TIMING ms=16399 delta=549 event=acio-domains-on
+BOOT-TIMING ms=16412 delta=562 event=acio-reset-ready
+BOOT-TIMING ms=16421 delta=571 event=m3-start-write
+BOOT-TIMING ms=16433 delta=583 event=rtkit-boot-return
+BOOT-TIMING ms=16464 delta=614 event=rtkit-ap-on-return
+BOOT-TIMING ms=16474 delta=624 event=firmware-state-poll-return
+BOOT-TIMING ms=16519 delta=669 event=rc-tunables-begin
+BOOT-TIMING ms=16531 delta=681 event=rc-tunables-return
+BOOT-TIMING ms=16737 delta=887 event=nhi-dart-probe-begin
+BOOT-TIMING ms=16738 delta=888 event=nhi-dart-probe-return
+BOOT-TIMING ms=16752 delta=902 event=nhi-tunables-begin
+BOOT-TIMING ms=16765 delta=915 event=nhi-tunables-return
+BOOT-TIMING ms=16777 delta=927 event=nhi-control-rings-started
+BOOT-TIMING ms=16794 delta=944 event=rtkit-message-consumed
+BOOT-TIMING ms=16805 delta=955 event=rtkit-message-consumed
+BOOT-TIMING ms=17321 delta=1471 event=pciec-cold-prepare-begin
+BOOT-TIMING ms=17321 delta=1471 event=pciec-cold-prepare-return
+BOOT-TIMING ms=17346 delta=1496 event=lane-unlock-verified
+BOOT-TIMING ms=17357 delta=1507 event=cable-info-submit
+BOOT-TIMING ms=17370 delta=1520 event=rtkit-message-consumed
+BOOT-TIMING ms=17382 delta=1532 event=rtkit-message-consumed
+BOOT-TIMING ms=17382 delta=1532 event=cable-info-readback-verified
+BOOT-TIMING ms=17392 delta=1542 event=dwc3-host-begin
+BOOT-TIMING ms=17442 delta=1592 event=dwc3-core-init-begin
+BOOT-TIMING ms=17442 delta=1592 event=dwc3-core-init-return
+BOOT-TIMING ms=17476 delta=1626 event=dwc3-host-return
+BOOT-TIMING ms=17658 delta=1808 event=late-pipe-begin
+BOOT-TIMING ms=17694 delta=1844 event=late-pipe-return
+BOOT-TIMING ms=17734 delta=1884 event=xhci-start-begin
+BOOT-TIMING ms=17808 delta=1958 event=xhci-start-return
+BOOT-TIMING ms=17870 delta=2020 event=rtkit-message-consumed
+BOOT-TIMING ms=17882 delta=2032 event=rtkit-message-consumed
+BOOT-TIMING ms=17896 delta=2046 event=rtkit-message-consumed
+BOOT-TIMING ms=17908 delta=2058 event=rtkit-message-consumed
+BOOT-TIMING ms=19044 delta=3194 event=link-observation-return
+BOOT-TIMING ms=19106 delta=3256 event=rtkit-shutdown-begin
+BOOT-TIMING ms=19106 delta=3256 event=rtkit-shutdown-return
+BOOT-TIMING ms=19246 delta=3396 event=xhci-stop-begin
+BOOT-TIMING ms=19246 delta=3396 event=xhci-stop-return
+BOOT-TIMING count=42 dropped=0
+Diagnostic state only: reset before any OS handover
+USB4CHECK END command_result=0; reset required
+
+USB4CHECK SUMMARY result=0 truncated=0 bytes=20768

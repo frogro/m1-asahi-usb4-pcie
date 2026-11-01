@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "summary": "CASES 33 PASS; transaction failure injection 20",
+  "ASan": true,
+  "UBSan": true
+}

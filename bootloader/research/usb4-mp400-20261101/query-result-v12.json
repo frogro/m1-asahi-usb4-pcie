@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "summary": "QUERY FAULT TESTS: 2615 cases, zero failures",
+  "ASan": true,
+  "UBSan": true
+}

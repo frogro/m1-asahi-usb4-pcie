@@ -1,0 +1,40 @@
+{
+  "all_passed": true,
+  "results": [
+    {
+      "test": "test-router-v10.py",
+      "returncode": 0,
+      "summary": "CASES 33 PASS; transaction failure injection 20"
+    },
+    {
+      "test": "test-router-write-v10.py",
+      "returncode": 0,
+      "summary": "CASES 265 PASS"
+    },
+    {
+      "test": "test-preflight-v13.py",
+      "returncode": 0,
+      "summary": "CASES 37 PASS; transaction failure injection 26"
+    },
+    {
+      "test": "test-query-v12.py",
+      "returncode": 0,
+      "summary": "QUERY FAULT TESTS: 2615 cases, zero failures"
+    },
+    {
+      "test": "test-credit-guard-v12.py",
+      "returncode": 0,
+      "summary": "CASES 4865 PASS"
+    },
+    {
+      "test": "test-paths-v15.py",
+      "returncode": 0,
+      "summary": "CASES 57 PASS; full programming/restore transactions 25"
+    },
+    {
+      "test": "test-endpoint-v15.py",
+      "returncode": 0,
+      "summary": "CASES 29 PASS; transactions 13; bounded NVMe read callback sequenced before adapter shutdown"
+    }
+  ]
+}

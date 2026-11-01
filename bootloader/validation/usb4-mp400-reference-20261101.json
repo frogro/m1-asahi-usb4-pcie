@@ -1,6 +1,6 @@
 {
   "date": "2026-11-01",
-  "status": "Linux reference confirmed; pre-OS USB4 result not yet captured",
+  "status": "Superseded by usb4-mp400-router-20261101.json: native USB4 link/router/path setup established",
   "priority": "Continue existing USB4 work after prioritised Yottamaster TB3 integration",
   "scope": "MP400/Samsung current reference compared to prior OWC and Fanxiang records; no SSD writes or formatting",
   "linux_reference": {
@@ -331,5 +331,6 @@
     "automatic_restore_service": "disabled after successful restore",
     "no_diagnostic_installed": true
   },
-  "next_step": "Prove early U-Boot entry and persistent logging independently, then repeat existing USB4 host/PHY/ACIO sequence with MP400. Do not change tunnel resources blindly or call Linux enumeration a pre-OS boot pass."
+  "next_step": "Prove early U-Boot entry and persistent logging independently, then repeat existing USB4 host/PHY/ACIO sequence with MP400. Do not change tunnel resources blindly or call Linux enumeration a pre-OS boot pass.",
+  "followup": "usb4-mp400-router-20261101.json"
 }

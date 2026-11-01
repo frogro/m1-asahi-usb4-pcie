@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "summary": "CASES 37 PASS; transaction failure injection 26",
+  "ASan": true,
+  "UBSan": true,
+  "PCIe_capability_register_width": "one DWORD, mock rejects adjacent read"
+}
