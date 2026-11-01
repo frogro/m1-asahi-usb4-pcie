@@ -40,7 +40,11 @@ resource / -22 and DCP PIODMA child-device creation failures. Correct the
 initial acceptance: menu display and kernel entry are confirmed; a functioning
 Googlebooks graphical system is NOT confirmed. Googlebooks through the dock
 remains untested. A comparison through the original Apple Ubuntu entry and
-its unchanged Googlebook GRUB item is pending, with cabling kept unchanged.
+its unchanged Googlebook GRUB item reproduced the same visible failure, as
+confirmed by the user and photo image-1793558283804.jpg. This is not specific
+to the new menu. Shared boot files, firmware/device-tree expectations, OWC
+access and retained hardware state still require diagnosis; the visible
+messages alone do not identify which condition prevents the graphical start.
 There is no claimed Android automatic-return timer.
 A guarded rollback helper and original files remain in the backup directory.
 
