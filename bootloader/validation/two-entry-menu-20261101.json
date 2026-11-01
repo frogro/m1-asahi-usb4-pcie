@@ -31,11 +31,13 @@
   "googlebooks_kernel_initrd_unchanged": true,
   "backup_directory": "/var/lib/asahi-two-entry-menu-20261101",
   "hardware_test": {
-    "result": "passed",
+    "result": "GRUB menu and Googlebooks kernel entry passed; Googlebooks graphical boot not accepted",
     "user_confirmation": "Zweiermen\u00fc und Googlebooks sichtbar",
     "owc_connection": "direct Mac USB-C, USB UAS 10000 Mb/s confirmed before reboot",
     "dock_googlebooks_boot": "not validated: first attempt stopped at GRUB packaging fault",
-    "ubuntu_new_menu_boot": "not retested in this turn; previous external desktop parameters unchanged"
+    "ubuntu_new_menu_boot": "not retested in this turn; previous external desktop parameters unchanged",
+    "followup_photo": "User photo 1000012560.jpg shows Googlebook starting Android, AVD Invalid resource / error -22, DCP failed to create PIODMA iomem child device, USB address error -71; no graphical UI shown.",
+    "original_ubuntu_grub_comparison": "requested; pending user result"
   },
   "efi_correction": "Initial standalone memdisk config unreadable, reproduced in QEMU; direct embedded early normal dispatch verified in QEMU.",
   "qemu": {

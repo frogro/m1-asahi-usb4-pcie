@@ -34,8 +34,13 @@ No Android kernel boot was claimed from QEMU.
 
 Both installed EFI copies were replaced and verified. The user moved OWC from
 the dock to direct Mac USB-C; Linux confirmed USB UAS at 10000 Mb/s and the same
-Googlebooks partition. A corrected one-shot boot was dispatched. The user confirmed the two-entry menu and Googlebooks visible. This accepts
-the direct USB connection only; Googlebooks through the dock remains untested.
+Googlebooks partition. A corrected one-shot boot was dispatched. The user initially reported the two-entry menu and Googlebooks visible. A
+subsequent photo shows only kernel/bootstrap output, including AVD invalid
+resource / -22 and DCP PIODMA child-device creation failures. Correct the
+initial acceptance: menu display and kernel entry are confirmed; a functioning
+Googlebooks graphical system is NOT confirmed. Googlebooks through the dock
+remains untested. A comparison through the original Apple Ubuntu entry and
+its unchanged Googlebook GRUB item is pending, with cabling kept unchanged.
 There is no claimed Android automatic-return timer.
 A guarded rollback helper and original files remain in the backup directory.
 
