@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "base_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "version": "20261101-efi-rc1",
+  "patches": [
+    {
+      "file": "../patches/0001-iommu-resolve-pci-map-without-ofnode.patch",
+      "sha256": "6304abc0a6d29986c87c883a82993851c61eb44b14c873066f22cf91941d3fa9"
+    },
+    {
+      "file": "../patches/0002-iommu-apple-usb4-dart-prototype.patch",
+      "sha256": "ccc5e62020c67d172b10b05a56f898f3fdd4192de5114b554365d6484a46198e"
+    },
+    {
+      "file": "../patches/0003-iommu-validate-pci-map-ranges.patch",
+      "sha256": "7985915272c86bd320095f86244601427c23725fec220c13b4e67c726d3b31ba"
+    },
+    {
+      "file": "../patches/0004-mailbox-apple-bound-full-queue-waits.patch",
+      "sha256": "433b6772d8638c07aa493aba01f03030a43eec08e7ff3e1d063a7db696dc09f8"
+    },
+    {
+      "file": "../patches/0005-usb4-add-configuration-packet-codec.patch",
+      "sha256": "843b4acd83d6b3d198216e1fc19cabb17a99f318b8a6a9e1a5c969c7e9730760"
+    },
+    {
+      "file": "../patches/0006-iommu-apple-reject-invalid-dma-reservations.patch",
+      "sha256": "1d5d5cf02d7d071879151558e07c00ef230ee7d3e3fdf5dfa7260c2c17e24bb5"
+    },
+    {
+      "file": "../patches/0007-i2c-apple-add-bounded-polled-transfers.patch",
+      "sha256": "af8445c8f8b7c07d1e434587e057fac29d2df39ac3a9d836dd6108005ace92cc"
+    },
+    {
+      "file": "../patches/0008-usb4-add-read-only-cd321x-status.patch",
+      "sha256": "71733d214d62deb61165fb97a1250a525af58b5dc9d0439f1d8a129dfcade96e"
+    },
+    {
+      "file": "patches/0009-apple-integrate-tested-tb-boot-path.patch",
+      "sha256": "144ceca52bd3e89f736d614305602742310d999182e9a4e9b498e07645873d5f"
+    },
+    {
+      "file": "patches/0010-apple-use-standard-EFI-boot-and-native-port-handover.patch",
+      "sha256": "8e34c4766f29040c19c8b49d195ea624229a23ba7de1f55cf332645fe8b3b919"
+    }
+  ],
+  "scope": "J274 M1; integrated full U-Boot with internal NVMe, USB, and port1 TB3 EFI boot",
+  "not_yet_universal": [
+    "port0 pre-OS tunnel",
+    "native USB4 enclosure link",
+    "multiple NVMe endpoints/namespaces",
+    "external-router configuration still guards Intel 8086:15da"
+  ],
+  "upstream_source": "https://github.com/AsahiLinux/u-boot",
+  "no_m1n1_source_modifications": true,
+  "hardware_result": "three external TB root boots, one internal Ubuntu and one USB-A SanDisk root boot passed using the same integrated U-Boot",
+  "confirmed_hardware": [
+    "TB3 Samsung root with unchanged egpu3 kernel",
+    "both Linux ports enabled",
+    "Dynabook and all four Radeon drivers bound",
+    "user observed two monitors",
+    "Existing internal Ubuntu GRUB and stock kernel boot",
+    "Existing USB-A SanDisk GRUB, kernel/initramfs and USB root boot",
+    "One-shot menu selection consumed correctly"
+  ],
+  "kernel_findings_deferred": [
+    "PCIe tunnel reset release timeouts recovered by normal enumeration",
+    "NetworkManager-wait-online timeout",
+    "Radeon USB-C display absent on second boot; diagnosis pending",
+    "SanDisk retains older egpu1 image and missing AVD firmware; not modified in this bootloader test",
+    "grub2-common service failure under investigation"
+  ]
+}

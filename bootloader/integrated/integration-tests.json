@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "efi_read_cases": 9,
+  "efi_selection_cases": 4,
+  "actual_fdt_handover": true,
+  "sanitizers": "ASan+UBSan"
+}

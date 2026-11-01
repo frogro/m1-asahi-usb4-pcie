@@ -1,0 +1,16 @@
+{
+  "base": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "version": "20261101-efi-rc1",
+  "bundle_sha256": "7dd9bc657620925bf4aa796efb91ac29c570cf4cbf1ddab612ef6dfe9cf5cc47",
+  "uboot_sha256": "f31024262b9d6cf8afd906e1827f662af40b9c4ced97763ae0c22db443a7d4d8",
+  "grub_sha256": "42d7189a1ff62a82e983edc335d9bc4d059be3e5c1a44bb2cafae4038db8ef95",
+  "kernel_unchanged": "7.2.12-usb4sd4-egpu3",
+  "policy": "scan GPT ESP and boot /EFI/BOOT/BOOTAA64.EFI",
+  "fixed_disk_or_kernel_in_transport": false,
+  "native_linux_ports": [
+    0,
+    1
+  ],
+  "hardware_transport_scope": "J274 M1 port1 TB3, one NVMe namespace; USB4 native and port0 pre-OS tunnel still require integration/validation",
+  "hardware_validated": false
+}

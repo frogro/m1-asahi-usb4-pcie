@@ -1,0 +1,56 @@
+{
+  "apple_dart*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 7, 101 ms, average: 14 ms, failures: 0"
+    ]
+  },
+  "iommu*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 8, 71 ms, average: 8 ms, failures: 0"
+    ]
+  },
+  "pci*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 18, 115 ms, average: 6 ms, failures: 0"
+    ]
+  },
+  "apple_mbox*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 3, 4026 ms, average: 1342 ms, failures: 0"
+    ]
+  },
+  "usb4_cfg*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 6, 2 ms, average: 0 ms, failures: 0"
+    ]
+  },
+  "apple_i2c*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 6, 202 ms, average: 33 ms, failures: 0"
+    ]
+  },
+  "cd321x*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 10, 4 ms, average: 0 ms, failures: 0"
+    ]
+  },
+  "atc_m1*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 15, 259 ms, average: 17 ms, failures: 0"
+    ]
+  },
+  "pciec_m1*": {
+    "exit": 0,
+    "summary": [
+      "Tests run: 4, 8 ms, average: 2 ms, failures: 0"
+    ]
+  }
+}

@@ -1,5 +1,7 @@
 # Separate boot environment: Asahi Linux
 
+**Current integrated native TB boot work:** see [integrated/README.md](integrated/README.md) and its pinned ten-patch manifest. The older feature-only profile and historical prototype checks below remain separately reproducible; their limitations are not a description of the new integration.
+
 The requested Apple boot-picker name is exactly **Asahi Linux**. This is the
 name of a new APFS boot container, not a replacement name for every GRUB entry.
 The intended environment offers internal Linux, external USB sticks/USB SSDs,

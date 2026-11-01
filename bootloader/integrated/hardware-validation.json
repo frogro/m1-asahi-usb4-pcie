@@ -1,0 +1,56 @@
+{
+  "boots": [
+    {
+      "id": "efd64b11-f5a6-42fe-a131-354b93bb87d1",
+      "root": "TB Samsung",
+      "kernel": "7.2.12-usb4sd4-egpu3",
+      "user_two_monitors": true
+    },
+    {
+      "id": "e7f2e1d0-6a6d-4ab4-9e0b-0d7359327ed1",
+      "root": "TB Samsung",
+      "kernel": "7.2.12-usb4sd4-egpu3",
+      "all_four_radeon_drivers": true,
+      "radeon_connector": "all disconnected at check",
+      "blocked_tasks": false
+    },
+    {
+      "id": "398eb69c-1d60-4b6b-a92b-e730f790bc9d",
+      "root": "internal Ubuntu",
+      "kernel": "7.2.0-1001-asahi-arm",
+      "integration_marker": "20261101-efi-rc1",
+      "menu": "existing internal GRUB",
+      "one_shot_consumed": true
+    },
+    {
+      "id": "05db1c3b-e3ba-4101-b77a-7b028c3b639b",
+      "root": "TB Samsung",
+      "kernel": "7.2.12-usb4sd4-egpu3",
+      "all_four_radeon_drivers": true,
+      "radeon_connector": "all disconnected at check",
+      "blocked_tasks": false,
+      "wifi_connected": true
+    },
+    {
+      "id": "2bfac073-7ee3-404f-96e3-974f962ad468",
+      "root": "USB SanDisk /dev/sda3",
+      "root_uuid": "a2220ec6-aada-4bda-8049-ca5638794afd",
+      "kernel": "7.2.12-usb4sd4-egpu1",
+      "integration_marker": "20261101-efi-rc1",
+      "failed_units": 0,
+      "note": "Older system: missing AVD firmware and PCIe probe failures; not newest kernel acceptance."
+    }
+  ],
+  "audio_module_installed": false,
+  "priority": "boot integration and regression observation",
+  "usb_boot_scope": "Integrated U-Boot loads EFI/GRUB from TB SSD; GRUB selects USB kernel/initramfs/root at Mac USB-A. Not a test with TB SSD absent.",
+  "fallback": "Original Ubuntu Apple default and its boot.bin unchanged; Asahi Linux uses independent ESP and one-shot selection.",
+  "observed_failures": [
+    "Known PCIe reset release timeouts before later successful enumeration on egpu3",
+    "grub2-common.service failed on latest Yotta boot; diagnosis pending",
+    "Radeon display connectors disconnected at boots2/3, despite all four drivers bound",
+    "SanDisk older userspace lacks remote passwordless sudo; local restart requested"
+  ],
+  "installed_bundle_sha256": "7dd9bc657620925bf4aa796efb91ac29c570cf4cbf1ddab612ef6dfe9cf5cc47",
+  "original_ubuntu_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60"
+}

@@ -1,0 +1,511 @@
+diff --git a/arch/arm/mach-apple/board.c b/arch/arm/mach-apple/board.c
+index 35276354..bb1bfc4b 100644
+--- a/arch/arm/mach-apple/board.c
++++ b/arch/arm/mach-apple/board.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <dm.h>
++#include <apple_pciec_m1.h>
+ #include <dm/uclass-internal.h>
+ #include <efi_loader.h>
+ #include <env.h>
+@@ -972,6 +973,11 @@ int ft_board_setup(void *blob, struct bd_info *bd)
+ 	const char *stdoutname;
+ 	int node, ret;
+ 
++#if IS_ENABLED(CONFIG_CMD_APPLE_ATC_M1)
++	ret = apple_tb_os_fdt(blob);
++	if (ret) return ret;
++#endif
++
+ 	/*
+ 	 * Modify the "stdout-path" property under "/chosen" to point
+ 	 * at "/chosen/framebuffer if a keyboard is available and
+diff --git a/cmd/apple_atc_m1.c b/cmd/apple_atc_m1.c
+index 028885cf..a5281d86 100644
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -608,3 +608,23 @@ fail:
+ U_BOOT_CMD(atcm1, 3, 0, do_atcm1,
+ 	   "explicit M1 port1 PHY diagnostic, requires reset afterwards",
+ 	   "1 check|start|acio|nhi|dart|tune|host|hostrun|fresh|tbonly|usb4host|usb4query|usb4snapshot|usb4power|usb4pciec|tbtpciec - bounded diagnostic; hostrun/usb4host also enable xHCI DMA");
++
++
++static int do_tbboot(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++ char *check[] = { "atcm1", "1", "check" };
++ char *start[] = { "atcm1", "1", "tbtpciec" };
++ if (argc != 1) return CMD_RET_USAGE;
++ /* No link / USB-only cable: no PHY writes were made. Standard internal and
++  * USB bootflow remains usable. TB3 setup errors after writes require reset,
++  * so a partially live controller is never handed to an OS as a fallback. */
++ if (do_atcm1(cmdtp, flag, 3, check)) {
++  puts("TB: no supported external link; continuing standard bootflow\n");
++  return run_command("bootflow scan -lb", 0);
++ }
++ do_atcm1(cmdtp, flag, 3, start);
++ puts("TB boot returned; resetting before fallback to the default Apple OS\n");
++ return run_command("reset", 0);
++}
++U_BOOT_CMD(tbboot, 1, 0, do_tbboot,
++           "boot a Thunderbolt EFI system or scan internal/USB media", "");
+diff --git a/cmd/apple_pciec_m1.c b/cmd/apple_pciec_m1.c
+index 6b4c3c2c..d44025e6 100644
+--- a/cmd/apple_pciec_m1.c
++++ b/cmd/apple_pciec_m1.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0
+-/* Explicit, RAM-only J274 port1 PCIe-C preparation. Never auto-probed. */
++/* J274 port1 PCIe-C transport and read-only EFI boot integration. */
+ #include <apple_pciec_m1.h>
+ #include <linux/errno.h>
+ #ifdef CONFIG_ARCH_APPLE
+@@ -256,7 +256,7 @@ static struct {
+  u64 sectors;
+  unsigned blksz;
+  struct tb_queue q[2];
+- bool live, dma, failed, files_loaded, boot_ready;
++ bool live, dma, failed;
+ } tb;
+ 
+ static int tb_health(void)
+@@ -361,159 +361,6 @@ static int tb_fs_open(unsigned part)
+  struct blk_desc *desc=dev_get_uclass_plat(tb.blk);
+  return fs_set_blk_dev_with_part(desc,part);
+ }
+-static int tb_load_boot(const char *name, const char *address, ulong limit,
+-                       const char *size_env, const char *known_hash)
+-{
+- loff_t size,actual; ulong dest=env_get_hex(address,0); int ret;
+- u8 digest[32]; char printed[65]; unsigned i;
+- ret=tb_fs_open(2);if(ret)return ret;
+- ret=fs_size(name,&size);fs_close();
+- if(ret||size<=0||size>limit||!dest) return -ERANGE;
+- ret=tb_fs_open(2);if(ret)return ret;
+- ret=fs_read(name,dest,0,size,&actual);fs_close();
+- if(ret||actual!=size)return -EIO;
+- sha256_csum_wd((void*)dest,size,digest,CHUNKSZ_SHA256);
+- for(i=0;i<32;i++)sprintf(printed+2*i,"%02x",digest[i]);
+- printf("TB-BOOT-FILE %s bytes=%llu addr=%lx sha256=%s expected-match=%u\n",name,(unsigned long long)size,dest,printed,!strcmp(printed,known_hash));
+- env_set_hex(size_env,size);
+- return strcmp(printed,known_hash)?-EBADMSG:0;
+-}
+-
+-/* Exercise the real EFI protocols while the diagnostic tunnel is still live.
+- * Explicit opt-in, known disk UUIDs checked by tb_files(), no EFI app executed.
+- * The no-store build and read-only block operations forbid persistent writes.
+- */
+-static int tb_efi_read_probe(void)
+-{
+- struct udevice *child, *esp = NULL;
+- struct efi_handler *handler;
+- struct efi_block_io *bio;
+- struct efi_simple_file_system_protocol *fs;
+- struct efi_file_handle *root = NULL, *file = NULL;
+- efi_handle_t handle;
+- efi_status_t status, closing;
+- struct disk_part *part;
+- u8 *buffer = NULL, digest[32];
+- char printed[65];
+- loff_t size;
+- efi_uintn_t count;
+- ulong begin;
+- unsigned i, total = 0;
+- int ret = -EIO;
+- const char *known = "e9c439d22305d4962befc73ba0b2dbb6bef0cd7113399765ae9bc302bd3d269f";
+-
+- env_set("probe_efi", "FAIL");
+- if (!IS_ENABLED(CONFIG_EFI_VARIABLE_NO_STORE) ||
+-     IS_ENABLED(CONFIG_EFI_VARIABLE_FILE_STORE) ||
+-     !tb.live || !tb.dma || tb.failed || !tb.files_loaded)
+-  return -EPERM;
+- /* Determine the expected size through the already verified block path. */
+- if (tb_fs_open(1)) return -ENODEV;
+- ret = fs_size("/EFI/BOOT/BOOTAA64.EFI", &size); fs_close();
+- if (ret || size < 1 || size > 8 * 1024 * 1024) return -ERANGE;
+- buffer = memalign(4096, ALIGN(size + 1, 4096));
+- if (!buffer) return -ENOMEM;
+- memset(buffer, 0, 4096);
+- ret = -EIO;
+- begin = get_timer(0);
+- status = efi_init_obj_list();
+- printf("TB-EFI init status=%lx elapsed=%lums\n", status, get_timer(begin));
+- if (status != EFI_SUCCESS) goto out;
+- if (dev_tag_get_ptr(tb.blk, DM_TAG_EFI, (void **)&handle)) goto out;
+- status = efi_search_protocol(handle, &efi_block_io_guid, &handler);
+- if (status != EFI_SUCCESS) goto out;
+- bio = handler->protocol_interface;
+- if (!bio || !bio->media || bio->media->block_size != tb.blksz ||
+-     bio->media->last_block != tb.sectors - 1) goto out;
+- bio->media->read_only = true;
+- status = EFI_CALL(bio->read_blocks(bio, bio->media->media_id, 1, tb.blksz, buffer));
+- printf("TB-EFI raw-GPT status=%lx signature=%.8s\n", status, buffer);
+- if (status != EFI_SUCCESS || memcmp(buffer, "EFI PART", 8)) goto out;
+- device_foreach_child(child, tb.blk) {
+-  if (device_get_uclass_id(child) != UCLASS_PARTITION) continue;
+-  part = dev_get_uclass_plat(child);
+-  if (part->partnum == 1) {
+-   if (esp) goto out;
+-   esp = child;
+-  }
+- }
+- if (!esp || dev_tag_get_ptr(esp, DM_TAG_EFI, (void **)&handle)) goto out;
+- status = efi_search_protocol(handle, &efi_simple_file_system_protocol_guid, &handler);
+- if (status != EFI_SUCCESS) goto out;
+- fs = handler->protocol_interface;
+- status = EFI_CALL(fs->open_volume(fs, &root));
+- printf("TB-EFI open-volume status=%lx\n", status);
+- if (status != EFI_SUCCESS || !root) goto out;
+- status = EFI_CALL(root->open(root, &file, u"\\EFI\\BOOT\\BOOTAA64.EFI", EFI_FILE_MODE_READ, 0));
+- printf("TB-EFI open-file status=%lx bytes=%llu\n", status, (unsigned long long)size);
+- if (status != EFI_SUCCESS || !file) goto out;
+- while (total < size) {
+-  if (get_timer(begin) > 30000 || tb_health()) { ret = -ETIMEDOUT; goto out; }
+-  count = min_t(efi_uintn_t, 65536, size - total);
+-  status = EFI_CALL(file->read(file, &count, buffer + total));
+-  if (status != EFI_SUCCESS || !count || count > size - total) goto out;
+-  total += count;
+- }
+- count = 1;
+- status = EFI_CALL(file->read(file, &count, buffer + total));
+- if (status != EFI_SUCCESS || count) goto out;
+- sha256_csum_wd(buffer, total, digest, CHUNKSZ_SHA256);
+- for (i = 0; i < 32; i++) sprintf(printed + 2 * i, "%02x", digest[i]);
+- printf("TB-EFI FILE bytes=%u sha256=%s expected-match=%u elapsed=%lums\n",
+-        total, printed, !strcmp(printed, known), get_timer(begin));
+- ret = strcmp(printed, known) ? -EBADMSG : 0;
+-out:
+- if (file) {
+-  closing = EFI_CALL(file->close(file));
+-  if (closing != EFI_SUCCESS && !ret) ret = -EIO;
+- }
+- if (root) {
+-  closing = EFI_CALL(root->close(root));
+-  if (closing != EFI_SUCCESS && !ret) ret = -EIO;
+- }
+- free(buffer);
+- if (!ret) { env_set("probe_efi", "PASS"); puts("TB-EFI-READ PASS; real BlockIO and File protocols; no EFI image executed\n"); }
+- else printf("TB-EFI-READ FAIL ret=%d\n", ret);
+- return ret;
+-}
+-
+-
+-/* Run a fixed, RAM-supplied GRUB script that reads known files then exits.
+- * This is deliberately not the installed GRUB configuration or an OS handoff.
+- */
+-static int tb_grub_read_probe(void)
+-{
+- const void *payload;
+- void *image;
+- u8 digest[32], sector[4096];
+- char printed[65], command[128];
+- int length, ret;
+- unsigned i;
+- if (!IS_ENABLED(CONFIG_EFI_VARIABLE_NO_STORE) || !tb.live || !tb.dma ||
+-     tb.failed || !tb.files_loaded) return -EPERM;
+- payload = ofnode_get_property(ofnode_path("/config"), "u-boot,probe-grub-image", &length);
+- if (!payload || length != 782336) return -EINVAL;
+- sha256_csum_wd(payload, length, digest, CHUNKSZ_SHA256);
+- for (i = 0; i < 32; i++) sprintf(printed + i * 2, "%02x", digest[i]);
+- if (strcmp(printed, "9fc4474e8d230abcfa24c7dcf49721d230fbff99a97778568c3babfa9f32a561"))
+-  return -EBADMSG;
+- image = memalign(4096, ALIGN(length, 4096));
+- if (!image) return -ENOMEM;
+- memcpy(image, payload, length);
+- snprintf(command, sizeof(command), "bootefi %lx:%x %lx", (ulong)image,
+-          length, (ulong)gd->fdt_blob);
+- puts("TB-GRUB80 ENTER; fixed read-only script; tunnel remains live\n");
+- ret = run_command(command, 0);
+- printf("TB-GRUB80 RETURN command-status=%d; validate GRUB file hashes in UART\n", ret);
+- free(image);
+- if (ret) return -EIO;
+- ret = tb_read_chunk(1, 1, sector);
+- if (ret || memcmp(sector, "EFI PART", 8)) return ret ? ret : -EPROTO;
+- puts("TB-GRUB80 POST-READ PASS; NVMe remains readable after EFI return\n");
+- return 0;
+-}
+-
+-
+ static int tb_quiesce(void);
+ static int tb_linux_fdt(void *dest, const void *source, unsigned size);
+ static bool tb_efi_exit_done;
+@@ -552,118 +399,115 @@ static void EFIAPI tb_efi_exit_notify(struct efi_event *event, void *context)
+  puts("TB-EFI-EXIT PASS; endpoint DMA unmapped, NHI stopped, ACIO asleep\n");
+  EFI_EXIT(EFI_SUCCESS);
+ }
+-static int tb_read_grub_disk(void **image_out, int *length_out)
++/* Standard removable-media EFI policy. No filesystem UUID, OS version,
++ * partition number or image digest is compiled into the transport. The EFI
++ * loader validates the executable; normal U-Boot EFI security policy applies.
++ * The device remains strictly read-only, including EFI variable storage.
++ */
++static int tb_read_efi(unsigned part, void **image_out, int *length_out)
+ {
+- const char *path = "/EFI/CODEXTB/GRUB89.EFI";
++ const char *path = "/EFI/BOOT/BOOTAA64.EFI";
+  loff_t size = 0, actual = 0;
+  void *image;
+  int ret;
+  *image_out = NULL;
+  *length_out = 0;
+- ret = tb_fs_open(1);
++ ret = tb_fs_open(part);
+  if (ret) return ret;
+  ret = fs_size(path, &size);
+  fs_close();
+  if (ret) return ret;
+- if (size != 1519616) return -EINVAL;
++ if (size < 512 || size > 128 * 1024 * 1024) return -EFBIG;
+  image = memalign(4096, ALIGN(size, 4096));
+  if (!image) return -ENOMEM;
+- ret = tb_fs_open(1);
++ ret = tb_fs_open(part);
+  if (ret) { free(image); return ret; }
+  ret = fs_read(path, (ulong)image, 0, size, &actual);
+  fs_close();
+  if (ret || actual != size) { free(image); return ret ? ret : -EIO; }
+  *image_out = image;
+  *length_out = size;
+- puts("TB-GRUB89 image read from Thunderbolt ESP; digest check follows\n");
+  return 0;
+ }
+ 
+-static int tb_grub_boot_probe(void)
++static int tb_find_efi(struct blk_desc *desc, void **image_out, int *length_out)
+ {
+- const void *payload;
+- void *image = NULL;
++ struct disk_partition partition;
++ unsigned part;
++ int ret;
++ *image_out = NULL;
++ *length_out = 0;
++ /* GPT slots can have gaps; do not stop at the first unused slot. */
++ for (part = 1; part <= CONFIG_EFI_PARTITION_ENTRIES_NUMBERS; part++) {
++  ret = part_get_info(desc, part, &partition);
++  if (ret || !(partition.bootable & PART_EFI_SYSTEM_PARTITION)) continue;
++  ret = tb_read_efi(part, image_out, length_out);
++  if (ret == -ENOENT) continue;
++  if (ret) return ret;
++  printf("TB-EFI boot device=%d partition=%u partuuid=%s bytes=%d\n",
++         desc->devnum, part, partition.uuid, *length_out);
++  return 0;
++ }
++ return -ENOENT;
++}
++
++static int tb_boot_efi(void)
++{
++ struct blk_desc *desc;
+  struct efi_event *event = NULL;
++ void *image = NULL;
+  efi_status_t status;
+  ulong dest = env_get_hex("fdt_addr_r", 0);
+- u8 digest[32]; char printed[65], command[128];
+- int length, ret; unsigned i;
++ char command[128];
++ int length = 0, ret;
+  if (!IS_ENABLED(CONFIG_EFI_VARIABLE_NO_STORE) || !tb.live || !tb.dma ||
+-     tb.failed || !tb.files_loaded || !dest) return -EPERM;
+- if (ofnode_read_u32_default(ofnode_path("/config"),
+-                             "u-boot,probe-grub-from-disk", 0) == 89) {
+-  ret = tb_read_grub_disk(&image, &length);
+-  if (ret) return ret;
+-  payload = image;
+- } else {
+-  payload = ofnode_get_property(ofnode_path("/config"), "u-boot,probe-grub-image", &length);
+- }
+- if (!payload || length != 1519616) { free(image); return -EINVAL; }
+- sha256_csum_wd(payload, length, digest, CHUNKSZ_SHA256);
+- for (i = 0; i < 32; i++) sprintf(printed + i * 2, "%02x", digest[i]);
+- if (strcmp(printed, "0a3863fd94e75ad999d2f4be13a23cb50a21edfaf5f33404b612bc0ae0eb633f")) {
+-  free(image); return -EBADMSG;
+- }
+- tb_efi_check_dart = ofnode_read_u32_default(ofnode_path("/config"),
+-                                          "u-boot,probe-checked-dart", 0) == 85;
++     tb.failed || !dest) return -EPERM;
++ ret = blk_create_devicef(gd->dm_root, "tb-nvme-readonly", "tb-nvme-ro",
++                         UCLASS_NVME, -1, tb.blksz, tb.sectors, &tb.blk);
++ if (ret) return ret;
++ desc = dev_get_uclass_plat(tb.blk);
++ strlcpy(desc->vendor, "NVMe", sizeof(desc->vendor));
++ strlcpy(desc->product, "Thunderbolt storage", sizeof(desc->product));
++ ret = device_probe(tb.blk);
++ if (ret) return ret;
++ ret = tb_find_efi(desc, &image, &length);
++ if (ret) return ret;
++ tb_efi_check_dart = true;
+  ret = tb_linux_fdt((void *)dest, gd->fdt_blob, 0x200000);
+  if (ret) { free(image); return ret; }
+- if (!image) {
+-  image = memalign(4096, ALIGN(length, 4096));
+-  if (!image) return -ENOMEM;
+-  memcpy(image, payload, length);
++ /* Register the complete block device and partitions before loading EFI.
++  * Mark the EFI media read-only as well as omitting write block operations. */
++ status = efi_init_obj_list();
++ if (status != EFI_SUCCESS) { free(image); return -EIO; }
++ {
++  struct udevice *child;
++  struct efi_handler *handler;
++  efi_handle_t handle;
++  if (dev_tag_get_ptr(tb.blk, DM_TAG_EFI, (void **)&handle) ||
++      efi_search_protocol(handle, &efi_block_io_guid, &handler) != EFI_SUCCESS) {
++   free(image); return -ENODEV;
++  }
++  ((struct efi_block_io *)handler->protocol_interface)->media->read_only = true;
++  device_foreach_child(child, tb.blk) {
++   if (device_get_uclass_id(child) != UCLASS_PARTITION) continue;
++   if (dev_tag_get_ptr(child, DM_TAG_EFI, (void **)&handle) ||
++       efi_search_protocol(handle, &efi_block_io_guid, &handler) != EFI_SUCCESS) {
++    free(image); return -ENODEV;
++   }
++   ((struct efi_block_io *)handler->protocol_interface)->media->read_only = true;
++  }
+  }
+  status = efi_create_event(EVT_SIGNAL_EXIT_BOOT_SERVICES, TPL_NOTIFY,
+                           tb_efi_exit_notify, NULL, NULL, &event);
+  if (status != EFI_SUCCESS) { free(image); return -EIO; }
+  snprintf(command, sizeof(command), "bootefi %lx:%x %lx", (ulong)image, length, dest);
+- puts("TB-GRUB81 ENTER; GRUB loads Linux from TB, cleanup at ExitBootServices\n");
++ puts("TB-EFI ENTER /EFI/BOOT/BOOTAA64.EFI; OS selection belongs to EFI/GRUB\n");
+  ret = run_command(command, 0);
+- printf("TB-GRUB81 UNEXPECTED RETURN ret=%d exited=%u\n", ret, tb_efi_exit_done);
++ printf("TB-EFI returned ret=%d exited=%u\n", ret, tb_efi_exit_done);
+  if (tb_efi_exit_done) { do_reset(NULL, 0, 0, NULL); hang(); }
+  EFI_CALL(efi_close_event(event));
+  free(image);
+- return -EIO;
+-}
+-
+-static int tb_files(void)
+-{
+- struct blk_desc *desc;struct disk_partition part;unsigned i;int ret;
+- char uuid[128],small[4096];loff_t actual;
+- ret=blk_create_devicef(gd->dm_root,"tb-nvme-readonly","tb-nvme-ro",UCLASS_NVME,-1,tb.blksz,tb.sectors,&tb.blk);
+- if(ret)return ret;
+- desc=dev_get_uclass_plat(tb.blk);strlcpy(desc->vendor,"Samsung",sizeof(desc->vendor));strlcpy(desc->product,"TB read-only diagnostic",sizeof(desc->product));
+- ret=device_probe(tb.blk);if(ret)return ret;
+- for(i=1;i<=4;i++){
+-  ret=part_get_info(desc,i,&part);if(ret)break;
+-  printf("TB-PART %u name=%s start=%llu blocks=%llu uuid=%s\n",i,part.name,(unsigned long long)part.start,(unsigned long long)part.size,part.uuid);
+- }
+- ret=tb_fs_open(2);if(ret)return ret;
+- ret=fs_uuid(uuid);fs_close();if(ret)return ret;
+- printf("TB-BOOT-FS uuid=%s\n",uuid);
+- if(strcmp(uuid,"e10cc27a-5892-4594-befa-2c74255c78cf"))return -ENODEV;
+- ret=tb_fs_open(2);if(ret)return ret;
+- ret=fs_ls("/");fs_close();if(ret)return ret;
+- ret=tb_fs_open(3);if(ret)return ret;
+- ret=fs_uuid(uuid);fs_close();if(ret)return ret;
+- printf("TB-ROOT-FS uuid=%s\n",uuid);
+- if(strcmp(uuid,"1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935"))return -ENODEV;
+- ret=tb_fs_open(3);if(ret)return ret;
+- ret=fs_read("/etc/os-release",(ulong)small,0,sizeof(small)-1,&actual);fs_close();
+- if(ret||actual<1||actual>=sizeof(small))return -EIO;
+- small[actual]=0;printf("TB-OS-RELEASE BEGIN\n%s\nTB-OS-RELEASE END\n",small);
+- ret=tb_load_boot("/Image-7.2.12-usb4sd4-egpu3","kernel_addr_r",0x8000000,"tb_kernel_size","24d6f4eafd4b535597b9b9bccc601711f7c2fb6dfada920809482ab45e6c379b");if(ret)return ret;
+- ret=tb_load_boot("/initrd.img-7.2.12-usb4sd4-egpu3","ramdisk_addr_r",0x40000000,"tb_initrd_size","ef8caa8a96740c0de692dae65c61e8ee398a1eca02545c0d29a245b9d617f910");if(ret)return ret;
+- tb.files_loaded=true;
+- puts("TB-BOOT-FILES PASS; verified image and initramfs are in RAM\n");
+- i = ofnode_read_u32_default(ofnode_path("/config"), "u-boot,probe-nvme-efi", 0);
+- if (i == 79 || i == 80 || i == 81) {
+-  ret = tb_efi_read_probe();
+-  if (ret) return ret;
+-  if (i == 80) return tb_grub_read_probe();
+-  if (i == 81) return tb_grub_boot_probe();
+- }
+- return 0;
++ return ret ? ret : -EIO;
+ }
+ 
+ static int tb_quiesce(void)
+@@ -804,10 +648,10 @@ int apple_pciec_m1_nvme_read(void)
+  printf("TB-NVME GPT signature=%.8s header-size=%u entries-LBA=%llu entries=%u\n",sector,get_unaligned_le32(sector+12),(unsigned long long)get_unaligned_le64(sector+72),get_unaligned_le32(sector+80));
+  if(memcmp(sector,"EFI PART",8)){ret=-EPROTO;goto out;}
+  puts("TB-NVME-READ PASS; partition data read over native Thunderbolt\n");
+- if(ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),"u-boot,probe-nvme-files",0)==70)ret=tb_files();
++ if (ofnode_read_bool(ofnode_path("/config"), "u-boot,tb-efi-boot"))
++  ret = tb_boot_efi();
+ out:
+  stop=tb_quiesce();if(!ret)ret=stop;
+- if(!ret&&tb.files_loaded)tb.boot_ready=true;
+  printf("TB-NVME-DIAGNOSTIC ret=%d\n",ret);
+  return ret;
+ }
+@@ -818,10 +662,10 @@ static int tb_linux_fdt(void *dest, const void *source, unsigned size)
+  static const char *enable[]={"/soc/cio@501ac0000","/soc/cio@501ac0000/nhi@f00000",
+   "/soc/cio@501ac0000/iommu@a80000","/soc/mailbox@501100000","/soc/reset-controller@23b784000"};
+  static const char *remove[]={"/soc/pcie@530000000","/soc/iommu@521008000"};
+- static const char *debug_port[]={"/soc/cio@381ac0000","/soc/usb4-pcie-tunnel-0","/soc/usb@382280000"};
++ static const char *native_ports[]={"/soc/cio@381ac0000","/soc/usb4-pcie-tunnel-0","/soc/usb@382280000"};
+  const char *native="/soc/usb4-pcie-tunnel-1/pcie@530000000";
+  const fdt32_t *marker; int node,len,ret;unsigned i;
+- if(fdt_check_header(source)||size<0x40000)return -EINVAL;
++ if(fdt_check_header(source)||size<(unsigned)fdt_totalsize(source))return -EINVAL;
+  node=fdt_path_offset(source,"/config");if(node<0)return -EINVAL;
+  marker=fdt_getprop(source,node,"u-boot,tb-linux-tree",&len);
+  if(!marker||len!=4||fdt32_to_cpu(*marker)!=72)return -EPERM;
+@@ -835,32 +679,28 @@ static int tb_linux_fdt(void *dest, const void *source, unsigned size)
+  node=fdt_path_offset(dest,"/soc/power-management@23b700000/power-controller@450");if(node<0)return node;
+  ret=fdt_setprop(dest,node,"apple,always-on",NULL,0);if(ret)return ret;
+  for(i=0;i<ARRAY_SIZE(remove);i++){
+-  node=fdt_path_offset(dest,remove[i]);if(node<0)return node;
++  node=fdt_path_offset(dest,remove[i]);
++  if(node==-FDT_ERR_NOTFOUND)continue;
++  if(node<0)return node;
+   ret=fdt_del_node(dest,node);if(ret)return ret;
+  }
+  node=fdt_path_offset(dest,"/aliases");if(node<0)return node;
+  ret=fdt_setprop_string(dest,node,"usb4_1_pcie",native);if(ret)return ret;
+- /* The separate USB debug port remains owned by the outer hypervisor. */
+- for(i=0;i<ARRAY_SIZE(debug_port);i++){
+-  node=fdt_path_offset(dest,debug_port[i]);if(node<0)return node;
+-  ret=fdt_setprop_string(dest,node,"status","disabled");if(ret)return ret;
++ /* Native boot: Linux owns both ports; no hypervisor debug-port reservation. */
++ for(i=0;i<ARRAY_SIZE(native_ports);i++){
++  node=fdt_path_offset(dest,native_ports[i]);if(node<0)return node;
++  ret=fdt_setprop_string(dest,node,"status","okay");if(ret)return ret;
+  }
+  return 0;
+ }
+-static int do_tbboot(struct cmd_tbl *cmdtp,int flag,int argc,char *const argv[])
++/* Also fix up the built-in tree when ordinary bootflow starts an internal
++ * or USB OS without a Thunderbolt device. Called only for the integrated DT. */
++int apple_tb_os_fdt(void *blob)
+ {
+- ulong dest=env_get_hex("fdt_addr_r",0);int ret;
+- if(!tb.boot_ready||tb.live||tb.dma||tb.failed||!dest){puts("TB-BOOT refused: verified files/clean DMA stop required\n");return CMD_RET_FAILURE;}
+- ret=tb_linux_fdt((void*)dest,gd->fdt_blob,0x200000);
+- if(ret){printf("TB-BOOT FDT ret=%d\n",ret);return CMD_RET_FAILURE;}
+- ret=env_set("bootargs","root=UUID=1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935 rootwait rw console=tty0 console=ttySAC0,115200n8 earlycon loglevel=7 panic=20 rd.retry=60 rd.timeout=90 rd.shell=0 rd.emergency=reboot maxcpus=1 systemd.unit=multi-user.target pcie_apple_pciec.pciec_topology_events=1 pcie_apple_pciec.pciec_reset_ack_clear=0 pci=hpbussize=16,hpmmiosize=32M,hpmmioprefsize=512M,realloc=on");
+- if(ret)return CMD_RET_FAILURE;
+- puts("TB-BOOT HANDOVER: Image and initramfs loaded from native TB3 Samsung; one-CPU text-mode diagnostic\n");
+- ret=run_command("booti ${kernel_addr_r} ${ramdisk_addr_r}:${tb_initrd_size} ${fdt_addr_r}",0);
+- printf("TB-BOOT returned ret=%d\n",ret);
+- return CMD_RET_FAILURE;
++ int node = fdt_path_offset(blob, "/config");
++ if (node < 0 || !fdt_getprop(blob, node, "u-boot,tb-efi-boot", NULL)) return 0;
++ return tb_linux_fdt(blob, blob, fdt_totalsize(blob));
+ }
+-U_BOOT_CMD(tbboot,1,0,do_tbboot,"boot verified read-only TB experiment from RAM","");
+ 
+ #else
+ int apple_pciec_m1_check(void) { return -ENOSYS; }
+@@ -868,4 +708,5 @@ int apple_pciec_m1_prepare(void *unused) { return -ENOSYS; }
+ int apple_pciec_m1_start_link(void) { return -ENOSYS; }
+ int apple_pciec_m1_scan(void) { return -ENOSYS; }
+ int apple_pciec_m1_nvme_read(void) { return -ENOSYS; }
++int apple_tb_os_fdt(void *blob) { return 0; }
+ #endif
+diff --git a/include/apple_pciec_m1.h b/include/apple_pciec_m1.h
+index afe37658..13a323c7 100644
+--- a/include/apple_pciec_m1.h
++++ b/include/apple_pciec_m1.h
+@@ -29,4 +29,5 @@ struct pciec_scan { struct pciec_scan_entry entry[PCIEC_SCAN_MAX]; unsigned int
+ int pciec_m1_scan(const struct pciec_m1_io *, void *, struct pciec_scan *);
+ int apple_pciec_m1_scan(void);
+ int apple_pciec_m1_nvme_read(void);
++int apple_tb_os_fdt(void *blob);
+ #endif
