@@ -52,3 +52,7 @@ remains separate and is stated in every published title.
 A previously completed full build can be verified and published idempotently
 using the publisher workflow's `run_id` input. The script also supports a local
 read-only dry run: `python3 build/publish-installer.py --run RUN_ID`.
+
+## Pending correction before the next release
+
+The DCP audio DMA-error path can leak `data_lock` and block WirePlumber/shutdown. The tested source candidate is queued in [`consolidated/next-build/audio-open-lock`](../consolidated/next-build/audio-open-lock/README.md). It is not in the released egpu3 binaries. Integrate it with source/hash replay checks and a new kernel release suffix before the next release build; its hardware test and the preceding intermittent SIO startup failure remain open.

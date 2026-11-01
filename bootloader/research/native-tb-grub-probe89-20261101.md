@@ -29,3 +29,9 @@ Probe87 with egpu1 later suffered root I/O errors. Its filesystem was repaired o
 Probe89 also records an SIO firmware crash during Linux initialization and a subsequent DCP audio open lock leak blocking WirePlumber. YouTube playback fails. A small lock-release candidate passed extracted-function fault tests and ARM64 object compilation, but is not installed and is not proof of a fix for the preceding SIO failure. The origin of the SIO firmware failure is not classified: a boot-handoff or firmware-context problem remains possible. Per user direction, audio-driver work is parked while U-Boot/TB boot is evaluated.
 
 The scheduled return and final installed-state verification are recorded separately in `result.json`; consult that file for the outcome rather than treating reboot initiation as successful recovery.
+
+## Manual desktop restart
+
+The scheduled reboot at 14:06:42 UTC blocked on the known audio mutex. The user restarted through Asahi Linux and selected Desktop. Boot ID `085a4fd8-1ba4-40cf-bf03-d009403ad266` uses the same egpu3 kernel and Probe89 bootloader. SIO binds successfully on this run; WirePlumber remains responsive, the direct HDMI PCM open/playback succeeds, and the user confirms YouTube video and sound. No audio patch or module replacement was installed. This distinguishes a successful current session from a permanent repair of the intermittent startup failure. Automatic return to internal Ubuntu was not validated by this run.
+
+Read-only verification confirmed the original Ubuntu boot bundle and the baseline backup on the separate ESP still match `8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60`; the installed separate candidate matches Probe89 `fac6b87ea60a1e0b6af493ba89b4e168f2fa0fcdc033f53e2e3087d98dab7faa`.
