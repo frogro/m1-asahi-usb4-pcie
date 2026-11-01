@@ -4204,10 +4204,10 @@ index 000000000..05795d12c
 +incrementalfs-$(CONFIG_FS_VERITY) += verity.o
 diff --git a/fs/incfs/data_mgmt.c b/fs/incfs/data_mgmt.c
 new file mode 100644
-index 000000000..ed8c5b89d
+index 000000000..dc09e19db
 --- /dev/null
 +++ b/fs/incfs/data_mgmt.c
-@@ -0,0 +1,1891 @@
+@@ -0,0 +1,1890 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright 2019 Google LLC
@@ -6098,7 +6098,6 @@ index 000000000..ed8c5b89d
 +	spin_unlock(&log->rl_lock);
 +	return dst_idx;
 +}
-+
 diff --git a/fs/incfs/data_mgmt.h b/fs/incfs/data_mgmt.h
 new file mode 100644
 index 000000000..555a62150
