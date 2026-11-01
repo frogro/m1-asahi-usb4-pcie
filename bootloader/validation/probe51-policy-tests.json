@@ -1,0 +1,8 @@
+{
+  "cases": 26,
+  "passed": true,
+  "production_policy_and_preflight_body": true,
+  "ASan": true,
+  "UBSan": true,
+  "limits": "DWC3 common init is stubbed here; verifies selection, reset guards and failure propagation, not hardware behavior"
+}

@@ -1,0 +1,95 @@
+--- a/drivers/usb/host/xhci-dwc3.c
++++ b/drivers/usb/host/xhci-dwc3.c
+@@ -9,6 +9,8 @@
+ 
+ #include <clk.h>
+ #include <dm.h>
++#include <dm/read.h>
++#include <linux/ioport.h>
+ #include <generic-phy.h>
+ #include <log.h>
+ #include <reset.h>
+@@ -172,6 +174,54 @@
+ 	return 0;
+ }
+ 
++#if CONFIG_IS_ENABLED(CMD_APPLE_ATC_M1)
++/* Explicit RAM diagnostic only, J274 port1. This does not alter the default
++ * driver path or suppress the later xHCI reset. PMGR observations alone do
++ * not show the transient DWC3/PHY reset effects compared here.
++ */
++static int m1_early_dwc3_policy(struct udevice *dev)
++{
++ const char *property = "u-boot,probe-preserve-dwc3-phy";
++ ofnode node = dev_ofnode(dev);
++ struct resource r;
++ u32 tag;
++ int len;
++ const void *p = ofnode_get_property(node, property, &len);
++ if (!p) return 0;
++ if (len != sizeof(u32) || ofnode_read_u32(node, property, &tag) || tag != 51 ||
++     !ofnode_device_is_compatible(ofnode_root(), "apple,j274") ||
++     !ofnode_equal(node, ofnode_path("/soc/usb@502280000")) ||
++     !ofnode_device_is_compatible(node, "apple,t8103-dwc3") ||
++     ofnode_read_resource(node, 0, &r) ||
++     r.start != 0x502280000ULL || resource_size(&r) != 0xcd00)
++  return -EINVAL;
++ return 1;
++}
++
++static int m1_early_dwc3_init(struct dwc3 *regs)
++{
++ u32 id = readl(&regs->g_snpsid);
++ u32 ctl = readl(&regs->g_ctl);
++ u32 usb2 = readl(&regs->g_usb2phycfg[0]);
++ u32 usb3 = readl(&regs->g_usb3pipectl[0]);
++ int ret;
++ printf("M1-EARLY-DWC3 before id=%08x gctl=%08x usb2=%08x usb3=%08x\n",
++        id, ctl, usb2, usb3);
++ /* Do not adopt an unknown core or leave an inherited reset asserted. */
++ if (id != 0x33313130 || ctl == 0xffffffff || usb2 == 0xffffffff ||
++     usb3 == 0xffffffff || (ctl & DWC3_GCTL_CORESOFTRESET) ||
++     (usb2 & DWC3_GUSB2PHYCFG_PHYSOFTRST) ||
++     (usb3 & DWC3_GUSB3PIPECTL_PHYSOFTRST))
++  return -EBUSY;
++ /* Retain both normal 100-ms waits, isolating reset pulses from delay. */
++ mdelay(100);
++ mdelay(100);
++ ret = dwc3_m1_diag_init_preserve_phy(regs);
++ printf("M1-EARLY-DWC3 preserve-soft-resets ret=%d; xHCI reset unchanged\n", ret);
++ return ret;
++}
++#endif
++
+ static int xhci_dwc3_probe(struct udevice *dev)
+ {
+ 	struct xhci_hcor *hcor;
+@@ -182,6 +232,12 @@
+ 	const char *phy;
+ 	u32 reg;
+ 	int ret;
++#if CONFIG_IS_ENABLED(CMD_APPLE_ATC_M1)
++	int preserve = m1_early_dwc3_policy(dev);
++
++	if (preserve < 0)
++		return preserve;
++#endif
+ 
+ 	ret = xhci_dwc3_reset_init(dev, plat);
+ 	if (ret)
+@@ -201,7 +257,14 @@
+ 
+ 	dwc3_reg = (struct dwc3 *)((char *)(hccr) + DWC3_REG_OFFSET);
+ 
+-	dwc3_core_init(dwc3_reg);
++#if CONFIG_IS_ENABLED(CMD_APPLE_ATC_M1)
++	if (preserve) {
++		ret = m1_early_dwc3_init(dwc3_reg);
++		if (ret)
++			return ret;
++	} else
++#endif
++		dwc3_core_init(dwc3_reg);
+ 
+ 	/* Set dwc3 usb2 phy config */
+ 	reg = readl(&dwc3_reg->g_usb2phycfg[0]);

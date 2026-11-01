@@ -1,0 +1,42 @@
+{
+  "probe": 51,
+  "utc": "2026-11-01T00:18:27.355408+00:00",
+  "baseline": 48,
+  "hardware_tested": false,
+  "armed": false,
+  "hypothesis": "Initial generic DWC3 core/USB2/USB3 reset pulses influence subsequent USB4 link training despite equal PMGR state",
+  "change": "Explicit per-device diagnostic property suppresses initial DWC3 core/PHY soft resets on J274 port1; late explicit ATC initialization and xHCI reset unchanged",
+  "guards": "Exact board, node, address, resource size, property tag, core ID, no inherited reset bits/all-ones register values",
+  "both_100ms_waits_retained": true,
+  "config_byte_identical_to_probe48": true,
+  "input_dt_delta": "Only diagnostic property and test label",
+  "bootcommand_delta": "Only test label",
+  "software_cases": 26,
+  "software_limit": "Selection and preflight checks tested with actual bodies; common init stubbed in host tests",
+  "m1_build": "passed",
+  "installed_changes": false,
+  "ram_only": true,
+  "external_sector_commands": false,
+  "usb_enumeration": true,
+  "nhi_control_dma": true,
+  "external_tunnel": false,
+  "fallback": "Mandatory reset; existing 60s serviced watchdog and 240s host deadline; host deadline alone cannot reboot target",
+  "expected_evidence": [
+    "M1-EARLY-DWC3 preserve-soft-resets ret=0 before test marker",
+    "selected DWC3 active/halted verification",
+    "Phase2/Phase3 and lane state",
+    "native PCIe-C readiness",
+    "internal control hashes before/after",
+    "stock Ubuntu SSH return and original boot bundle hash"
+  ],
+  "payload_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe51-early-dwc3-preserve",
+  "artifact_sha256": {
+    "m1n1-release.bin": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "j274-probe-hv.dtb": "a3f6525dd29f0efdc1a8c85ddfb07e836f18ce9e54e44a3dfe3e8add2facad66",
+    "run-hv-once.py": "47986e902c2b487c04aba9192f3732fb2eca73fe66203e5a28df5b983449ba31",
+    "uboot.config": "b60f9fb76ac39a58e92448bef7634193e8374960d9824865981b0ad1ff1a45a9",
+    "u-boot-nodtb.bin": "77da38737d72aaf5af5676aa9497466f0bd8e2ead8afcd5e4f727c5eba973d52",
+    "bootcommand.txt": "2a570efe9ee951c46be87856c780c217a0427becc046aae8a3076440d26a83eb",
+    "m1n1-uboot-probe-hv.bin": "74b5160407eec1d1c26809d6e262ddd6170770beb97e482e395eee69a4e21107"
+  }
+}
