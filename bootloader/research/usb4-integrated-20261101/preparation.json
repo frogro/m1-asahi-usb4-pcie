@@ -1,0 +1,10 @@
+{
+  "version": "20261101-usb4-integrated-rc2",
+  "bundle_sha256": "5dab40d61fb29da88f5c2faa0546acb068788ed228ef7731acbf928c952c973d",
+  "uboot_sha256": "a6e5c9e8b942238dc272a25c81162bd15b64da00f3e917ce704555218ff0bff1",
+  "m1n1_sha256": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+  "normal_main_loop": true,
+  "forced_reboot_diagnostic": false,
+  "transport_selection": "validated PD mode; exclusive TB3 or USB4",
+  "hardware_tested": false
+}

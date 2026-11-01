@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "cases": [
+    "none",
+    "wrong-root",
+    "no-opt-in",
+    "wrong-vendor",
+    "wrong-device",
+    "wrong-id",
+    "wrong-port",
+    "already-authorized",
+    "already-attempted"
+  ]
+}

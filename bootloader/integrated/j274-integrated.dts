@@ -3300,14 +3300,6 @@
 			u-boot,probe-apply-pcie-adapter = <0x35>;
 			u-boot,probe-preserve-acio-start = <0x38>;
 			u-boot,probe-acio-pinctrl = <0x39>;
-			u-boot,probe-remote-inventory = <0x3a>;
-			u-boot,probe-remote-config = <0x3b>;
-			u-boot,probe-tunnel-preflight = <0x3e>;
-			u-boot,probe-tunnel-paths = <0x3f>;
-			u-boot,probe-pcie-enable = <0x40>;
-			u-boot,probe-pcie-scan = <0x41>;
-			u-boot,probe-nvme-read = <0x42>;
-			u-boot,probe-nvme-files = <0x46>;
 			compatible = "apple,t8103-usb4-acio";
 			reg = <0x05 0x1ac0000 0x00 0xc000 0x05 0x1080000 0x00 0x20000 0x05 0x1e44000 0x00 0x4000>;
 			reg-names = "rc", "sram", "pcie-adapter";
@@ -3658,7 +3650,7 @@
 	};
 
 	chosen {
-		u-boot,integration = "20261101-efi-rc1";
+		u-boot,integration = "20261101-usb4-integrated-rc3";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		ranges;

@@ -1,0 +1,12 @@
+{
+  "all_modified_files_identical": true,
+  "patch_count": 12,
+  "files": {
+    "cmd/apple_atc_m1.c": "7a9d1f04909ab118524af18785ad1e009c2cee82525301cb1d3181e59fa0b43a",
+    "cmd/apple_pciec_m1.c": "e81dee642e13069018e7f06bb1e78d7194284e0ef85605b550cd3eb7aab40326",
+    "cmd/apple_nhi_m1_ring.c": "fd74868ce7fe6ca4a2ef0a75381cdea44402b969eb95627c109e298e4ff6f919",
+    "cmd/apple_nhi_m1_inventory.c": "5f7f36a946bf299e31ceaaa4b5af007f55276194ce980f99af6ed702cd480e6a",
+    "include/apple_atc_m1.h": "87adc3e238da2d61f149b0d3bf55d9f52aa6fe865c7afef2824cdc9d457544ae",
+    "include/apple_nhi_m1.h": "60a6ff8753ecccfdf17d2a618a83c9819da6eb156d6cbe67780bcbe351b4b9b8"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": "20261101-usb4-integrated-rc3",
+  "patch_count": 12,
+  "kernel_unchanged": "7.2.12-usb4sd4-egpu3",
+  "hardware": [
+    {
+      "version": "rc2",
+      "boot_id": "89cf0cf8-5cf0-4031-aab7-bfc861b5595b",
+      "root": "NVMe over native USB4",
+      "initrd": "existing v19 diagnostic",
+      "direct_reads_sha256": "bb74ab47ba924cd9c0e1c266a9ebbf99392842f495d09b0df4de67c29f70b60d",
+      "return_internal_boot_id": "8f817640-6f57-4413-b053-508732a8f4c9",
+      "return": "SSH confirmed"
+    },
+    {
+      "version": "rc2",
+      "boot_id": "4c8f55e5-48c6-4b82-9f6c-d18ce6ef075e",
+      "root": "NVMe over native USB4",
+      "initrd": "original + selected-root authorization only, no diagnostic capture",
+      "return_internal_boot_id": "766f03cd-c1e2-4a8f-b257-bd565ac20858",
+      "return": "stock internal kernel and GDM started; user reported black screen and SSH absent; manual recovery confirmed"
+    },
+    {
+      "version": "rc3",
+      "boot_id": "d57bea59-e8f6-44a7-87ed-87ab8609dd9e",
+      "root": "NVMe over native USB4",
+      "initrd": "selected-root authorization only",
+      "kernel_read_sha256": "bb74ab47ba924cd9c0e1c266a9ebbf99392842f495d09b0df4de67c29f70b60d",
+      "grub2_common": "passed",
+      "return": "SSH confirmed on original internal root",
+      "return_internal_boot_id": "802372bc-9557-4ef9-86a4-94d63d697cda"
+    },
+    {
+      "version": "rc3",
+      "boot_id": "523b5ee3-fe76-4659-96c8-65d4b184557b",
+      "root": "SanDisk USB-A, MP400 physically disconnected",
+      "root_uuid": "a2220ec6-aada-4bda-8049-ca5638794afd",
+      "kernel": "7.2.12-usb4sd4-egpu1",
+      "usb_speed_mbps": 5000,
+      "failed_units": 0,
+      "prior_bundle_restored": true,
+      "visual": "User confirmed Ubuntu login/desktop and logged in",
+      "return": "automatic five-minute timer armed"
+    }
+  ],
+  "visual_confirmation": "not observed by user for these runs",
+  "permanent_installation": false,
+  "previous_asahi_bundle_restored_by_boot_service": true,
+  "original_ubuntu_bundle_unchanged": true,
+  "pending": [
+    "rc3 TB3 hardware comparison",
+    "reboot/black-screen cause",
+    "transient invalid grubenv report not reproducible offline"
+  ]
+}

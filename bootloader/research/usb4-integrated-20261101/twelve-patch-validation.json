@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "patch_count": 12,
+  "base": "pinned eleven-patch clean reconstruction plus patch 12",
+  "apple_build": "clean-rc3-build.log",
+  "sandbox_build": "clean-rc3-sandbox-build.log",
+  "source_identity": "rc3-source-reconstruction.json",
+  "targeted_sandbox": {
+    "atc_m1": 15,
+    "pciec_m1": 4
+  },
+  "handover_fault_cases": 17,
+  "failures": 0
+}

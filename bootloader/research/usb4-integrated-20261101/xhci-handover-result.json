@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "summary": "PASS 17 actual xHCI/EFI handover cases; ordered halt and failure barriers",
+  "ASan": true,
+  "UBSan": true
+}

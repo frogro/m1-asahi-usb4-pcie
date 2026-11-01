@@ -1,0 +1,7 @@
+{
+  "actual_boot_policy_cases": 15,
+  "actual_exclusive_dispatch_cases": 18,
+  "passed": true,
+  "asan": true,
+  "ubsan": true
+}

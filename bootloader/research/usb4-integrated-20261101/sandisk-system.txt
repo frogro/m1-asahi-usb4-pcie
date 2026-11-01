@@ -1,0 +1,73 @@
+Sun Nov  1 17:59:02 UTC 2026
+523b5ee3-fe76-4659-96c8-65d4b184557b
+7.2.12-usb4sd4-egpu1
+/dev/sda3 a2220ec6-aada-4bda-8049-ca5638794afd
+/:  Bus 001.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/4p, 480M
+    |__ Port 001: Dev 002, If 0, Class=Human Interface Device, Driver=usbhid, 12M
+    |__ Port 001: Dev 002, If 1, Class=Human Interface Device, Driver=usbhid, 12M
+    |__ Port 001: Dev 002, If 2, Class=Human Interface Device, Driver=usbhid, 12M
+/:  Bus 002.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/4p, 5000M
+    |__ Port 002: Dev 002, If 0, Class=Mass Storage, Driver=uas, 5000M
+/:  Bus 003.Port 001: Dev 001, Class=root_hub, Driver=xhci-hcd/1p, 480M
+    |__ Port 001: Dev 002, If 0, Class=Hub, Driver=hub/6p, 480M
+        |__ Port 001: Dev 003, If 0, Class=Vendor Specific Class, Driver=[none], 1.5M
+        |__ Port 002: Dev 004, If 0, Class=Hub, Driver=hub/4p, 480M
+            |__ Port 004: Dev 005, If 0, Class=Hub, Driver=hub/4p, 480M
+                |__ Port 002: Dev 006, If 0, Class=Hub, Driver=hub/4p, 480M
+/:  Bus 004.Port 001: Dev 001, Class=root_hub, Driver=xhci-hcd/1p, 10000M
+    |__ Port 001: Dev 002, If 0, Class=Hub, Driver=hub/4p, 10000M
+        |__ Port 004: Dev 003, If 0, Class=Hub, Driver=hub/4p, 10000M
+            |__ Port 001: Dev 004, If 0, Class=Mass Storage, Driver=usb-storage, 5000M
+            |__ Port 004: Dev 005, If 0, Class=Hub, Driver=hub/4p, 10000M
+                |__ Port 002: Dev 006, If 0, Class=Hub, Driver=hub/4p, 10000M
+                |__ Port 004: Dev 007, If 0, Class=Communications, Driver=cdc_ether, 5000M
+                |__ Port 004: Dev 007, If 1, Class=CDC Data, Driver=cdc_ether, 5000M
+{
+  "boot_id": "523b5ee3-fe76-4659-96c8-65d4b184557b",
+  "kernel": "7.2.12-usb4sd4-egpu1",
+  "root_uuid": "a2220ec6-aada-4bda-8049-ca5638794afd",
+  "prior_bundle_restored": true,
+  "integration": "20261101-usb4-integrated-rc3"
+}
+○ usb4-rc3-restore.service - Restore one-shot USB4 bootloader after USB comparison
+     Loaded: loaded (/etc/systemd/system/usb4-rc3-restore.service; disabled; preset: enabled)
+     Active: inactive (dead)
+
+Nov 01 17:57:32 asahi-usb-test systemd[1]: Starting usb4-rc3-restore.service - Restore one-shot USB4 bootloader after USB comparison...
+Nov 01 17:57:33 asahi-usb-test systemctl[1945]: Removed '/etc/systemd/system/multi-user.target.wants/usb4-rc3-restore.service'.
+Nov 01 17:57:33 asahi-usb-test systemd[1]: usb4-rc3-restore.service: Deactivated successfully.
+Nov 01 17:57:33 asahi-usb-test systemd[1]: Finished usb4-rc3-restore.service - Restore one-shot USB4 bootloader after USB comparison.
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+Jul 27 20:44:02 localhost kernel: apple-pmgr-pwrstate 23b700000.power-management:power-controller@428: always-on domain atc0_pcie is not on at boot
+Jul 27 20:44:02 localhost kernel: apple-pmgr-pwrstate 23b700000.power-management:power-controller@450: always-on domain atc1_pcie is not on at boot
+Jul 27 20:44:02 localhost kernel: apple-pmgr-pwrstate 23d280000.power-management:power-controller@78: always-on domain msg is not on at boot
+Jul 27 20:44:02 localhost kernel: macsmc-low-gpio: Failed to locate of_node [id: -1]
+Nov 01 17:57:26 localhost kernel: pcie-apple-pciec 3b0000000.pcie: port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:57:26 localhost kernel: pcie-apple-pciec 3b0000000.pcie: Port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 setup fail: -110
+Nov 01 17:57:26 localhost kernel: pcie-apple-pciec 3b0000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:57:29 asahi-usb-test kernel: spi-nor spi0.0: supply vcc not found, using dummy regulator
+Nov 01 17:57:29 asahi-usb-test kernel: tas2770 1-0031: supply SDZ not found, using dummy regulator
+Nov 01 17:57:29 asahi-usb-test kernel: cs42l83 2-0048: supply VA not found, using dummy regulator
+Nov 01 17:57:29 asahi-usb-test kernel: cs42l83 2-0048: supply VP not found, using dummy regulator
+Nov 01 17:57:29 asahi-usb-test kernel: cs42l83 2-0048: supply VCP not found, using dummy regulator
+Nov 01 17:57:29 asahi-usb-test kernel: cs42l83 2-0048: supply VD_FILT not found, using dummy regulator
+Nov 01 17:57:29 asahi-usb-test kernel: cs42l83 2-0048: supply VL not found, using dummy regulator
+Nov 01 17:57:29 asahi-usb-test kernel: apple-dcp 231c00000.dcp: RTKit: Unknown system endpoint: 0x0a
+Nov 01 17:57:29 asahi-usb-test kernel: apple-dcp 271c00000.dcp: RTKit: Unknown system endpoint: 0x0a
+Nov 01 17:57:30 asahi-usb-test kernel: avd 269080000.avd: Direct firmware load for apple/avd-fw-v2-t0.bin failed with error -2
+Nov 01 17:57:30 asahi-usb-test kernel: avd 269080000.avd: failed to load firmware: -2
+Nov 01 17:57:30 asahi-usb-test kernel: avd 269080000.avd: probe with driver avd failed with error -2
+Nov 01 17:57:30 asahi-usb-test kernel: brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac4378b1-pcie for chip BCM4378/3
+Nov 01 17:57:30 asahi-usb-test kernel: hci_bcm4377 0000:01:00.1: resetting
+Nov 01 17:57:30 asahi-usb-test kernel: hci_bcm4377 0000:01:00.1: reset done
+Nov 01 17:57:30 asahi-usb-test kernel: brcmfmac: brcmf_c_process_txcap_blob: TxCap blob found, loading
+Nov 01 17:57:30 asahi-usb-test kernel: brcmfmac: brcmf_c_process_cal_blob: Calibration blob provided by platform, loading
+Nov 01 17:57:30 asahi-usb-test kernel: brcmfmac: brcmf_c_preinit_dcmds: Firmware: BCM4378/3 wl0: May 13 2023 07:20:48 version 18.20.383.15.7.8.150 FWID 01-b37727a5
+Nov 01 17:57:30 asahi-usb-test kernel: Bluetooth: hci0: HCI LE Coded PHY feature bit is set, but its usage is not supported.
+Nov 01 17:57:33 asahi-usb-test kernel: ieee80211 phy0: brcmf_p2p_set_firmware: failed to update device address ret -52
+Nov 01 17:57:33 asahi-usb-test kernel: ieee80211 phy0: brcmf_p2p_create_p2pdev: set p2p_disc error
+Nov 01 17:57:33 asahi-usb-test kernel: ieee80211 phy0: brcmf_cfg80211_add_iface: add iface p2p-dev-wld0 type 10 failed: err=-52
+Nov 01 17:57:37 asahi-usb-test kernel: workqueue: work func _RNvXsb_NtCsj9bqJNU6tGA_6kernel9workqueueINtNtCscIHVMyPnRZn_4core3pin3PinINtNtNtB7_5alloc4kbox3BoxNtNtCshmFHkjAZICO_5asahi9workqueue22SubmittedWorkContainerNtNtB1d_9allocator7KmallocEEINtB5_15WorkItemPointerKy0_E3runB1B_ [asahi] enqueued on deprecated workqueue. Use system_{percpu|dfl}_wq instead.
+Nov 01 17:58:38 asahi-usb-test kernel: kauditd_printk_skb: 239 callbacks suppressed

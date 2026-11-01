@@ -1,0 +1,11 @@
+{
+  "apple_dart": 7,
+  "iommu": 8,
+  "pci": 18,
+  "apple_mbox": 3,
+  "usb4_cfg": 6,
+  "apple_i2c": 6,
+  "cd321x": 10,
+  "atc_m1": 15,
+  "pciec_m1": 4
+}

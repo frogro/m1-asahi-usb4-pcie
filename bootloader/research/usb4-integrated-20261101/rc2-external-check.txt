@@ -1,0 +1,242 @@
+IDENTITY
+7.2.12-usb4sd4-egpu3
+/dev/nvme1n1p3 1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935
+89cf0cf8-5cf0-4031-aab7-bfc861b5595b
+20261101-usb4-integrated-rc2
+ROOT TRANSPORT
+loop0       4K
+loop1      69M
+loop2    61.9M
+loop3    19.9M
+loop4    90.7M
+loop5   236.1M
+loop6     503M
+loop7   552.9M
+loop8    91.7M
+loop9   174.6M
+loop10   17.5M
+loop11   79.9M
+loop12   14.9M
+loop13   42.6M
+loop14    560K
+loop15  221.1M
+sda     115.1G usb    SanDisk SSD PLUS 240GB
+sdb         0B usb    MassStorageClass
+sdc         0B usb    MassStorageClass
+nvme0n1 233.8G nvme   APPLE SSD AP0256Q
+nvme0n2     3M nvme   APPLE SSD AP0256Q
+nvme0n3   128M nvme   APPLE SSD AP0256Q
+nvme1n1 232.9G nvme   Samsung SSD 970 EVO Plus 250GB
+/sys/bus/thunderbolt/devices/0-0
+device_name=iOS
+vendor=0x1
+device=0xf
+generation=4
+authorized=1
+/sys/bus/thunderbolt/devices/0-1
+device_name=Thunderbolt 4 Dock
+vendor=0x236
+device=0x22
+generation=4
+authorized=1
+rx_speed=20.0 Gb/s
+tx_speed=20.0 Gb/s
+rx_lanes=2
+tx_lanes=2
+/sys/bus/thunderbolt/devices/0-301
+device_name=Core X
+vendor=0x127
+device=0x1
+generation=3
+authorized=1
+rx_speed=20.0 Gb/s
+tx_speed=20.0 Gb/s
+rx_lanes=2
+tx_lanes=2
+/sys/bus/thunderbolt/devices/1-0
+device_name=iOS
+vendor=0x1
+device=0xf
+generation=4
+authorized=1
+/sys/bus/thunderbolt/devices/1-1
+device_name=246x
+vendor=0xb8
+device=0x2463
+generation=4
+authorized=1
+rx_speed=20.0 Gb/s
+tx_speed=20.0 Gb/s
+rx_lanes=2
+tx_lanes=2
+PCI DRIVERS
+0000:00:00.0 PCI bridge [0604]: Apple Inc. Apple Silicon PCI Express Root Port [106b:100c] (rev 01)
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0000:00:01.0 PCI bridge [0604]: Apple Inc. Apple Silicon PCI Express Root Port [106b:100c] (rev 01)
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0000:00:02.0 PCI bridge [0604]: Apple Inc. Apple Silicon PCI Express Root Port [106b:100c] (rev 01)
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0000:01:00.0 Network controller [0280]: Broadcom Inc. and subsidiaries BCM4378 802.11ax Dual Band Wireless Network Adapter [14e4:4425] (rev 03)
+	Subsystem: Apple Inc. Device [106b:4378]
+	Kernel driver in use: brcmfmac
+	Kernel modules: brcmfmac
+0000:01:00.1 Network controller [0280]: Broadcom Inc. and subsidiaries BRCM4378 Bluetooth Controller [14e4:5f69] (rev 03)
+	Subsystem: Apple Inc. Device [106b:4378]
+	Kernel driver in use: hci_bcm4377
+	Kernel modules: hci_bcm4377
+0000:02:00.0 USB controller [0c03]: Fresco Logic FL1100 USB 3.0 Host Controller [1b73:1100] (rev 10)
+	Subsystem: Fresco Logic FL1100 USB 3.0 Host Controller [1b73:1100]
+	Kernel driver in use: xhci_hcd
+	Kernel modules: xhci_pci
+0000:03:00.0 Ethernet controller [0200]: Broadcom Inc. and subsidiaries NetXtreme BCM57762 Gigabit Ethernet PCIe [14e4:1682]
+	Subsystem: Broadcom Inc. and subsidiaries NetXtreme BCM57762 Gigabit Ethernet PCIe [14e4:1682]
+	Kernel driver in use: tg3
+	Kernel modules: tg3
+0001:00:00.0 PCI bridge [0604]: Apple Inc. Apple Silicon USB4/Thunderbolt PCI Express Root Port [106b:1010]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0001:01:00.0 PCI bridge [0604]: ASMedia Technology Inc. ASM2464PD USB4 Device Controller 40G [1b21:2463]
+	Subsystem: ASMedia Technology Inc. ASM2464PD USB4 Device Controller 40G [1b21:2463]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0001:02:00.0 PCI bridge [0604]: ASMedia Technology Inc. ASM2464PD USB4 Device Controller 40G [1b21:2463]
+	Subsystem: ASMedia Technology Inc. ASM2464PD USB4 Device Controller 40G [1b21:2463]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0001:03:00.0 Non-Volatile memory controller [0108]: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983 [144d:a808]
+	Subsystem: Samsung Electronics Co Ltd SSD 970 EVO/PRO [144d:a801]
+	Kernel driver in use: nvme
+	Kernel modules: nvme
+0002:00:00.0 PCI bridge [0604]: Apple Inc. Apple Silicon USB4/Thunderbolt PCI Express Root Port [106b:1010]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:01:00.0 PCI bridge [0604]: Intel Corporation Thunderbolt 4 Bridge [Goshen Ridge 2020] [8086:0b26] (rev 03)
+	Subsystem: Intel Corporation Device [8086:0000]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:02:00.0 PCI bridge [0604]: Intel Corporation Thunderbolt 4 Bridge [Goshen Ridge 2020] [8086:0b26] (rev 03)
+	Subsystem: Intel Corporation Device [8086:0000]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:02:01.0 PCI bridge [0604]: Intel Corporation Thunderbolt 4 Bridge [Goshen Ridge 2020] [8086:0b26] (rev 03)
+	Subsystem: Intel Corporation Device [8086:0000]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:02:02.0 PCI bridge [0604]: Intel Corporation Thunderbolt 4 Bridge [Goshen Ridge 2020] [8086:0b26] (rev 03)
+	Subsystem: Intel Corporation Device [8086:0000]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:02:03.0 PCI bridge [0604]: Intel Corporation Thunderbolt 4 Bridge [Goshen Ridge 2020] [8086:0b26] (rev 03)
+	Subsystem: Intel Corporation Device [8086:0000]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:02:04.0 PCI bridge [0604]: Intel Corporation Thunderbolt 4 Bridge [Goshen Ridge 2020] [8086:0b26] (rev 03)
+	Subsystem: Intel Corporation Device [8086:0000]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:04:00.0 PCI bridge [0604]: Intel Corporation JHL6340 Thunderbolt 3 Bridge (C step) [Alpine Ridge 2C 2016] [8086:15da] (rev 02)
+	Subsystem: Razer USA Ltd. Device [1a58:0001]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:05:01.0 PCI bridge [0604]: Intel Corporation JHL6340 Thunderbolt 3 Bridge (C step) [Alpine Ridge 2C 2016] [8086:15da] (rev 02)
+	Subsystem: Razer USA Ltd. Device [1a58:0001]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:06:00.0 PCI bridge [0604]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 10 XL Upstream Port of PCI Express Switch [1002:1478] (rev c0)
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:07:00.0 PCI bridge [0604]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 10 XL Downstream Port of PCI Express Switch [1002:1479]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Navi 10 XL Downstream Port of PCI Express Switch [1002:1479]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:08:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21 [Radeon RX 6800/6800 XT / 6900 XT] [1002:73bf] (rev c0)
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Radeon RX 6900 XT [1002:0e3a]
+	Kernel driver in use: amdgpu
+	Kernel modules: amdgpu
+0002:08:00.1 Audio device [0403]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21/23 HDMI/DP Audio Controller [1002:ab28]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21/23 HDMI/DP Audio Controller [1002:ab28]
+	Kernel driver in use: snd_hda_intel
+	Kernel modules: snd_hda_intel
+0002:08:00.2 USB controller [0c03]: Advanced Micro Devices, Inc. [AMD/ATI] Device [1002:73a6]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Device [1002:73a6]
+	Kernel driver in use: xhci_hcd
+	Kernel modules: xhci_pci
+0002:08:00.3 Serial bus controller [0c80]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21 USB [1002:73a4]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Device [1002:0408]
+	Kernel driver in use: i2c-designware-pci
+	Kernel modules: i2c_designware_pci
+FAILED UNITS
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+RECOVERY
+○ usb4-mp400-restore.service - Restore integrated U-Boot after bounded MP400 diagnostic
+     Loaded: loaded (/etc/systemd/system/usb4-mp400-restore.service; disabled; preset: enabled)
+     Active: inactive (dead)
+
+Nov 01 17:30:59 asahi-yotta-test systemd[1]: Starting usb4-mp400-restore.service - Restore integrated U-Boot after bounded MP400 diagnostic...
+Nov 01 17:30:59 asahi-yotta-test systemctl[1987]: Removed '/etc/systemd/system/multi-user.target.wants/usb4-mp400-restore.service'.
+Nov 01 17:31:00 asahi-yotta-test python3[1941]: Integrated U-Boot restored
+Nov 01 17:31:00 asahi-yotta-test systemd[1]: usb4-mp400-restore.service: Deactivated successfully.
+Nov 01 17:31:00 asahi-yotta-test systemd[1]: Finished usb4-mp400-restore.service - Restore integrated U-Boot after bounded MP400 diagnostic.
+
+● usb4-mp400-return.timer - Five-minute return for USB4 EFI test
+     Loaded: loaded (/etc/systemd/system/usb4-mp400-return.timer; enabled; preset: enabled)
+     Active: active (waiting) since Sun 2026-11-01 17:30:59 UTC; 22s ago
+ Invocation: 8a55257779494f8691a86f4ae96569d1
+    Trigger: Sun 2026-11-01 17:35:44 UTC; 4min 23s left
+   Triggers: ● usb4-mp400-return.service
+
+Nov 01 17:30:59 asahi-yotta-test systemd[1]: Started usb4-mp400-return.timer - Five-minute return for USB4 EFI test.
+RECENT KERNEL ERRORS
+Jul 27 20:44:02 localhost kernel: apple-pmgr-pwrstate 23b700000.power-management:power-controller@428: always-on domain atc0_pcie is not on at boot
+Jul 27 20:44:02 localhost kernel: apple-pmgr-pwrstate 23d280000.power-management:power-controller@78: always-on domain msg is not on at boot
+Jul 27 20:44:02 localhost kernel: macsmc-low-gpio: Failed to locate of_node [id: -1]
+Nov 01 17:30:52 localhost kernel: pcie-apple-pciec 3b0000000.pcie: port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:30:52 localhost kernel: pcie-apple-pciec 530000000.pcie: port /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:30:52 localhost kernel: pcie-apple-pciec 3b0000000.pcie: Port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 setup fail: -110
+Nov 01 17:30:52 localhost kernel: pcie-apple-pciec 530000000.pcie: Port /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0 setup fail: -110
+Nov 01 17:30:52 localhost kernel: pcie-apple-pciec 3b0000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:30:52 localhost kernel: pcie-apple-pciec 530000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:30:52 localhost kernel: pcieport 0001:02:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:30:52 localhost kernel: nvme 0001:03:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:30:52 localhost kernel: nvme nvme1: missing or invalid SUBNQN field.
+Nov 01 17:30:52 localhost kernel: workqueue: work func apple_pcie_topology_work enqueued on deprecated workqueue. Use system_{percpu|dfl}_wq instead.
+Nov 01 17:30:57 asahi-yotta-test kernel: spi-nor spi0.0: supply vcc not found, using dummy regulator
+Nov 01 17:30:57 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:30:57 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: Port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 setup fail: -110
+Nov 01 17:30:57 asahi-yotta-test kernel: tas2770 1-0031: supply SDZ not found, using dummy regulator
+Nov 01 17:30:57 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:30:57 asahi-yotta-test kernel: cs42l83 2-0048: supply VA not found, using dummy regulator
+Nov 01 17:30:57 asahi-yotta-test kernel: cs42l83 2-0048: supply VP not found, using dummy regulator
+Nov 01 17:30:57 asahi-yotta-test kernel: cs42l83 2-0048: supply VCP not found, using dummy regulator
+Nov 01 17:30:57 asahi-yotta-test kernel: cs42l83 2-0048: supply VD_FILT not found, using dummy regulator
+Nov 01 17:30:57 asahi-yotta-test kernel: cs42l83 2-0048: supply VL not found, using dummy regulator
+Nov 01 17:30:57 asahi-yotta-test kernel: apple-dcp 231c00000.dcp: RTKit: Unknown system endpoint: 0x0a
+Nov 01 17:30:57 asahi-yotta-test kernel: apple-dcp 271c00000.dcp: RTKit: Unknown system endpoint: 0x0a
+Nov 01 17:30:57 asahi-yotta-test kernel: hci_bcm4377 0000:01:00.1: resetting
+Nov 01 17:30:57 asahi-yotta-test kernel: brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac4378b1-pcie for chip BCM4378/3
+Nov 01 17:30:57 asahi-yotta-test kernel: hci_bcm4377 0000:01:00.1: reset done
+Nov 01 17:30:58 asahi-yotta-test kernel: brcmfmac: brcmf_c_process_txcap_blob: TxCap blob found, loading
+Nov 01 17:30:58 asahi-yotta-test kernel: brcmfmac: brcmf_c_process_cal_blob: Calibration blob provided by platform, loading
+Nov 01 17:30:58 asahi-yotta-test kernel: brcmfmac: brcmf_c_preinit_dcmds: Firmware: BCM4378/3 wl0: May 13 2023 07:20:48 version 18.20.383.15.7.8.150 FWID 01-b37727a5
+Nov 01 17:30:58 asahi-yotta-test kernel: Bluetooth: hci0: HCI LE Coded PHY feature bit is set, but its usage is not supported.
+Nov 01 17:31:00 asahi-yotta-test kernel: ieee80211 phy0: brcmf_p2p_set_firmware: failed to update device address ret -52
+Nov 01 17:31:00 asahi-yotta-test kernel: ieee80211 phy0: brcmf_p2p_create_p2pdev: set p2p_disc error
+Nov 01 17:31:00 asahi-yotta-test kernel: ieee80211 phy0: brcmf_cfg80211_add_iface: add iface p2p-dev-wld0 type 10 failed: err=-52
+Nov 01 17:31:00 asahi-yotta-test kernel: pcieport 0002:02:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: pcieport 0002:02:04.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: pcieport 0002:04:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: pcieport 0002:05:01.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: pcieport 0002:06:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: pcieport 0002:07:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: snd_hda_intel 0002:08:00.1: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: xhci_hcd 0002:08:00.2: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: i2c-designware-pci 0002:08:00.3: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:00 asahi-yotta-test kernel: amdgpu: DSDT table not found for OEM information
+Nov 01 17:31:00 asahi-yotta-test kernel: amdgpu 0002:08:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:31:14 asahi-yotta-test kernel: kauditd_printk_skb: 235 callbacks suppressed
+Nov 01 17:31:19 asahi-yotta-test kernel: workqueue: name exceeds WQ_NAME_LEN. Truncating to: hdmi_frl_status_polling_workque

@@ -1,7 +1,7 @@
-# Integrated M1 U-Boot: native Thunderbolt EFI boot
+# Integrated M1 U-Boot: native TB3 and USB4 EFI boot
 
 This is the complete U-Boot build with the previously tested Apple PHY, ACIO,
-NHI, DART, PCIe-C, NVMe and EFI handover work integrated as a pinned ten-patch
+NHI, DART, PCIe-C, NVMe and EFI handover work integrated as a pinned twelve-patch
 series. It retains internal Apple NVMe, USB mass storage, EFI and standard
 bootflow. It is not the old eight-patch, feature-only prototype.
 
@@ -21,19 +21,49 @@ continuation through a partly active controller is not allowed.
 
 ## Confirmed and remaining scope
 
-The first native hardware boot of `20261101-efi-rc1` reached Ubuntu on the
-Samsung 970 EVO Plus through the Yottamaster TB3 enclosure. The unchanged
-`7.2.12-usb4sd4-egpu3` kernel bound the Dynabook and all four Radeon functions
-on the other Mac port. The user saw two monitor outputs. See validation
-records for subsequent boots; a build passing is not hardware coverage.
+The `20261101-usb4-integrated-rc3` build automatically selects TB3 or USB4
+from the validated Type-C cable state. The normal U-Boot main loop and read-only EFI/NVMe reader are retained.
+Patch 12 adds an explicit halt of the separately retained USB4 xHCI context
+before NHI/ACIO shutdown at ExitBootServices. Failure prevents Linux handover.
+Generic USB teardown cannot discover that removed device-model context.
+This source-level ownership fix is not claimed to explain the intermittent
+black-screen return into the original stock Ubuntu. Runtime dispatch
+is exclusive and no longer requires numbered diagnostic tunnel-stage flags.
+
+The MP400 (ASM2463) with Samsung 970 EVO Plus booted the unchanged
+`7.2.12-usb4sd4-egpu3` kernel and external NVMe root. Both 64 MiB direct reads
+matched the earlier known digest; the Dynabook and all four Radeon functions
+were bound. A second boot used the normal root-authorization overlay without
+diagnostic capture hooks. rc3 also reached that external root after the xHCI
+handover correction. This is native USB4, not USB mass-storage fallback. Visual GRUB
+confirmation was not obtained for this run. Earlier rc1 TB3/internal/USB results
+below remain historical evidence, not an assertion that all were retested on rc3.
 
 **Universal boot remains the goal, not a claim of completed compatibility.**
-The low-level tunnel implementation is still restricted to J274 M1 port1,
-a direct Intel Alpine Ridge (8086:15da) TB3 storage topology and one NVMe namespace. Native USB4 enclosure
-link setup, boot-time tunnels on port0, multiple endpoints/namespaces and
-other Apple models remain open. Enabling port0 for Linux is not proof of
-pre-OS port0 tunnelling. The existing USB path remains available for USB
-storage; it does not force an already negotiated USB4 device into USB3.
+The pre-OS tunnel is restricted to J274 M1 port1, a direct USB4 v1 router or
+the previously supported Intel Alpine Ridge (8086:15da) TB3 topology, and one
+NVMe namespace. USB4 adapters are discovered and validated; they are not fixed
+to the MP400 port numbers. The single PCIe tunnel allocates the validated
+minimum lane credits and preserves vendor-defined protocol-adapter fields.
+USB4 v2, downstream router chains, port0 pre-OS tunnels and multiple namespaces
+remain unvalidated. The normal USB path does not force a USB4 device to USB3.
+
+### External-root authorization belongs to Linux
+
+U-Boot reads external EFI/GRUB, kernel and initramfs, then relinquishes the
+controllers. Linux must independently authorize the selected root enclosure.
+The original external initramfs only allowed the earlier Intel TB3 Yotta, so
+MP400 appeared as an unauthorized router and the root device timed out.
+No new kernel compilation was needed to correct that distinction.
+
+`make-root-auth-overlay.py` generates a dracut settled hook for explicit
+root UUID, router UUID, vendor/device IDs and physical SoC controller.
+It refuses to authorize a different device or a boot using another root.
+It performs at most one authorization attempt per boot, has no diagnostic
+command-line dependency, and mounts/writes no boot filesystem. It only creates
+an archive; installation and GRUB selection must be performed separately after
+checking the actual selected device. Retain the original initramfs as fallback.
+Do not reuse this Mac's UUIDs from the hardware evidence on another system.
 
 ## Rebuild and checks
 
@@ -43,7 +73,8 @@ python3 bootloader/integrated/build.py /path/to/u-boot /path/to/new-output --job
 
 The script checks every patch hash, reconstructs the source in an isolated
 worktree at the pinned upstream commit, builds the full Apple and sandbox
-profiles, runs hardware-library tests and actual C EFI/FDT fault tests. It
+profiles, runs hardware-library tests, actual C EFI/FDT fault tests and the
+USB4 router/path/transport-dispatch fault tests. It
 never changes installed boot files or builds/updates a kernel. m1n1 source
 is not modified. The independently installed Apple `Asahi Linux` entry uses
 the unchanged released m1n1 stage2 binary plus the integrated DT and U-Boot.
@@ -103,10 +134,40 @@ The independent Asahi ESP now holds a standalone GRUB menu (example
 choices. Only GRUB is stored there, not a kernel or initramfs. Its previous
 BOOTAA64.EFI is backed up on the same ESP; the original Ubuntu ESP/bundle
 remain unchanged. The SanDisk retains older egpu1 kernel/firmware and is not
-a current-kernel regression acceptance. Native USB4 boot remains next work.
+a current-kernel regression acceptance. Native USB4 was subsequently integrated in rc2; see the current scope above.
 
 The earlier black-screen return is now localized past GRUB: the original
 internal stock 7.2.0 kernel and userspace began, and that journal ends at
 4.9 seconds, near an ACIO AT-register timeout. This does not establish the
 root cause or exclude retained hardware state. Manual original-Ubuntu
 recovery succeeded.
+
+## Current reboot limitation
+
+The first rc2 return to the original internal Ubuntu succeeded. The next
+external shutdown was orderly through journald termination, and the subsequent
+internal boot reached its stock kernel, system services and GDM, but HDMI was
+black and SSH unavailable. Manual original-Ubuntu recovery succeeded. This
+localizes the observed return failure past GRUB; it does not identify its cause.
+The rc3 external-root boot and subsequent automatic return to the internal
+stock Ubuntu were confirmed over SSH; repeated reboot stability remains open.
+The transient `grub2-common` invalid-environment-block report could not be
+reproduced against the same external `grubenv` offline; it was not erased or
+silenced. These findings are retained separately from successful USB4 boot.
+
+The currently installed kernel, its modules and its original initramfs were
+not rebuilt/replaced during this integration. The selected-root initramfs is
+an additional file; the original remains available. Hardware test bundles use
+one-shot selection and restore the preceding independent Asahi bootloader.
+
+## rc3 independent USB3 comparison
+
+With MP400 physically disconnected, the same twelve-patch rc3 bundle booted
+SanDisk through the normal USB/internal EFI path. Linux confirmed the rc3 DT
+marker, USB root and a 5000 Mb/s UAS link (boot
+`523b5ee3-fe76-4659-96c8-65d4b184557b`). The user confirmed the Ubuntu login/desktop
+and logged in. Zero system units failed, and the previous independent Asahi
+bundle was automatically restored. This retains the existing USB3 boot option
+without a Thunderbolt/USB4 system disk. The older SanDisk egpu1 image still
+reports its known missing AVD firmware and a PCIe tunnel reset timeout; this
+is a bootloader regression test, not acceptance of that older full system.

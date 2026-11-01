@@ -36,5 +36,8 @@ for pattern in ['apple_dart','iommu','pci','apple_mbox','usb4_cfg','apple_i2c','
  results[pattern]=int(match[1])
 run(['dtc','-I','dts','-O','dtb','-o',out/'j274-integrated.dtb',here/'j274-integrated.dts'],'dtc.log')
 run(['python3',here/'test-integration.py',work,out/'j274-integrated.dtb',out/'policy-tests'],'policy-tests.log')
+run(['python3',here/'test-usb4.py',work,out/'usb4-tests'],'usb4-tests.log')
+run(['python3',here/'test-root-auth.py',out/'root-auth-tests'],'root-auth-tests.log')
+run(['python3',here/'test-xhci-handover.py',work,out/'xhci-handover-tests'],'xhci-handover-tests.log')
 result={'manifest':m,'software_tests':results,'installed':False,'uboot_sha256':hashlib.sha256((out/'apple/u-boot-nodtb.bin').read_bytes()).hexdigest()}
 (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))

@@ -1,0 +1,98 @@
+From: frogro <frogro@users.noreply.github.com>
+Subject: [PATCH 12/12] apple: halt retained USB4 xHCI before EFI OS handover
+
+The USB4 host sequence removes the regular USB device and starts a retained
+xHCI context outside the device model. Generic EFI USB teardown cannot stop
+that context. Stop and verify HALTED before NHI/ACIO shutdown and before Linux
+may reuse DMA memory. Keep buffers allocated until handoff. A failed halt
+aborts handover through the existing reset path; TB3 with no retained xHCI
+is a no-op. This addresses a source-level ownership gap, not a proven cause
+of the intermittent black-screen reboot.
+
+--- a/include/apple_atc_m1.h
++++ b/include/apple_atc_m1.h
+@@ -2,6 +2,9 @@
+ #ifndef __APPLE_ATC_M1_H
+ #define __APPLE_ATC_M1_H
+ #include <linux/types.h>
++
++/* Stop a retained USB4 xHCI before Linux can reuse its DMA memory. */
++int apple_atc_m1_quiesce(void);
+ 
+ enum atc_m1_region { ATC_CORE, ATC_AXI, ATC_USB2, ATC_PIPE, ATC_DP, ATC_REGIONS };
+ enum atc_m1_mode { ATC_USB4, ATC_TBT };
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -35,6 +35,25 @@
+ 	struct udevice *usb;
+ 	struct xhci_ctrl *retained_xhci;
+ };
++
++/* This controller was started outside the USB device model after its normal
++ * device was removed. Generic EFI USB teardown cannot find it. Keep buffers
++ * allocated, but require a verified halt before relinquishing firmware DMA. */
++static struct xhci_ctrl *boot_xhci;
++int apple_atc_m1_quiesce(void)
++{
++#if CONFIG_IS_ENABLED(USB_XHCI_HCD)
++ int ret;
++ if (!boot_xhci) return 0;
++ ret = xhci_m1_diag_stop(boot_xhci);
++ if (ret) return ret;
++ boot_xhci = NULL;
++ puts("USB4-XHCI OS halt verified; DMA buffers retained\n");
++ return 0;
++#else
++ return 0;
++#endif
++}
+ 
+ static void show_stage(struct atc_m1_hw *hw)
+ {
+@@ -276,6 +295,7 @@
+   apple_boot_trace("xhci-start-begin");
+   ret = xhci_m1_diag_start(hw->usb, hw->xhci, hw->xhci + hw->cap,
+                            &hw->retained_xhci);
++  boot_xhci = hw->retained_xhci;
+   apple_boot_trace("xhci-start-return");
+   if (!ret) ret = check_usb_darts(hw);
+ #else
+@@ -583,7 +603,7 @@
+         if (hw.retained_xhci) {
+          int stop;
+          apple_boot_trace("xhci-stop-begin");
+-         stop = xhci_m1_diag_stop(hw.retained_xhci);
++         stop = apple_atc_m1_quiesce();
+          apple_boot_trace("xhci-stop-return");
+          printf("M1-XHCI stop ret=%d; buffers retained\n", stop);
+          if (stop) ret = stop;
+--- a/cmd/apple_pciec_m1.c
++++ b/cmd/apple_pciec_m1.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /* J274 port1 PCIe-C transport and read-only EFI boot integration. */
+ #include <apple_pciec_m1.h>
++#include <apple_atc_m1.h>
+ #include <linux/errno.h>
+ #ifdef CONFIG_ARCH_APPLE
+ #include <apple_acio_m1.h>
+@@ -371,6 +372,10 @@
+  if (tb_efi_exit_done) return 0;
+  ret = tb_quiesce();
+  if (ret || tb.live || tb.dma) return ret ? ret : -EBUSY;
++#if CONFIG_IS_ENABLED(CMD_APPLE_ATC_M1)
++ ret = apple_atc_m1_quiesce();
++ if (ret) return ret;
++#endif
+  ret = apple_nhi_m1_quiesce();
+  if (ret) return ret;
+  ret = apple_acio_m1_prepare_os();
+@@ -389,7 +394,7 @@
+ {
+  int ret;
+  EFI_ENTRY("%p, %p", event, context);
+- puts("TB-EFI-EXIT begin: NVMe -> NHI -> ACIO\n");
++ puts("TB-EFI-EXIT begin: NVMe -> USB4 xHCI -> NHI -> ACIO\n");
+  ret = tb_stop_for_efi();
+  if (ret) {
+   printf("TB-EFI-EXIT FAILED ret=%d; refusing Linux handoff, reset\n", ret);

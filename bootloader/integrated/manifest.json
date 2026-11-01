@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "base_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
-  "version": "20261101-efi-rc1",
+  "version": "20261101-usb4-integrated-rc3",
   "patches": [
     {
       "file": "../patches/0001-iommu-resolve-pci-map-without-ofnode.patch",
@@ -42,19 +42,37 @@
     {
       "file": "patches/0010-apple-use-standard-EFI-boot-and-native-port-handover.patch",
       "sha256": "8e34c4766f29040c19c8b49d195ea624229a23ba7de1f55cf332645fe8b3b919"
+    },
+    {
+      "file": "patches/0011-apple-integrate-native-usb4-efi-boot.patch",
+      "sha256": "367a1d7024c3a1bab3f65de9590df1c90573385fd9ed55ef68326efe8dd757a7"
+    },
+    {
+      "file": "patches/0012-apple-halt-retained-usb4-xhci-before-efi-handover.patch",
+      "sha256": "92b1763d8adbc4ad7a478b35a55a6fc857b6fc847fb55ef58f936f0cd0d71b2f"
     }
   ],
-  "scope": "J274 M1; integrated full U-Boot with internal NVMe, USB, and port1 TB3 EFI boot",
+  "scope": "J274 M1; full U-Boot with internal NVMe, USB storage, port1 TB3 and native USB4 v1 single-hop EFI boot",
   "not_yet_universal": [
     "port0 pre-OS tunnel",
-    "native USB4 enclosure link",
     "multiple NVMe endpoints/namespaces",
-    "external-router configuration still guards Intel 8086:15da"
+    "USB4 v2 and downstream USB4 router chains",
+    "TB3 external-router configuration still guards Intel 8086:15da",
+    "rc3 TB3 hardware regression pending"
   ],
   "upstream_source": "https://github.com/AsahiLinux/u-boot",
   "no_m1n1_source_modifications": true,
-  "hardware_result": "Four TB-root starts, one internal Ubuntu, USB-A boot via TB GRUB, and independent USB-A boot with Yotta physically disconnected passed. One intervening return to stock internal kernel stalled after kernel/userspace startup.",
-  "confirmed_hardware": [
+  "hardware_result": "Two rc2 native USB4 root boots and one rc3 boot with verified xHCI OS-halt path reached Linux. rc2 first return succeeded; second return reached internal stock Linux/GDM but HDMI was black and SSH absent. rc3 return to original internal Ubuntu confirmed by SSH and root UUID. No claim of full reboot stability.",
+  "kernel_findings_deferred": [
+    "PCIe tunnel reset release timeouts recovered by normal enumeration",
+    "NetworkManager-wait-online timeout",
+    "Radeon USB-C display absent on second boot; diagnosis pending",
+    "SanDisk retains older egpu1 image and missing AVD firmware; not modified in this bootloader test",
+    "grub2-common service failure under investigation",
+    "Black screen/no SSH after fourth TB-root shutdown: phase not yet determined; must not be assumed a kernel or U-Boot fault.",
+    "rc2 return reached internal stock kernel and GDM; user reported black screen/no SSH, manual recovery succeeded. Cause not established."
+  ],
+  "confirmed_hardware_rc1": [
     "TB3 Samsung root with unchanged egpu3 kernel",
     "both Linux ports enabled",
     "Dynabook and all four Radeon drivers bound",
@@ -64,12 +82,11 @@
     "One-shot menu selection consumed correctly",
     "Independent USB-A SanDisk boot with TB SSD physically disconnected, using internal GRUB and external kernel/initramfs/root"
   ],
-  "kernel_findings_deferred": [
-    "PCIe tunnel reset release timeouts recovered by normal enumeration",
-    "NetworkManager-wait-online timeout",
-    "Radeon USB-C display absent on second boot; diagnosis pending",
-    "SanDisk retains older egpu1 image and missing AVD firmware; not modified in this bootloader test",
-    "grub2-common service failure under investigation",
-    "Black screen/no SSH after fourth TB-root shutdown: phase not yet determined; must not be assumed a kernel or U-Boot fault."
+  "confirmed_hardware": [
+    "MP400 native USB4 v1 root with unchanged egpu3 kernel",
+    "both Linux ports, Dynabook and all four Radeon drivers",
+    "automatic restoration of previous Asahi U-Boot",
+    "rc3 USB4 boot with explicit retained-xHCI halt before OS handover",
+    "rc3 independent SanDisk USB-A root at 5 Gb/s with MP400 physically disconnected; user confirmed login/desktop"
   ]
 }
