@@ -1,0 +1,10 @@
+{
+  "candidate_sha256": "e6328b961a4804075fa2362fada57681e6546cc1f2e1f64311be0247e6b90cf5",
+  "return_boot_id": "d864b992-8c98-4158-9041-d33dbd218fe5",
+  "returned_to": "internal Ubuntu stock 7.2.0-1001-asahi-arm",
+  "normal_bootloader_restored": true,
+  "new_external_linux_journal": false,
+  "old_v15_log_unchanged": true,
+  "conclusion": "No successful external Linux boot established. EFI execution/early Linux phase unresolved; next v17 reads and hashes entire external EFI without executing it.",
+  "user_display_observation": "pending"
+}

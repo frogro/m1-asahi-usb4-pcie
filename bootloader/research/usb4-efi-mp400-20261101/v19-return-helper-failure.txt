@@ -1,0 +1,8 @@
+Nov 01 17:17:33 asahi-yotta-test systemd[1]: Starting usb4-mp400-return.service - Return from bounded USB4 EFI test...
+Nov 01 17:17:33 asahi-yotta-test python3[4296]:   File "/var/lib/usb4-mp400-diagnostic/return.py", line 6
+Nov 01 17:17:33 asahi-yotta-test python3[4296]:     (state/'automatic-return.txt').write_text('Bounded external USB4 EFI boot test completed; returning to default Ubuntu
+Nov 01 17:17:33 asahi-yotta-test python3[4296]:                                               ^
+Nov 01 17:17:33 asahi-yotta-test python3[4296]: SyntaxError: unterminated string literal (detected at line 6)
+Nov 01 17:17:33 asahi-yotta-test systemd[1]: usb4-mp400-return.service: Main process exited, code=exited, status=1/FAILURE
+Nov 01 17:17:33 asahi-yotta-test systemd[1]: usb4-mp400-return.service: Failed with result 'exit-code'.
+Nov 01 17:17:33 asahi-yotta-test systemd[1]: Failed to start usb4-mp400-return.service - Return from bounded USB4 EFI test.

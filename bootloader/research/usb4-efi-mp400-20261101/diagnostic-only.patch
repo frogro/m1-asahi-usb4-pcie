@@ -1,0 +1,741 @@
+--- a/include/apple_nhi_m1.h
++++ b/include/apple_nhi_m1.h
+@@ -26,8 +26,17 @@
+ typedef int (*apple_nhi_read_fn)(void *context, unsigned int port,
+ 			       unsigned int space, unsigned int offset,
+ 			       unsigned int words, u32 *data);
++typedef int (*apple_nhi_router_write_fn)(void *, unsigned int, unsigned int, const u32 *);
++int apple_nhi_m1_usb4_router_setup(apple_nhi_read_fn, apple_nhi_read_fn,
++ apple_nhi_router_write_fn, void (*)(void *), void *, unsigned int);
+ typedef int (*apple_nhi_host_config_fn)(void *context, u32 *data);
+ /* Read-only external router inventory; callback is restricted to route 1. */
++struct apple_usb4_snapshot {
++ u32 port[4], cap[4], old[4][2], nfc[4], control[4];
++ bool valid;
++};
++int apple_nhi_m1_usb4_preflight(apple_nhi_read_fn, apple_nhi_read_fn, void *, struct apple_usb4_snapshot *);
++int apple_nhi_m1_usb4_path_plan(const struct apple_usb4_snapshot *, const u32 *, u32 [4][2]);
+ int apple_nhi_m1_remote_inventory(apple_nhi_read_fn read, void *context);
+ int apple_nhi_m1_remote_configure(apple_nhi_read_fn read,
+                                 apple_nhi_host_config_fn write, void *context,
+--- a/cmd/apple_nhi_m1_inventory.c
++++ b/cmd/apple_nhi_m1_inventory.c
+@@ -144,13 +144,13 @@
+ 				if (seen[i] == offset)
+ 					return -ELOOP;
+ 			seen[count++] = offset;
+-			ret = read(context, port, 1, offset, 2, data);
++			ret = read(context, port, 1, offset, 1, data);
+ 			if (ret)
+ 				return ret;
+ 			reads++;
+ 			id = (data[0] >> 8) & 255;
+-			printf("REMOTE-INVENTORY cap port=%u offset=%#x id=%u raw=%08x %08x\n",
+-			       port, offset, id, data[0], data[1]);
++			printf("REMOTE-INVENTORY cap port=%u offset=%#x id=%u raw=%08x\n",
++			       port, offset, id, data[0]);
+ 		}
+ 	}
+ 	printf("REMOTE-INVENTORY PASS reads=%u; no remote writes, paths or SSD access\n", reads);
+@@ -461,3 +461,186 @@
+  }
+  return 0;
+ }
++
++/* USB4 v1, single-hop router setup following Linux switch.c and usb4.c.
++ * Linux original authors: Andreas Noever, Mika Westerberg, Intel and Asahi
++ * contributors. No NVM operations, PCIe adapter enable, paths or disk I/O.
++ */
++int apple_nhi_m1_usb4_router_setup(apple_nhi_read_fn host_read,
++ apple_nhi_read_fn read, apple_nhi_router_write_fn write,
++ void (*wait)(void *), void *context, unsigned int upstream)
++{
++ const u32 pto = 1U << 24, uto = 1U << 25, hco = 1U << 26;
++ const u32 cns = 1U << 23, cv = 1U << 31;
++ u32 h[5], host[5], p[4], cfg[4], check[4], cs5, cs6, value;
++ unsigned int maxport, i, poll;
++ bool pcie = false, usb3 = false;
++ int ret;
++ if (!host_read || !read || !write || !wait || !upstream || upstream > 16)
++  return -EINVAL;
++ ret = read(context, 0, 2, 0, 5, h);
++ if (ret) return ret;
++ maxport = (h[1] >> 14) & 63;
++ if (!h[0] || h[0] == ~0U || ((h[4] >> 29) & 7) != 1 ||
++     !maxport || maxport > 16 || upstream > maxport)
++  return -EPROTONOSUPPORT;
++ if (h[2] || h[3] || ((h[1] >> 20) & 7)) return -EBUSY;
++ ret = host_read(context, 0, 2, 0, 5, host);
++ if (ret) return ret;
++ maxport = (host[1] >> 14) & 63;
++ if (((host[4] >> 29) & 7) != 1 || !maxport || maxport > 16 ||
++     host[2] || host[3] != (1U << 31) || ((host[1] >> 20) & 7))
++  return -EPROTO;
++ for (i = 1; i <= maxport; i++) {
++  ret = host_read(context, i, 1, 0, 4, p);
++  if (ret) return ret;
++  if ((p[2] & 0xffffff) && ((p[3] >> 20) & 63) != i) return -EPROTO;
++  if ((p[2] & 0xffffff) == 0x100101) pcie = true;
++  if ((p[2] & 0xffffff) == 0x200101) usb3 = true;
++ }
++ if (!pcie) return -EOPNOTSUPP;
++ cfg[0] = (h[1] & ~((63U << 8) | (7U << 20))) | (upstream << 8) | (1U << 20);
++ cfg[1] = 1;
++ cfg[2] = 1U << 31;
++ cfg[3] = (h[4] & 0xffff0000U) | 0x10ff;
++ ret = write(context, 1, 4, cfg);
++ if (ret) return ret;
++ ret = read(context, 0, 2, 1, 4, check);
++ if (ret) return ret;
++ for (i = 0; i < 4; i++) if (check[i] != cfg[i]) return -EIO;
++ printf("USB4-ROUTER enumerated upstream=%u route=1 CMUV=0x10 parent-pcie=%u parent-usb3=%u\n", upstream, pcie, usb3);
++ ret = read(context, 0, 2, 6, 1, &cs6);
++ if (ret) return ret;
++ ret = read(context, 0, 2, 5, 1, &cs5);
++ if (ret) return ret;
++ printf("USB4-ROUTER before CS5=%08x CS6=%08x\n", cs5, cs6);
++ if (cs5 & (cv | 1U)) return -EBUSY;
++ value = (cs5 | pto) & ~cns;
++ if (usb3) value |= uto;
++ else if (cs6 & (1U << 18)) value |= hco;
++ ret = write(context, 5, 1, &value);
++ if (ret) return ret;
++ ret = read(context, 0, 2, 5, 1, &cs5);
++ if (ret) return ret;
++ if ((cs5 & (pto | uto | hco | cns | cv)) != (value & (pto | uto | hco | cns | cv))) return -EIO;
++ for (poll = 0; poll <= 50; poll++) {
++  ret = read(context, 0, 2, 6, 1, &cs6);
++  if (ret) return ret;
++  if (cs6 & (1U << 24)) break;
++  if (poll < 50) wait(context);
++ }
++ if (!(cs6 & (1U << 24))) return -ETIMEDOUT;
++ printf("USB4-ROUTER ready CS6=%08x polls=%u\n", cs6, poll + 1);
++ ret = read(context, 0, 2, 5, 1, &cs5);
++ if (ret) return ret;
++ value = cs5 | cv;
++ ret = write(context, 5, 1, &value);
++ if (ret) return ret;
++ for (poll = 0; poll <= 50; poll++) {
++  ret = read(context, 0, 2, 6, 1, &cs6);
++  if (ret) return ret;
++  if (cs6 & (1U << 25)) break;
++  if (poll < 50) wait(context);
++ }
++ if (!(cs6 & (1U << 25))) return -ETIMEDOUT;
++ ret = read(context, 0, 2, 5, 1, &cs5);
++ if (ret) return ret;
++ if (!(cs5 & cv)) return -EIO;
++ printf("USB4-ROUTER-SETUP PASS route=1 CS5=%08x CS6=%08x polls=%u; no paths\n",cs5,cs6,poll+1);
++ return 0;
++}
++
++/* Read-only single-hop USB4 path discovery. No assumed PCIe port number. */
++int apple_nhi_m1_usb4_preflight(apple_nhi_read_fn host, apple_nhi_read_fn remote,
++                               void *context, struct apple_usb4_snapshot *snapshot)
++{
++ apple_nhi_read_fn reads[2] = {host, remote};
++ u32 headers[2][5], p[8], cap, path[2], control[2];
++ unsigned int endpoints[2] = {0,0}, lane[2] = {1,0};
++ unsigned int r, i, max, off, wanted, seen[16], n, j;
++ int ret;
++ if (!host || !remote || !snapshot) return -EINVAL;
++ *snapshot = (struct apple_usb4_snapshot){0};
++ for (r = 0; r < 2; r++) {
++  ret = reads[r](context,0,2,0,5,headers[r]);
++  if (ret) return ret;
++  max = (headers[r][1] >> 14) & 63;
++  if (!max || max > 16 || ((headers[r][4] >> 29)&7)!=1 ||
++      headers[r][2] != r || headers[r][3] != (1U<<31) ||
++      ((headers[r][1]>>20)&7) != r) return -EPROTO;
++  if (r) lane[r] = (headers[r][1]>>8)&63;
++  if (!lane[r] || lane[r] > max) return -EPROTO;
++  for (i=1;i<=max;i++) {
++   ret=reads[r](context,i,1,0,4,p);if(ret)return ret;
++   if ((p[2]&0xffffff) && ((p[3]>>20)&63)!=i) return -EPROTO;
++   if ((p[2]&0xffffff)==(r?0x100102:0x100101)) {
++    if (endpoints[r]) return -EOPNOTSUPP;
++    endpoints[r]=i;
++   }
++  }
++  if (!endpoints[r]) return -ENODEV;
++ }
++ printf("USB4-PREFLIGHT discovered host-pcie=%u host-lane=%u remote-lane=%u remote-pcie=%u\n",endpoints[0],lane[0],lane[1],endpoints[1]);
++ for(r=0;r<2;r++) for(i=0;i<2;i++) {
++  unsigned int port=i?lane[r]:endpoints[r];
++  ret=reads[r](context,port,1,0,8,p);if(ret)return ret;
++  if((p[5]&2047)<8 || ((p[5]>>11)&2047)<8) return -ENOSPC;
++  wanted=i?1:4;off=p[1]&255;
++  for(n=0;;n++) {
++   if(n==16 || off<8 || off>255)return -ERANGE;
++   for(j=0;j<n;j++)if(seen[j]==off)return -ELOOP;
++   seen[n]=off;
++   ret=reads[r](context,port,1,off,1,&cap);if(ret)return ret;
++   if(((cap>>8)&255)==wanted)break;
++   off=cap&255;
++  }
++  if(!i && (cap & (1U<<31)))return -EBUSY;
++  ret=reads[r](context,port,0,16,2,path);if(ret)return ret;
++  if(path[0]&(1U<<31))return -EBUSY;
++  control[0]=control[1]=0;
++  if(i) {ret=reads[r](context,port,0,0,2,control);if(ret)return ret;}
++  {
++   unsigned int index = r ? (i ? 2 : 3) : i;
++   snapshot->port[index]=port; snapshot->cap[index]=off;
++   snapshot->old[index][0]=path[0]; snapshot->old[index][1]=path[1];
++   snapshot->nfc[index]=p[4]; snapshot->control[index]=control[0];
++  }
++  printf("USB4-PREFLIGHT route=%u port=%u cap=%#x cap-word=%08x buffers=%08x path8=%08x %08x control0=%08x %08x\n",r,port,off,cap,p[4],path[0],path[1],control[0],control[1]);
++ }
++ snapshot->valid=true;
++ puts("USB4-PREFLIGHT PASS; discovered endpoints and inactive paths; no path writes\n");
++ return 0;
++}
++
++/* USB4 protocol-adapter credit/IFC/ISE fields are vendor-defined (Linux path.c).
++ * Preserve them on BOTH ends; allocate minimum PCIe credits only on lanes.
++ */
++int apple_nhi_m1_usb4_path_plan(const struct apple_usb4_snapshot *s,
++                               const u32 *limits, u32 next[4][2])
++{
++ unsigned int i, out[4], total, control;
++ if (!s || !limits || !next || !s->valid) return -EINVAL;
++ if (limits[0]<6 || limits[1]<6) return -ENOSPC;
++ if (s->port[0]==s->port[1] || s->port[2]==s->port[3]) return -EPROTO;
++ out[0]=s->port[1];out[1]=s->port[0];out[2]=s->port[3];out[3]=s->port[2];
++ for(i=0;i<4;i++) {
++  if(!s->port[i] || s->port[i]>16 || s->cap[i]<8 || s->cap[i]>255) return -EPROTO;
++  if(s->old[i][0]&(1U<<31)) return -EBUSY;
++  if(i==1 || i==2) {
++   total=(s->nfc[i]>>20)&1023;control=(s->control[i]>>17)&127;
++   if(total<control+6) return -ENOSPC;
++  }
++ }
++ for(i=0;i<4;i++) {
++  next[i][0]=(1U<<31)|(out[i]<<11)|8;
++  next[i][1]=0x301;
++  if(i==0 || i==3) {
++   next[i][0]|=s->old[i][0]&(127U<<17);
++   next[i][1]|=s->old[i][1]&((1U<<24)|(1U<<26));
++   next[i][1]|=1U<<25;
++  } else {
++   next[i][0]|=6U<<17;next[i][1]|=1U<<24;
++  }
++ }
++ return 0;
++}
+--- a/cmd/apple_nhi_m1_ring.c
++++ b/cmd/apple_nhi_m1_ring.c
+@@ -51,6 +51,7 @@
+  unsigned int sent, received, skipped, acked, pending_count;
+  unsigned int last_response_port;
+  unsigned int remote_max_port;
++ struct apple_usb4_snapshot usb4_snapshot;
+  bool path_snapshot_valid;
+  bool paths_programmed;
+  u32 path_old[4][2], path_cap[4], path_control[4], path_nfc[4];
+@@ -463,6 +464,155 @@
+                          USB4_CFG_READ, 1);
+ }
+ 
++static int diagnostic_usb4_path_read(void *context, unsigned int port,
++ unsigned int space, unsigned int offset, unsigned int words, u32 *data)
++{
++ if (space == 0) {
++  if (!port || port > 16 || words != 2 || (offset != 0 && offset != 16))
++   return -EINVAL;
++  return diagnostic_xfer(context,port,space,offset,words,data,USB4_CFG_READ,1);
++ }
++ return diagnostic_remote_read(context,port,space,offset,words,data);
++}
++
++/* USB4 router buffer-allocation query. Only operation 0x33 allowed. */
++static int diagnostic_usb4_credit_read(void *context, unsigned int port,
++ unsigned int space, unsigned int offset, unsigned int words, u32 *data)
++{
++ if (port || space != 2 ||
++     !((words == 1 && (offset == 0x19 || offset == 0x1a)) ||
++       (words == 16 && offset == 9))) return -EINVAL;
++ return diagnostic_xfer(context,0,2,offset,words,data,USB4_CFG_READ,1);
++}
++static int diagnostic_usb4_credit_write(void *context, unsigned int offset, u32 value)
++{
++ if (!((offset == 0x19 && value == 0) ||
++       (offset == 0x1a && value == 0x80000033))) return -EINVAL;
++ return diagnostic_xfer(context,0,2,offset,1,&value,USB4_CFG_WRITE,1);
++}
++static void diagnostic_usb4_credit_wait(void *context)
++{
++ udelay(10000);
++}
++static int diagnostic_usb4_credits(struct diagnostic_ring *ring)
++{
++ int ret;
++ puts("USB4-REMOTE-CREDITS BEGIN; buffer allocation query only\n");
++ ret=apple_nhi_m1_query(diagnostic_usb4_credit_read,diagnostic_usb4_credit_write,
++                      diagnostic_usb4_credit_wait,ring,0x33,0);
++ if (!ret) puts("USB4-REMOTE-CREDITS PASS; no path programming\n");
++ return ret;
++}
++
++/* Enable the discovered USB4 protocol adapters, enumerate PCIe, then disable.
++ * No endpoint bus mastering, BAR assignment, NVMe queues or storage commands.
++ */
++static int diagnostic_usb4_endpoint_scan(struct diagnostic_ring *ring, unsigned int mode)
++{
++ struct apple_usb4_snapshot *s=&ring->usb4_snapshot;
++ const unsigned int order[2]={3,0};
++ u32 original[2],value;
++ unsigned int k,i,done=0;
++ int ret,cleanup=0;
++ for(k=0;k<2;k++) {
++  i=order[k];
++  ret=diagnostic_xfer(ring,s->port[i],1,s->cap[i],1,&original[k],USB4_CFG_READ,i?1:0);
++  if(ret)return ret;
++  if((original[k]&(1U<<31)) || ((original[k]>>25)&15))return -EBUSY;
++ }
++ for(k=0;k<2;k++) {
++  i=order[k];value=original[k]|(1U<<31);done=k+1;
++  ret=diagnostic_xfer(ring,s->port[i],1,s->cap[i],1,&value,USB4_CFG_WRITE,i?1:0);
++  if(ret)goto stop;
++  ret=diagnostic_xfer(ring,s->port[i],1,s->cap[i],1,&value,USB4_CFG_READ,i?1:0);
++  if(ret)goto stop;
++  if(!(value&(1U<<31))){ret=-EIO;goto stop;}
++  printf("USB4-PCIE ENABLE route=%u port=%u value=%08x\n",i?1:0,s->port[i],value);
++ }
++ ret=apple_pciec_m1_start_link();
++ if(!ret)ret=apple_pciec_m1_scan();
++ if(!ret && mode==15)ret=apple_pciec_m1_nvme_read();
++stop:
++ while(done) {
++  k=--done;i=order[k];
++  value=original[k]&~(1U<<31);
++  int e=diagnostic_xfer(ring,s->port[i],1,s->cap[i],1,&value,USB4_CFG_WRITE,i?1:0);
++  if(!e)e=diagnostic_xfer(ring,s->port[i],1,s->cap[i],1,&value,USB4_CFG_READ,i?1:0);
++  if(!e&&(value&(1U<<31)))e=-EIO;
++  if(e&&!cleanup)cleanup=e;
++ }
++ printf("USB4-PCIE DISABLE result=%d scan/read-result=%d; no SSD writes\n",cleanup,ret);
++ return ret?ret:cleanup;
++}
++
++static int diagnostic_usb4_paths(struct diagnostic_ring *ring, unsigned int scan)
++{
++ struct apple_usb4_snapshot *s=&ring->usb4_snapshot;
++ u32 limits[2]={0},metadata,data[16],next[4][2],current[2];
++ unsigned int r,i,j,done=0;
++ int ret,cleanup=0;
++ if(!s->valid)return -EPERM;
++ /* Refresh host query after DP resource queries, then read both router results. */
++ ret=diagnostic_query(ring,0x33,0);if(ret)return ret;
++ for(r=0;r<2;r++) {
++  ret=diagnostic_xfer(ring,0,2,0x19,1,&metadata,USB4_CFG_READ,r);if(ret)return ret;
++  if(!(metadata&255)||(metadata&255)>16)return -EPROTO;
++  ret=diagnostic_xfer(ring,0,2,9,16,data,USB4_CFG_READ,r);if(ret)return ret;
++  for(j=0;j<(metadata&255);j++)if((data[j]&65535)==4) {
++   if(limits[r])return -EPROTO;
++   limits[r]=data[j]>>16;
++  }
++ }
++ ret=apple_nhi_m1_usb4_path_plan(s,limits,next);if(ret)return ret;
++ printf("USB4-PATHS limits=%u,%u; diagnostic lane allocation=6,6\n",limits[0],limits[1]);
++ for(i=0;i<4;i++) {
++  r=i>=2;
++  ret=diagnostic_xfer(ring,s->port[i],0,16,2,current,USB4_CFG_READ,r);if(ret)goto restore;
++  if(current[0]!=s->old[i][0] || current[1]!=s->old[i][1]){ret=-EBUSY;goto restore;}
++  done=i+1; /* Also restore after an uncertain write completion. */
++  ret=diagnostic_xfer(ring,s->port[i],0,16,2,next[i],USB4_CFG_WRITE,r);if(ret)goto restore;
++  ret=diagnostic_xfer(ring,s->port[i],0,16,2,current,USB4_CFG_READ,r);if(ret)goto restore;
++  printf("USB4-PATHS route=%u port=%u written=%08x %08x read=%08x %08x\n",r,s->port[i],next[i][0],next[i][1],current[0],current[1]);
++  if(current[0]!=next[i][0] || (current[1]&~(1U<<28))!=next[i][1]){ret=-EIO;goto restore;}
++ }
++ puts("USB4-PATHS PROGRAM PASS; PCIe protocol adapters remain disabled\n");
++ if(scan)ret=diagnostic_usb4_endpoint_scan(ring,scan);
++restore:
++ while(done) {
++  i=--done;r=i>=2;
++  int e=diagnostic_xfer(ring,s->port[i],0,16,2,s->old[i],USB4_CFG_WRITE,r);
++  if(!e)e=diagnostic_xfer(ring,s->port[i],0,16,2,current,USB4_CFG_READ,r);
++  if(!e&&(current[0]!=s->old[i][0] || current[1]!=s->old[i][1]))e=-EIO;
++  if(e&&!cleanup)cleanup=e;
++ }
++ printf("USB4-PATHS RESTORE result=%d test-result=%d; no PCIe adapter enable or SSD IO\n",cleanup,ret);
++ return ret?ret:cleanup;
++}
++
++/* USB4 v1 router registers only. No path/adapter/NVM writes. */
++static int diagnostic_usb4_router_write(void *context, unsigned int offset,
++                                      unsigned int words, const u32 *data)
++{
++ u32 copy[4];
++ if (!data) return -EINVAL;
++ if (offset == 1 && words == 4) {
++  if (data[1] != 1 || data[2] != BIT(31) ||
++      ((data[0] >> 20) & 7) != 1 ||
++      !((data[0] >> 8) & 63) || ((data[0] >> 8) & 63) > 16 ||
++      ((data[3] >> 29) & 7) != 1 || (data[3] & 0xffff) != 0x10ff)
++   return -EINVAL;
++ } else if (offset == 5 && words == 1) {
++  if (!(data[0] & BIT(24)) || (data[0] & (BIT(0) | BIT(23))))
++   return -EINVAL;
++ } else return -EINVAL;
++ memcpy(copy, data, words * sizeof(*copy));
++ return diagnostic_xfer(context, 0, 2, offset, words, copy, USB4_CFG_WRITE, 1);
++}
++static void diagnostic_usb4_wait(void *context)
++{
++ udelay(10000);
++}
++
+ static int diagnostic_remote_config(void *context, u32 *data)
+ {
+  if (data[1] != 1 || data[2] != BIT(31) ||
+@@ -724,8 +874,26 @@
+    }
+   }
+   if (!ret && ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),
++                                      "u-boot,probe-usb4-router-config", 0) == 10) {
++   u32 dummy;
++   ret = diagnostic_remote_read(&ring, 0, 2, 0, 1, &dummy);
++   if (!ret)
++    ret = apple_nhi_m1_usb4_router_setup(diagnostic_read, diagnostic_remote_read,
++       diagnostic_usb4_router_write, diagnostic_usb4_wait, &ring,
++       ring.last_response_port);
++  }
++  if (!ret && ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),
+                                       "u-boot,probe-remote-inventory", 0) == 58)
+    ret = apple_nhi_m1_remote_inventory(diagnostic_remote_read, &ring);
++  if (!ret && ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),
++                                      "u-boot,probe-usb4-preflight", 0) == 11)
++   ret = apple_nhi_m1_usb4_preflight(diagnostic_read,diagnostic_usb4_path_read,&ring,&ring.usb4_snapshot);
++  if (!ret && ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),
++                                      "u-boot,probe-usb4-credits", 0) == 12)
++   ret=diagnostic_usb4_credits(&ring);
++  if (!ret && ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),
++                                      "u-boot,probe-usb4-path-check", 0) == 13)
++   ret=diagnostic_usb4_paths(&ring, ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),"u-boot,probe-usb4-endpoint-scan",0));
+   if (!ret && ofnode_read_u32_default(ofnode_path("/soc/cio@501ac0000"),
+                                       "u-boot,probe-tunnel-preflight", 0) == 62)
+    ret = diagnostic_path_snapshot(&ring);
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -7,6 +7,17 @@
+ #include <apple_pciec_m1.h>
+ #include <asm/io.h>
+ #include <command.h>
++#include <blk.h>
++#include <part.h>
++#include <fs.h>
++#include <nvme.h>
++#include "../drivers/nvme/nvme.h"
++#include <console.h>
++#include <env.h>
++#include <malloc.h>
++#include <membuf.h>
++#include <asm/global_data.h>
++DECLARE_GLOBAL_DATA_PTR;
+ #include <dm.h>
+ #include <dm/device-internal.h>
+ #include <dm/ofnode.h>
+@@ -628,3 +639,194 @@
+ }
+ U_BOOT_CMD(tbboot, 1, 0, do_tbboot,
+            "boot a Thunderbolt EFI system or scan internal/USB media", "");
++
++/* One-shot USB4 link observation. No downstream configuration or disk I/O. */
++static int do_usb4check(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++ static const char *const forbidden[] = {
++  "u-boot,probe-remote-config",
++  "u-boot,probe-tunnel-preflight", "u-boot,probe-tunnel-paths",
++  "u-boot,probe-pcie-enable", "u-boot,probe-pcie-scan", "u-boot,probe-nvme-read",
++ };
++ ofnode node = ofnode_path("/soc/cio@501ac0000");
++ char *args[] = { "atcm1", "1", "usb4pciec" };
++ char *log;
++ unsigned int i;
++ int ret, count, tail;
++ bool overflow;
++ (void)argv;
++ env_set("usb4trace_addr", NULL);
++ env_set("usb4trace_size", NULL);
++ if (argc != 1 || !ofnode_valid(node)) return CMD_RET_USAGE;
++ for (i = 0; i < ARRAY_SIZE(forbidden); i++)
++  if (ofnode_read_bool(node, forbidden[i])) return CMD_RET_FAILURE;
++ if (!IS_ENABLED(CONFIG_CONSOLE_RECORD)) return CMD_RET_FAILURE;
++ log = memalign(4096, 0x100000 + 128);
++ if (!log) return CMD_RET_FAILURE;
++ if (console_record_reset_enable()) { free(log); return CMD_RET_FAILURE; }
++ puts("USB4CHECK BEGIN native integrated U-Boot; bounded USB4 NVMe read, no SSD writes\n");
++ ret = run_command("usb start", 0);
++ printf("USB4CHECK USB-start result=%d\n", ret);
++ if (!ret) ret = do_atcm1(cmdtp, flag, 3, args);
++ printf("USB4CHECK END command_result=%d; reset required\n", ret);
++ overflow = !!(gd->flags & GD_FLG_RECORD_OVF);
++ gd->flags &= ~GD_FLG_RECORD;
++ count = membuf_get((struct membuf *)&gd->console_out, log, 0x100000);
++ if (count <= 0 || count > 0x100000) { free(log); return CMD_RET_FAILURE; }
++ tail = snprintf(log + count, 128, "\nUSB4CHECK SUMMARY result=%d truncated=%u bytes=%d\n", ret, overflow, count);
++ if (tail < 0 || tail >= 128) { free(log); return CMD_RET_FAILURE; }
++ env_set_hex("usb4trace_addr", (ulong)log);
++ env_set_hex("usb4trace_size", count + tail);
++ puts("USB4CHECK capture ready for internal ESP; reset after saving\n");
++ return CMD_RET_SUCCESS;
++}
++U_BOOT_CMD(usb4check, 1, 0, do_usb4check,
++           "capture bounded native USB4 link observation; reset required", "");
++
++static int do_usb4mark(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++ static const char marker[] = "USB4CHECK boot command reached before USB scan\n";
++ (void)cmdtp; (void)flag; (void)argv;
++ if (argc != 1) return CMD_RET_USAGE;
++ env_set_hex("usb4mark_addr", (ulong)marker);
++ env_set_hex("usb4mark_size", sizeof(marker)-1);
++ return 0;
++}
++U_BOOT_CMD(usb4mark, 1, 0, do_usb4mark, "mark diagnostic boot entry", "");
++
++/* Diagnostic only. The sole allowed write target is this independent ESP. */
++static int do_usb4logtest(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++ const char *uuid = "f5af719f-ed4a-4004-b751-3f9e398a75d0";
++ const char *file = "/usb4-logonly-shutdown-v7.txt";
++ struct disk_partition info;
++ struct blk_desc *desc;
++ char target[32], *data, *check;
++ loff_t actual = 0;
++ int dev, part, ret, len;
++ (void)cmdtp; (void)flag; (void)argv;
++ if (argc != 1) return CMD_RET_USAGE;
++ puts("USB4 LOGONLY ENTRY: no USB scan, no PHY writes\n");
++ ret = nvme_scan_namespace();
++ printf("LOGONLY nvme scan=%d fw_dev_part=%s\n", ret, env_get("fw_dev_part"));
++ for (dev = 0; dev < 8; dev++) {
++  desc = blk_get_devnum_by_uclass_id(UCLASS_NVME, dev);
++  if (!desc) continue;
++  for (part = 1; part <= 32; part++) {
++   ret = part_get_info(desc, part, &info);
++   if (ret || strcasecmp(info.uuid, uuid)) continue;
++   snprintf(target, sizeof(target), "%x:%x", dev, part);
++   data = memalign(4096, 4096); check = memalign(4096, 4096);
++   if (!data || !check) { free(data); free(check); return CMD_RET_FAILURE; }
++   memset(data, 0, 4096); memset(check, 0, 4096);
++   len = snprintf(data,4096,"USB4 LOGONLY V7 ordered shutdown reached U-Boot main loop; device=%s blocksize=%lu UUID=%s\n",target,desc->blksz,info.uuid);
++   ret = fs_set_blk_dev("nvme", target, FS_TYPE_FAT);
++   printf("LOGONLY target=%s blocksize=%lu open=%d\n",target,desc->blksz,ret);
++   if (!ret) ret = fs_write(file,(ulong)data,0,len,&actual);
++   fs_close();
++   printf("LOGONLY write=%d actual=%lld expected=%d\n",ret,actual,len);
++   if (!ret && actual != len) ret = -EIO;
++   if (!ret) ret = fs_set_blk_dev("nvme",target,FS_TYPE_FAT);
++   if (!ret) ret = fs_read(file,(ulong)check,0,len,&actual);
++   fs_close();
++   if (!ret && (actual != len || memcmp(data,check,len))) ret = -EIO;
++   printf("LOGONLY readback=%d bytes=%lld\n",ret,actual);
++   free(data); free(check);
++   return ret ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
++  }
++ }
++ puts("LOGONLY target ESP not found; no writes performed\n");
++ return CMD_RET_FAILURE;
++}
++U_BOOT_CMD(usb4logtest, 1, 0, do_usb4logtest, "verify independent ESP logger only", "");
++
++/* Diagnostic transport only: no USB scan or external controller setup. */
++static int do_usb4handoff(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++ char log[4096];
++ struct blk_desc *desc;
++ struct disk_partition info;
++ int count, ret;
++ if (argc != 1) return CMD_RET_USAGE;
++ console_record_reset_enable();
++ ret = do_usb4logtest(cmdtp, flag, argc, argv);
++ printf("LOGONLY returned=%d; next=internal Linux with RAM transcript\n", ret);
++ gd->flags &= ~GD_FLG_RECORD;
++ count = membuf_get((struct membuf *)&gd->console_out, log, sizeof(log)-1);
++ if (count < 0 || count >= sizeof(log)) return CMD_RET_FAILURE;
++ log[count] = 0;
++ if (env_set("usb4diag_log", log)) return CMD_RET_FAILURE;
++ /* Read only, and only the verified independent Asahi ESP. */
++ desc = blk_get_devnum_by_uclass_id(UCLASS_NVME, 0);
++ if (!desc || part_get_info(desc, 8, &info) ||
++     strcasecmp(info.uuid, "f5af719f-ed4a-4004-b751-3f9e398a75d0"))
++  return CMD_RET_FAILURE;
++ ret = run_command("load nvme 0:8 ${kernel_addr_r} /EFI/Asahi/USB4DIAG.EFI", 0);
++ if (ret) return CMD_RET_FAILURE;
++ return run_command("bootefi ${kernel_addr_r}:${filesize} ${fdtcontroladdr}", 0);
++}
++U_BOOT_CMD(usb4handoff, 1, 0, do_usb4handoff, "pass logger-only result to internal Linux", "");
++
++static int do_usb4logreset(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++ struct blk_desc *desc;
++ struct disk_partition info;
++ struct udevice *controller;
++ int ret;
++ if (argc != 1) return CMD_RET_USAGE;
++ ret = do_usb4logtest(cmdtp, flag, argc, argv);
++ if (ret) return ret;
++ desc = blk_get_devnum_by_uclass_id(UCLASS_NVME, 0);
++ if (!desc || part_get_info(desc, 8, &info) ||
++     strcasecmp(info.uuid, "f5af719f-ed4a-4004-b751-3f9e398a75d0"))
++  return CMD_RET_FAILURE;
++ controller = dev_get_parent(desc->bdev);
++ if (!controller || !device_is_compatible(controller, "apple,nvme-ans2"))
++  return CMD_RET_FAILURE;
++ ret = nvme_shutdown(controller);
++ printf("LOGONLY orderly internal NVMe shutdown=%d; reset next\n", ret);
++ return ret ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
++}
++U_BOOT_CMD(usb4logreset, 1, 0, do_usb4logreset, "persist logger before reset", "");
++
++static int usb4_save_trace(const void *data, unsigned long size)
++{
++ struct blk_desc *desc;
++ struct disk_partition info;
++ struct udevice *controller;
++ char *check;
++ loff_t actual = 0;
++ int ret;
++ if (!data || !size || size > 0x100000 + 127) return -EINVAL;
++ desc = blk_get_devnum_by_uclass_id(UCLASS_NVME, 0);
++ if (!desc || part_get_info(desc, 8, &info) ||
++     strcasecmp(info.uuid, "f5af719f-ed4a-4004-b751-3f9e398a75d0")) return -EPERM;
++ controller = dev_get_parent(desc->bdev);
++ if (!controller || !device_is_compatible(controller, "apple,nvme-ans2")) return -EPERM;
++ check = memalign(4096, ALIGN(size, 4096));
++ if (!check) return -ENOMEM;
++ ret = fs_set_blk_dev("nvme", "0:8", FS_TYPE_FAT);
++ if (!ret) ret = fs_write("/usb4-mp400-link-v18.log", (ulong)data, 0, size, &actual);
++ fs_close();
++ if (!ret && actual != size) ret = -EIO;
++ if (!ret) ret = fs_set_blk_dev("nvme", "0:8", FS_TYPE_FAT);
++ if (!ret) ret = fs_read("/usb4-mp400-link-v18.log", (ulong)check, 0, size, &actual);
++ fs_close();
++ if (!ret && (actual != size || memcmp(data, check, size))) ret = -EIO;
++ free(check);
++ return ret;
++}
++static int do_usb4persist(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++ int ret, saved = -ENODATA, shutdown;
++ if (argc != 1) return CMD_RET_USAGE;
++ ret = do_usb4check(cmdtp, flag, argc, argv);
++ if (!ret) saved = usb4_save_trace((void *)env_get_hex("usb4trace_addr", 0),
++                                  env_get_hex("usb4trace_size", 0));
++ printf("USB4CHECK durable save=%d capture=%d\n", saved, ret);
++ /* Also verifies the independent ESP before shutting down only Apple ANS. */
++ shutdown = do_usb4logreset(cmdtp, flag, argc, argv);
++ printf("USB4CHECK shutdown=%d; always reset, never Linux handoff\n", shutdown);
++ return ret || saved || shutdown ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
++}
++U_BOOT_CMD(usb4persist, 1, 0, do_usb4persist, "capture USB4 and persist before reset", "");
+--- a/cmd/apple_pciec_m1.c
++++ b/cmd/apple_pciec_m1.c
+@@ -27,6 +27,8 @@
+ #include <command.h>
+ #include <fs.h>
+ #include <env.h>
++#include <console.h>
++#include <membuf.h>
+ #include <part.h>
+ #include <u-boot/sha256.h>
+ #include <u-boot/schedule.h>
+@@ -451,6 +453,35 @@
+  return -ENOENT;
+ }
+ 
++/* Diagnostic-only copy: leave the recording ring intact for failure cleanup. */
++static int usb4_efi_snapshot(const void *image, int length)
++{
++ struct membuf copy;
++ char *log;
++ u8 digest[SHA256_SUM_LEN];
++ int count, ret, i;
++ if (!ofnode_read_bool(ofnode_path("/config"), "u-boot,usb4-efi-diagnostic"))
++  return 0;
++ if (!IS_ENABLED(CONFIG_CONSOLE_RECORD) || length <= 0 ||
++     !(gd->flags & GD_FLG_RECORD) || (gd->flags & GD_FLG_RECORD_OVF))
++  return -EOVERFLOW;
++ sha256_csum_wd(image, length, digest, CHUNKSZ_SHA256);
++ puts("USB4-EFI image-sha256=");
++ for (i = 0; i < SHA256_SUM_LEN; i++) printf("%02x", digest[i]);
++ puts("\nUSB4-EFI snapshot: GRUB entry next; Linux handover not yet confirmed\n");
++ count = console_record_avail();
++ if (count <= 0 || count > 65536) return -EOVERFLOW;
++ log = malloc(count + 1);
++ if (!log) return -ENOMEM;
++ copy = gd->console_out;
++ ret = membuf_get(&copy, log, count);
++ if (ret != count) { free(log); return -EIO; }
++ log[count] = 0;
++ ret = env_set("usb4diag_log", log);
++ free(log);
++ return ret;
++}
++
+ static int tb_boot_efi(void)
+ {
+  struct blk_desc *desc;
+@@ -472,6 +503,12 @@
+  if (ret) return ret;
+  ret = tb_find_efi(desc, &image, &length);
+  if (ret) return ret;
++ if (ofnode_read_bool(ofnode_path("/config"), "u-boot,usb4-stop-before-efi")) {
++  ret = usb4_efi_snapshot(image, length);
++  printf("USB4-EFI READ-ONLY CHECK ret=%d bytes=%d; EFI execution intentionally skipped\n", ret, length);
++  free(image);
++  return ret ? ret : -ECANCELED;
++ }
+  tb_efi_check_dart = true;
+  ret = tb_linux_fdt((void *)dest, gd->fdt_blob, 0x200000);
+  if (ret) { free(image); return ret; }
+@@ -502,6 +539,8 @@
+  if (status != EFI_SUCCESS) { free(image); return -EIO; }
+  snprintf(command, sizeof(command), "bootefi %lx:%x %lx", (ulong)image, length, dest);
+  puts("TB-EFI ENTER /EFI/BOOT/BOOTAA64.EFI; OS selection belongs to EFI/GRUB\n");
++ ret = usb4_efi_snapshot(image, length);
++ if (ret) { EFI_CALL(efi_close_event(event)); free(image); return ret; }
+  ret = run_command(command, 0);
+  printf("TB-EFI returned ret=%d exited=%u\n", ret, tb_efi_exit_done);
+  if (tb_efi_exit_done) { do_reset(NULL, 0, 0, NULL); hang(); }
+--- a/arch/arm/mach-apple/board.c
++++ b/arch/arm/mach-apple/board.c
+@@ -978,6 +978,14 @@
+ 	if (ret) return ret;
+ #endif
+ 
++	/* Scratch diagnostic: hand the bounded transcript to Linux in RAM. */
++	if (env_get("usb4diag_log")) {
++		node = fdt_path_offset(blob, "/chosen");
++		if (node < 0) return node;
++		ret = fdt_setprop_string(blob, node, "u-boot,usb4-diagnostic-log", env_get("usb4diag_log"));
++		if (ret) return ret;
++	}
++
+ 	/*
+ 	 * Modify the "stdout-path" property under "/chosen" to point
+ 	 * at "/chosen/framebuffer if a keyboard is available and
+--- a/common/main.c
++++ b/common/main.c
+@@ -7,6 +7,7 @@
+ /* #define	DEBUG	*/
+ 
+ #include <autoboot.h>
++#include <hang.h>
+ #include <button.h>
+ #include <bootstage.h>
+ #include <bootstd.h>
+@@ -50,6 +51,10 @@
+ 		env_set("ver", version_string);  /* set version variable */
+ 
+ 	cli_init();
++	/* Temporary logger-only hardware diagnostic; no USB/PHY setup. */
++	run_command("usb4persist", 0);
++	run_command("sleep 15; reset", 0);
++	hang();
+ 
+ 	if (IS_ENABLED(CONFIG_USE_PREBOOT))
+ 		run_preboot_environment_command();

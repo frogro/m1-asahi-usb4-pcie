@@ -1,0 +1,10 @@
+from pathlib import Path
+import subprocess,os,json,gzip,hashlib,libfdt
+w=Path(__file__).resolve().parent;e=os.environ.copy();e['TMPDIR']=str(w/'tmp');e['SOURCE_DATE_EPOCH']='1793543400'
+with (w/'router-v18-build.log').open('w') as f:subprocess.run(['make','-C',str(w/'source'),'O='+str(w/'apple'),'CROSS_COMPILE=aarch64-linux-gnu-','-j4'],env=e,stdout=f,stderr=f,check=True)
+f=libfdt.Fdt((w/'j274-usb4check.dtb').read_bytes());f.resize(2097152)
+n=f.path_offset('/soc/cio@501ac0000');f.setprop_u32(n,'u-boot,probe-remote-inventory',58);f.setprop_u32(n,'u-boot,probe-usb4-router-config',10);f.setprop_u32(n,'u-boot,probe-usb4-preflight',11);f.setprop_u32(n,'u-boot,probe-usb4-credits',12);f.setprop_u32(n,'u-boot,probe-usb4-path-check',13);f.setprop_u32(n,'u-boot,probe-usb4-endpoint-scan',15)
+f.setprop(f.path_offset('/config'),'u-boot,tb-efi-boot',b'');f.setprop(f.path_offset('/config'),'u-boot,usb4-efi-diagnostic',b'');f.setprop(f.path_offset('/config'),'bootcmd',b'reset\0');f.setprop(f.path_offset('/chosen'),'u-boot,integration',b'20261101-usb4-router-v18\0');f.pack();assert bytes(f.getprop(f.path_offset('/config'),'u-boot,tb-efi-boot')) == b'';assert f.getprop(f.path_offset('/config'),'u-boot,tb-linux-tree').as_uint32()==72;(w/'router-v18.dtb').write_bytes(f.as_bytearray())
+m=(w.parent/'tb-boot-probe89/m1n1-release.bin').read_bytes();assert hashlib.sha256(m).hexdigest()=='2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69'
+b=m+f.as_bytearray()+gzip.compress((w/'apple/u-boot-nodtb.bin').read_bytes(),mtime=0);(w/'boot-router-v18.bin').write_bytes(b)
+meta={'sha256':hashlib.sha256(b).hexdigest(),'remote_writes':'USB4 router registration, four verified HopID8 paths, protocol enable; external block I/O read-only in U-Boot','purpose':'Native USB4 external EFI/GRUB and Linux boot, retained proven NVMe/EFI handover','tests':json.loads((w/'router-tests/result.json').read_text())};(w/'router-v18-preparation.json').write_text(json.dumps(meta,indent=2)+'\n');print(json.dumps(meta))

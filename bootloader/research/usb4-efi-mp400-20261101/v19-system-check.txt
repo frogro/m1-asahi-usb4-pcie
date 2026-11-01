@@ -1,0 +1,41 @@
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+	Kernel modules: shpchp
+0002:04:00.0 PCI bridge [0604]: Intel Corporation JHL6340 Thunderbolt 3 Bridge (C step) [Alpine Ridge 2C 2016] [8086:15da] (rev 02)
+	Subsystem: Razer USA Ltd. Device [1a58:0001]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:05:01.0 PCI bridge [0604]: Intel Corporation JHL6340 Thunderbolt 3 Bridge (C step) [Alpine Ridge 2C 2016] [8086:15da] (rev 02)
+	Subsystem: Razer USA Ltd. Device [1a58:0001]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:06:00.0 PCI bridge [0604]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 10 XL Upstream Port of PCI Express Switch [1002:1478] (rev c0)
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:07:00.0 PCI bridge [0604]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 10 XL Downstream Port of PCI Express Switch [1002:1479]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Navi 10 XL Downstream Port of PCI Express Switch [1002:1479]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+0002:08:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21 [Radeon RX 6800/6800 XT / 6900 XT] [1002:73bf] (rev c0)
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Radeon RX 6900 XT [1002:0e3a]
+	Kernel driver in use: amdgpu
+	Kernel modules: amdgpu
+0002:08:00.1 Audio device [0403]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21/23 HDMI/DP Audio Controller [1002:ab28]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21/23 HDMI/DP Audio Controller [1002:ab28]
+	Kernel driver in use: snd_hda_intel
+	Kernel modules: snd_hda_intel
+0002:08:00.2 USB controller [0c03]: Advanced Micro Devices, Inc. [AMD/ATI] Device [1002:73a6]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Device [1002:73a6]
+	Kernel driver in use: xhci_hcd
+	Kernel modules: xhci_pci
+0002:08:00.3 Serial bus controller [0c80]: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21 USB [1002:73a4]
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Device [1002:0408]
+	Kernel driver in use: i2c-designware-pci
+	Kernel modules: i2c_designware_pci
+Nov 01 17:12:47 asahi-yotta-test systemd[1]: Starting usb4-mp400-restore.service - Restore integrated U-Boot after bounded MP400 diagnostic...
+Nov 01 17:12:47 asahi-yotta-test systemctl[1981]: Removed '/etc/systemd/system/multi-user.target.wants/usb4-mp400-restore.service'.
+Nov 01 17:12:48 asahi-yotta-test python3[1941]: Integrated U-Boot restored
+Nov 01 17:12:48 asahi-yotta-test systemd[1]: usb4-mp400-restore.service: Deactivated successfully.
+Nov 01 17:12:48 asahi-yotta-test systemd[1]: Finished usb4-mp400-restore.service - Restore integrated U-Boot after bounded MP400 diagnostic.
+131.17 1006.22

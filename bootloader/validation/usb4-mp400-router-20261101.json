@@ -1,6 +1,6 @@
 {
   "utc": "2026-11-01T16:47:46.811350+00:00",
-  "status": "Native USB4 PCIe tunnel, Samsung NVMe IDENTIFY, MBR and GPT reads passed; EFI/GRUB/OS handover over USB4 remains to test.",
+  "status": "Native USB4 EFI/GRUB, kernel+initramfs load and external NVMe root boot now passed in bounded diagnostic; production integration pending",
   "scope": "J274 port1 with Fanxiang MP400 (ASM2464PD) and Samsung 970 EVO Plus; existing integrated U-Boot plus bounded diagnostic hooks. Not a USB4 boot release.",
   "logger": {
     "control": "Direct reset lost file in log-only control; EFI-to-Linux handoff showed correct ESP and successful write/readback.",
@@ -266,5 +266,6 @@
         "summary": "CASES 29 PASS; transactions 13; bounded NVMe read callback sequenced before adapter shutdown"
       }
     ]
-  }
+  },
+  "followup": "../research/usb4-efi-mp400-20261101/result.json"
 }

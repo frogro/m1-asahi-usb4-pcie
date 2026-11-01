@@ -1,0 +1,105 @@
+asahi-yotta-test
+7.2.12-usb4sd4-egpu3
+aba99500-690d-4e66-bc77-6da501f37fa2
+BOOT_IMAGE=(hd3,gpt2)/Image-7.2.12-usb4sd4-egpu3 root=UUID=1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935 rootwait rw usb4diag=v19 console=tty0 console=ttySAC0,115200n8 earlycon loglevel=7 panic=20 rd.retry=60 rd.timeout=90 rd.shell=0 rd.emergency=reboot pcie_apple_pciec.pciec_topology_events=1 pcie_apple_pciec.pciec_link_events=0 pcie_apple_pciec.pciec_reset_ack_clear=0 pciehp.pciehp_poll_mode=0 pci=hpbussize=16,hpmmiosize=32M,hpmmioprefsize=512M,realloc=on appledrm.hdmi_audio=1 amdgpu.runpm=0 amdgpu.aspm=0 amdgpu.rebar=0 systemd.unit=multi-user.target
+/dev/nvme1n1p3 1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935 ext4
+Samsung SSD 970 EVO Plus 250GB          
+S4W5NF0M305861J     
+device_name=246x
+vendor=0xb8
+device=0x2463
+authorized=1
+rx_speed=20.0 Gb/s
+tx_speed=20.0 Gb/s
+rx_lanes=2
+tx_lanes=2
+unique_id=01544c17-5069-cb4f-ffff-ffffffffffff
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: port /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: Port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 setup fail: -110
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: Port /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0 setup fail: -110
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:12:40 localhost kernel: pcieport 0001:02:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:40 localhost kernel: nvme 0001:03:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:44 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:12:44 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: Port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 setup fail: -110
+Nov 01 17:12:44 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:12:45 asahi-yotta-test kernel: brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac4378b1-pcie for chip BCM4378/3
+Nov 01 17:12:46 asahi-yotta-test kernel: brcmfmac: brcmf_c_process_txcap_blob: TxCap blob found, loading
+Nov 01 17:12:46 asahi-yotta-test kernel: brcmfmac: brcmf_c_process_cal_blob: Calibration blob provided by platform, loading
+Nov 01 17:12:46 asahi-yotta-test kernel: brcmfmac: brcmf_c_preinit_dcmds: Firmware: BCM4378/3 wl0: May 13 2023 07:20:48 version 18.20.383.15.7.8.150 FWID 01-b37727a5
+Nov 01 17:12:48 asahi-yotta-test kernel: pcieport 0002:02:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: pcieport 0002:02:04.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: pcieport 0002:04:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: pcieport 0002:05:01.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: ieee80211 phy0: brcmf_p2p_set_firmware: failed to update device address ret -52
+Nov 01 17:12:48 asahi-yotta-test kernel: pcieport 0002:06:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: ieee80211 phy0: brcmf_p2p_create_p2pdev: set p2p_disc error
+Nov 01 17:12:48 asahi-yotta-test kernel: ieee80211 phy0: brcmf_cfg80211_add_iface: add iface p2p-dev-wld0 type 10 failed: err=-52
+Nov 01 17:12:48 asahi-yotta-test kernel: pcieport 0002:07:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: snd_hda_intel 0002:08:00.1: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: xhci_hcd 0002:08:00.2: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: i2c-designware-pci 0002:08:00.3: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:48 asahi-yotta-test kernel: amdgpu 0002:08:00.0: of_irq_parse_pci: failed with rc=-22
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 3b0000000.pcie: host bridge /soc/usb4-pcie-tunnel-0/pcie@3b0000000 ranges:
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x0400000000..0x047fffffff -> 0x0400000000
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x0480000000..0x04bfffffff -> 0x0080000000
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x04c0000000..0x04ffffffff -> 0x00c0000000
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 3b0000000.pcie: using kernel-initialized PCIe-C handoff
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 530000000.pcie: host bridge /soc/usb4-pcie-tunnel-1/pcie@530000000 ranges:
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 530000000.pcie:      MEM 0x0580000000..0x05ffffffff -> 0x0580000000
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 530000000.pcie:      MEM 0x0600100000..0x063fffffff -> 0x0000100000
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 530000000.pcie:      MEM 0x0640000000..0x067fffffff -> 0x0040000000
+Nov 01 17:12:34 localhost kernel: pcie-apple-pciec 530000000.pcie: using kernel-initialized PCIe-C handoff
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: port /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: Port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 setup fail: -110
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: Port /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0 setup fail: -110
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: host bridge /soc/usb4-pcie-tunnel-0/pcie@3b0000000 ranges:
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: host bridge /soc/usb4-pcie-tunnel-1/pcie@530000000 ranges:
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie:      MEM 0x0580000000..0x05ffffffff -> 0x0580000000
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie:      MEM 0x0600100000..0x063fffffff -> 0x0000100000
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie:      MEM 0x0640000000..0x067fffffff -> 0x0040000000
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 530000000.pcie: using kernel-initialized PCIe-C handoff
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x0400000000..0x047fffffff -> 0x0400000000
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x0480000000..0x04bfffffff -> 0x0080000000
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x04c0000000..0x04ffffffff -> 0x00c0000000
+Nov 01 17:12:39 localhost kernel: pcie-apple-pciec 3b0000000.pcie: using kernel-initialized PCIe-C handoff
+Nov 01 17:12:40 localhost kernel: pcie-apple-pciec 530000000.pcie: Link up on /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0
+Nov 01 17:12:40 localhost kernel: pcie-apple-pciec 530000000.pcie: /soc/usb4-pcie-tunnel-1/pcie@530000000/pci@0,0 link up after 0ms
+Nov 01 17:12:40 localhost kernel: pcie-apple-pciec 530000000.pcie: initial tunnel recovery wait complete, link 0x99000001
+Nov 01 17:12:40 localhost kernel: pcie-apple-pciec 530000000.pcie: ECAM at [mem 0x530000000-0x53fffffff] for [bus 00-7f]
+Nov 01 17:12:40 localhost kernel: pcie-apple-pciec 530000000.pcie: PCI host bridge to bus 0001:00
+Nov 01 17:12:40 localhost kernel: nvme nvme1: pci function 0001:03:00.0
+Nov 01 17:12:40 localhost kernel: nvme nvme1: missing or invalid SUBNQN field.
+Nov 01 17:12:40 localhost kernel: nvme nvme1: D3 entry latency set to 8 seconds
+Nov 01 17:12:40 localhost kernel: nvme nvme1: passthrough uses implicit buffer lengths
+Nov 01 17:12:40 localhost kernel: nvme nvme1: 8/0/0 default/read/poll queues
+Nov 01 17:12:40 localhost kernel:  nvme1n1: p1 p2 p3
+Nov 01 17:12:40 localhost kernel: pcie-apple-pciec 530000000.pcie: USB4 topology event: checked 0 hotplug ports
+Nov 01 17:12:41 localhost kernel: EXT4-fs (nvme1n1p3): mounted filesystem 1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935 r/w with ordered data mode. Quota mode: none.
+Nov 01 17:12:41 localhost kernel: pcie-apple-pciec 530000000.pcie: USB4 topology event: checked 0 hotplug ports
+Nov 01 17:12:43 asahi-yotta-test kernel: EXT4-fs (nvme1n1p3): re-mounted 1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935.
+Nov 01 17:12:44 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 tunnel reset release timed out
+Nov 01 17:12:44 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: Port /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 setup fail: -110
+Nov 01 17:12:44 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: probe with driver pcie-apple-pciec failed with error -110
+Nov 01 17:12:45 asahi-yotta-test kernel: EXT4-fs (nvme1n1p2): mounted filesystem e10cc27a-5892-4594-befa-2c74255c78cf r/w with ordered data mode. Quota mode: none.
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: host bridge /soc/usb4-pcie-tunnel-0/pcie@3b0000000 ranges:
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x0400000000..0x047fffffff -> 0x0400000000
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x0480000000..0x04bfffffff -> 0x0080000000
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie:      MEM 0x04c0000000..0x04ffffffff -> 0x00c0000000
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: using kernel-initialized PCIe-C handoff
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: Link up on /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: /soc/usb4-pcie-tunnel-0/pcie@3b0000000/pci@0,0 link up after 0ms
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: initial tunnel recovery wait complete, link 0x99000001
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: ECAM at [mem 0x3b0000000-0x3bfffffff] for [bus 00-7f]
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: PCI host bridge to bus 0002:00
+Nov 01 17:12:48 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: USB4 topology event: checked 3 hotplug ports
+Nov 01 17:12:49 asahi-yotta-test kernel: pcie-apple-pciec 3b0000000.pcie: USB4 topology event: checked 3 hotplug ports
+7dd9bc657620925bf4aa796efb91ac29c570cf4cbf1ddab612ef6dfe9cf5cc47  /mnt/asahi-usb4-restore/m1n1/boot.bin
+-rwxr-xr-x 1 root root 100501 Nov  1 17:12 /mnt/asahi-usb4-restore/usb4-v19-after-authorization.txt
+-rwxr-xr-x 1 root root  93667 Nov  1 17:12 /mnt/asahi-usb4-restore/usb4-v19-before-authorization.txt
+-rwxr-xr-x 1 root root 104120 Nov  1 17:12 /mnt/asahi-usb4-restore/usb4-v19-pre-pivot.txt

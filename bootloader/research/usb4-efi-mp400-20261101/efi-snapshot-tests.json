@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "summary": "CASES 13 PASS; bounded snapshot preserves original recording ring",
+  "ASan": true,
+  "UBSan": true
+}

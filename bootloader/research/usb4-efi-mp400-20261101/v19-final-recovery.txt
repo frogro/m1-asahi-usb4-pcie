@@ -1,0 +1,11 @@
+macminim1
+7.2.0-1001-asahi-arm
+c301bffc-c161-42d2-8546-7649813fbbd8
+/dev/nvme0n1p6 e4d52d5a-56e9-4320-90f4-4223563b08d6
+8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60  /boot/efi/m1n1/boot.bin
+7dd9bc657620925bf4aa796efb91ac29c570cf4cbf1ddab612ef6dfe9cf5cc47  /mnt/asahi-usb4-test/m1n1/boot.bin
+599aecd11a470f4270012874148bdf43c27c0e07aafd40a001c7a6a170f268cd  /mnt/asahi-usb4-test/EFI/BOOT/BOOTAA64.EFI
+next_entry=
+48c3b49e3c36d9a31bfd6f10228acbe81310cf3c09f4b493e8356ad4a9d59d17  /mnt/mp400-boot/grub/grub.cfg
+Corrected return helper: completed external USB4 test; returning to default Ubuntu
+disabled

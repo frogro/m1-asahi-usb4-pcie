@@ -1,0 +1,100 @@
+{
+  "utc": "2026-11-01T17:20:36.571689+00:00",
+  "scope": "Diagnostic only; not production USB4 boot release",
+  "base": "integrated/manifest.json version20261101-efi-rc1, ten patches",
+  "m1n1_source_changes": false,
+  "kernel_changes": false,
+  "changes": "Native USB4 transport plus bounded EFI transcript; external initramfs diagnostic hooks and separately guarded MP400 authorization",
+  "v16": "Returned to internal Ubuntu; no external root journal; GRUB one-shot selection consumed",
+  "v17": "EFI 1560576 bytes SHA256 matches; deliberately stops -ECANCELED before execution; cleanup passed",
+  "v18": "GRUB loaded kernel+initramfs from hd3,gpt2. Linux found MP400 USB4 router authorized=0 security=user. Original initramfs only authorizes Intel Ash Creek, not MP400. Root absent at54s; automatic return passed.",
+  "v19": {
+    "result": "First native USB4 external root boot passed",
+    "boot_id": "aba99500-690d-4e66-bc77-6da501f37fa2",
+    "uboot": "Same v18 candidate as failing control",
+    "kernel": "7.2.12-usb4sd4-egpu3 unchanged",
+    "root_device": "/dev/nvme1n1p3",
+    "root_uuid": "1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935",
+    "transport": "USB4 2x20 Gb/s, PCIe-tunneled NVMe, not USB mass storage",
+    "change": "Initramfs authorizes only selected ASMedia enclosure, matching vendor0xb8/device0x2463, unique_id01544c17-5069-cb4f-ffff-ffffffffffff, native port1, target rootUUID and explicit diagnostic opt-in",
+    "root_mount_seconds": 8.650351,
+    "read_checks": {
+      "method": "Two direct 64MiB reads of external NVMe start",
+      "sha256_both": "bb74ab47ba924cd9c0e1c266a9ebbf99392842f495d09b0df4de67c29f70b60d"
+    },
+    "dock_and_egpu": "Dock topology and amdgpu/snd_hda_intel/xhci_hcd/i2c-designware-pci bindings confirmed",
+    "systemd_failed_units": {
+      "during_boot_and_io_validation": 0,
+      "later_diagnostic_helper_failure": "return.py SyntaxError; corrected"
+    },
+    "kernel_warnings_retained": [
+      "PCIe-C reset-release timeout -110 recovered by later enumeration",
+      "of_irq_parse_pci rc=-22",
+      "WiFi P2P ret=-52"
+    ],
+    "bootloader_restore": "Normal integrated boot.bin hash verified from external system",
+    "automatic_return": "Timer initially failed due generated helper SyntaxError; corrected helper explicitly started over SSH. Ordered return to original internal Ubuntu confirmed, boot c301bffc-c161-42d2-8546-7649813fbbd8.",
+    "visual_confirmation": "No new user confirmation; console/desktop visibility not claimed",
+    "external_writes": "Normal Linux root filesystem writes and diagnostic initramfs files; U-Boot external block access remains read-only",
+    "menu_cleanup": "Original external GRUB restored byte-for-byte to SHA25648c3b49e3c36d9a31bfd6f10228acbe81310cf3c09f4b493e8356ad4a9d59d17"
+  },
+  "production_warning": "Forced test main-loop and diagnostic logger must not be installed as production integration",
+  "candidate_sha256": {
+    "boot-router-v16.bin": "e6328b961a4804075fa2362fada57681e6546cc1f2e1f64311be0247e6b90cf5",
+    "boot-router-v17.bin": "8ad671447e856a5bb8b50d5aede6e8e7c40e5e8660766916664a76836d2044e9",
+    "boot-router-v18.bin": "22f2a37aeca53d59e6a8e065afdec9c72def037c69b6a5e8de99455c18256d73"
+  },
+  "next": [
+    "Extract native USB4 setup/path engine into ordinary full U-Boot bootflow without forced diagnostic main loop",
+    "Select TB3 versus USB4 from validated cable/router capability; retain no-link internal and USB bootflow",
+    "Installer/initramfs must authorize the user-selected root enclosure; avoid the former Intel-only assumption",
+    "Regression: internal, USB3, TB3 and USB4; additional USB4 cases/ports remain unverified"
+  ],
+  "evidence": {
+    "make-initrd-overlay-v19.py": "dac1854476aac4e7e944ac012c60b68a90e2a495e03af785f5d556d82bfbb9a9",
+    "deploy-v16.py": "030c41096c0b9dfab7dfa9d48567bfa0a36090b50e40995bbf4748df1d39364e",
+    "test-efi-snapshot-v16.py": "8fd07a1ce8e7b7502698069b0fcdcafe740c3de0704211b8a5e3642f3ef128a0",
+    "README.md": "864d4719c3b2a7ea02b6f9272f01144c3db00c3cdd9415bc223e810dddd2d15b",
+    "prepare-external-v19.py": "20871d8a9ef5fad04c6b54d7c06be035131ca2e898f3906584fbc57c2d826969",
+    "deploy-diagnostic.py": "0bdb81551eb46e516690d7223414b4fcb72ff4de76120f7936cb80820fefd866",
+    "test-initrd-authorize-v19.py": "df172357db43f2451d0a66a2a47e6ccc02dc23f5365911d5472bab38af28e45b",
+    "diagnostic-only.patch": "94d273b26c123a8dbf9a39b4ea41fce30182da6085ca63970dfbcecc6803844e",
+    "v17-observation.json": "1789a827ff28ae727878c30445e4272a2cbc08f234459c5f99f45682471ff117",
+    "build-router-v17.py": "88031b7fc22d42251bcc9181898750751c058e011bf0f21b33fbe7c1b3cb8366",
+    "build-router-v16.py": "71e2f3d88dcaeeafee2384e24eb468ce02ae85f8c03ce51ea5607e5fc5a592c5",
+    "v16-observation.json": "c0f41f61164e7903a3cc3f885d4566c8ba035294f81625f65104edc7e7078c9e",
+    "prepare-external-v18.py": "304a48653ab03b330a7f60257361c035874acce314056a00a963e5d2ef530b35",
+    "usb4-v19-before-authorization.txt": "3e1a6af3b7bc7a6e170b29d65d0e57fa4e9fa04bfc5a915d0e59b26faee018a8",
+    "v19-return-helper-failure.txt": "0a382ac0ef3a3f8c557810bcc08dac13d1b65f84a91983625cffaeacf5fa1ab2",
+    "efi-snapshot-tests.json": "0e8d9216a10a1e4fe6ad372bf9023d02d4ba8c718c3cfc2452d5021973c3e56f",
+    "v19-kernel-journal.txt": "4e73ab41bdddcd3d498b66cfc813f71708d3be1f1173f5ba20e6147b5f908080",
+    "authorize-mp400-v19.sh": "5abfe3ba284a7896fb8d104553d4445c035d42559726615f365c52b63475ea5f",
+    "build-router-v18.py": "eaff4b9af212f8b79ecde5e36cfa55539ede8fc6bf619ea1b4867593ec8eefb2",
+    "initrd-authorize-v19-tests.json": "3cca2e2890d04f8f5e1ac6b9ff3a5c32b9a7a2d15ccf36d9ede1b094c9eece52",
+    "restore-external-menu.py": "d69f3fd0b74b2261e1d188f61ad3da34248b813e85c41de125de4bb24ed9f398",
+    "v19-live-verification.txt": "aebfb771d75e46f188ed394f9e1456d1d33cb4fc3e39d503704cb437bcd1db81",
+    "v19-final-recovery.txt": "afecf1a55baf2dea9ce0dfb2739cbac1bbb0551c08c444fca8fd920ec2398c46",
+    "v19-system-check.txt": "b116dc2e98c9c35c083886ecbcd42022248eb598a6073e0e71db9b9a4b800da8",
+    "initramfs-v18-timeout.txt": "7dcfa3b6a3e33ef63e3276aa28ce99d3b3a02877e43d47e3570f75e16093abd6",
+    "usb4-v19-pre-pivot.txt": "5c1665a16ceaf6cfc226fd07036ced232ad29defe3790a73add6b3c8ff691030",
+    "usb4-v19-after-authorization.txt": "bcd323c32b3903abee77b59f0420ce776b81c49598f0cf1e4f59004286fff92c",
+    "router-v17-last.txt": "8c02d892dc77a2f51b883e58a84a6d2460915bbec0d244170d72d6684c290b5d",
+    "prepare-v16-deploy.py": "39c16cb555ebdde8191a77d4c1e128a33de27fa552b61fc9a8fc99f47572a8b8",
+    "deploy-v18.py": "83c27af21d448d9c867ccec04afe321c0d92f114262265339ec5ea99d19931c2",
+    "make-initrd-overlay-v18.py": "4d69953f0dadf6451ede0dcb5bb63d2bebb1fbc6ea99717437bb9527424a868e",
+    "return-v19.py": "b5f016fb407aa15105b7bb70f6080212ec5adece94b65eddf30abcb9e7b4474c"
+  },
+  "final_state": {
+    "root": "internal e4d52d5a-56e9-4320-90f4-4223563b08d6",
+    "kernel": "7.2.0-1001-asahi-arm",
+    "ssh": ".99 and .67 reachable",
+    "boot_files": "Original Ubuntu and independent integrated Asahi boot.bin plus EFI hashes verified",
+    "external_grub": "Original SHA256 restored",
+    "next_entry": "empty",
+    "external_return_timer_enabled": false,
+    "external_restore_service_enabled": false,
+    "internal_restore_service_enabled": false,
+    "diagnostic_initramfs": "v18 and v19 files retained but no normal menu entry references them",
+    "production_manifest_changed": false
+  }
+}
