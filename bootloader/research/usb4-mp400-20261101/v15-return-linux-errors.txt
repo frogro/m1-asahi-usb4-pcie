@@ -1,0 +1,25 @@
+Sep 16 16:55:31 localhost kernel: apple-pmgr-pwrstate 23d280000.power-management:power-controller@78: always-on domain msg is not on at boot
+Sep 16 16:55:31 localhost kernel: macsmc-low-gpio: Failed to locate of_node [id: -1]
+Nov 01 17:40:40 macminim1 kernel: macsmc-reboot macsmc-reboot: PMU logged 1 boot error(s) and 0 panic(s)
+Nov 01 17:40:40 macminim1 kernel: hci_bcm4377 0000:01:00.1: resetting
+Nov 01 17:40:40 macminim1 kernel: brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac4378b1-pcie for chip BCM4378/3
+Nov 01 17:40:40 macminim1 kernel: hci_bcm4377 0000:01:00.1: reset done
+Nov 01 17:40:40 macminim1 kernel: brcmfmac: brcmf_c_process_txcap_blob: TxCap blob found, loading
+Nov 01 17:40:40 macminim1 kernel: brcmfmac: brcmf_c_process_cal_blob: Calibration blob provided by platform, loading
+Nov 01 17:40:40 macminim1 kernel: brcmfmac: brcmf_c_preinit_dcmds: Firmware: BCM4378/3 wl0: May 13 2023 07:20:48 version 18.20.383.15.7.8.150 FWID 01-b37727a5
+Nov 01 17:40:41 macminim1 kernel: Bluetooth: hci0: HCI LE Coded PHY feature bit is set, but its usage is not supported.
+Nov 01 17:40:41 macminim1 kernel: apple-dcp 231c00000.dcp: RTKit: Unknown system endpoint: 0x0a
+Nov 01 17:40:41 macminim1 kernel: spi-nor spi0.0: supply vcc not found, using dummy regulator
+Nov 01 17:40:41 macminim1 kernel: tas2770 0-0031: supply SDZ not found, using dummy regulator
+Nov 01 17:40:41 macminim1 kernel: cs42l83 1-0048: supply VA not found, using dummy regulator
+Nov 01 17:40:41 macminim1 kernel: cs42l83 1-0048: supply VP not found, using dummy regulator
+Nov 01 17:40:41 macminim1 kernel: cs42l83 1-0048: supply VCP not found, using dummy regulator
+Nov 01 17:40:41 macminim1 kernel: cs42l83 1-0048: supply VD_FILT not found, using dummy regulator
+Nov 01 17:40:41 macminim1 kernel: cs42l83 1-0048: supply VL not found, using dummy regulator
+Nov 01 17:40:42 macminim1 kernel: thunderbolt-apple-nhi 501f00000.nhi: device links to tunneled native ports are missing!
+Nov 01 17:40:42 macminim1 kernel: thunderbolt-apple-nhi 381f00000.nhi: device links to tunneled native ports are missing!
+Nov 01 17:40:42 macminim1 kernel: PEFILE: Unsigned PE binary
+Nov 01 17:40:42 macminim1 kernel: ieee80211 phy0: brcmf_p2p_set_firmware: failed to update device address ret -52
+Nov 01 17:40:42 macminim1 kernel: ieee80211 phy0: brcmf_p2p_create_p2pdev: set p2p_disc error
+Nov 01 17:40:42 macminim1 kernel: ieee80211 phy0: brcmf_cfg80211_add_iface: add iface p2p-dev-wld0 type 10 failed: err=-52
+Nov 01 17:40:43 macminim1 kernel: kauditd_printk_skb: 234 callbacks suppressed
