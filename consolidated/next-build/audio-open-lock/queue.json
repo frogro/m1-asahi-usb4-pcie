@@ -1,0 +1,9 @@
+{
+  "status": "queued-for-next-build",
+  "installed": false,
+  "already_released_egpu3_contains_fix": false,
+  "requires_new_kernel_release": true,
+  "hardware_verified": false,
+  "patch": "0001-drm-apple-release-audio-lock-on-DMA-error.patch",
+  "sha256": "d46faa6adbf1ab385caab1824b2977b3b5e1458b16851279a27df88a854b0635"
+}

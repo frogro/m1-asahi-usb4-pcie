@@ -1,0 +1,12 @@
+{
+  "original": {
+    "exit": 1,
+    "output": "cases=13 lock_leaks=8\n",
+    "stderr": ""
+  },
+  "fixed": {
+    "exit": 0,
+    "output": "cases=13 lock_leaks=0\n",
+    "stderr": ""
+  }
+}
