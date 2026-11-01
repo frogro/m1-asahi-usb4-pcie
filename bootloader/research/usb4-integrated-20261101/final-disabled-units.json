@@ -1,0 +1,10 @@
+{
+  "external_enabled_test_units": {
+    "usb4-mp400-restore.service": false,
+    "usb4-mp400-return.timer": false
+  },
+  "internal_restore_enabled": "disabled",
+  "rollback_helper_installed": true,
+  "return_script": "#!/usr/bin/python3\nimport subprocess\nfrom pathlib import Path\nassert subprocess.check_output(['findmnt','-nro','UUID','/'],text=True).strip()=='1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935'\nstate=Path('/var/lib/usb4-mp400-diagnostic')\n(state/'automatic-return.txt').write_text('Corrected return helper: completed external USB4 test; returning to default Ubuntu'+chr(10))\nsubprocess.run(['systemctl','disable','--now','usb4-mp400-return.timer'],check=True)\nsubprocess.run(['systemctl','reboot'],check=True)\n",
+  "remaining_test_mounts": []
+}

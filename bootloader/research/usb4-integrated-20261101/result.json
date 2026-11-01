@@ -40,16 +40,49 @@
       "failed_units": 0,
       "prior_bundle_restored": true,
       "visual": "User confirmed Ubuntu login/desktop and logged in",
-      "return": "automatic five-minute timer armed"
+      "return": "automatic return to original internal root confirmed by SSH",
+      "return_internal_boot_id": "7c714ad2-1518-4166-8145-c0af2c6b4ecc"
+    },
+    {
+      "version": "rc3 regular installed menu",
+      "boot_id": "8caed138-f834-46bb-b7e0-9860872a10f1",
+      "root": "NVMe over native USB4",
+      "root_uuid": "1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935",
+      "kernel": "7.2.12-usb4sd4-egpu3",
+      "visual": "User confirmed Samsung GRUB menu and text console",
+      "failed_units": 0,
+      "dock_and_four_radeon_drivers_bound": true,
+      "new_kernel_warnings": [
+        "apple-sio late IOMMU probe at driver bind",
+        "__device_links_no_driver"
+      ],
+      "return": "automatic return to original internal Ubuntu confirmed by SSH",
+      "direct_kernel_file_read": {
+        "bytes": 65260032,
+        "sha256": "24d6f4eafd4b535597b9b9bccc601711f7c2fb6dfada920809482ab45e6c379b",
+        "matches_original": true
+      },
+      "mp400_link": "2 lanes x 20 Gb/s each direction",
+      "return_internal_boot_id": "9f115de9-da96-4963-92ae-204f112633dd"
     }
   ],
-  "visual_confirmation": "not observed by user for these runs",
-  "permanent_installation": false,
-  "previous_asahi_bundle_restored_by_boot_service": true,
+  "visual_confirmation": "Initial USB4 trials not observed; user confirmed SanDisk login and later regular USB4 GRUB/menu and text console",
+  "permanent_installation": true,
+  "previous_asahi_bundle_restored_by_boot_service": "during one-shot hardware acceptance; then rc3 deliberately installed with backups",
   "original_ubuntu_bundle_unchanged": true,
   "pending": [
     "rc3 TB3 hardware comparison",
     "reboot/black-screen cause",
-    "transient invalid grubenv report not reproducible offline"
-  ]
+    "transient invalid grubenv report not reproducible offline",
+    "SIO late IOMMU/device-link warnings in regular installed boot; cause not established"
+  ],
+  "installation_manifest": "installation.json",
+  "final_state": {
+    "running": "original internal Ubuntu",
+    "kernel": "7.2.0-1001-asahi-arm",
+    "boot_id": "9f115de9-da96-4963-92ae-204f112633dd",
+    "independent_asahi_bundle": "rc3 permanently installed",
+    "automatic_test_timers_disabled": true,
+    "temporary_test_mounts": []
+  }
 }

@@ -3,8 +3,9 @@
 The eleven-patch rc2 and twelve-patch rc3 series extend the previous full
 TB3/USB/internal bootloader. These are complete U-Boot builds, not a replacement
 of `common/main.c` with a diagnostic program. The original Apple Ubuntu entry
-and its bundle remain unchanged. The hardware candidate is selected once and
-the preceding independent Asahi bundle is restored after Linux starts.
+and its bundle remain unchanged. The initial hardware candidates were selected once and the preceding
+independent Asahi bundle restored after Linux started. After acceptance, rc3
+was deliberately installed with rollback copies, as recorded below.
 
 ## Boot evidence
 
@@ -90,3 +91,65 @@ in the evidence and were not treated as USB boot failure or suppressed.
 
 Published text logs have terminal escapes and trailing whitespace removed;
 original captures are retained in the local test directory.
+
+The five-minute SanDisk return completed automatically to internal stock Ubuntu
+(boot `7c714ad2-1518-4166-8145-c0af2c6b4ecc`). Both fallback bundle hashes were
+verified and the one-shot return/restore units were disabled afterward.
+
+## Regular installed boot and GitHub verification
+
+After both transport acceptances, rc3 was deliberately installed in the
+independent Asahi entry, with verified backups on the internal root and next
+to each target file. Both regular Samsung menu entries now use the additional
+selected-root initramfs. Kernel and original initramfs remain unchanged.
+`installation.json` records exact installed hashes.
+
+Boot `8caed138-f834-46bb-b7e0-9860872a10f1` used the regular text entry, reached
+external NVMe root and SSH, and bound the dock and four Radeon functions. The
+user confirmed the Samsung GRUB menu and text console. No system units failed.
+The original Ubuntu Apple default remains the fallback.
+
+This boot logged `apple-sio: late IOMMU probe at driver bind` followed by
+`__device_links_no_driver`. These warnings were not present in the preceding
+captured rc2/rc3 logs. The limited journal search on the external system found
+them only in this boot. Their cause is unestablished; successful boot does not
+make them an all-clear. No kernel ordering patch or warning suppression was
+introduced. Existing PCIe reset-release and IRQ-parse messages remain visible.
+
+GitHub run 41334500476 at commit 26c80f3 passed both prototype and integrated
+jobs. Unlike the earlier incremental local report, that integrated CI job ran
+the full twelve-patch reconstruction, builds and all configured checks in one
+run. See `github-ci.json`.
+
+A later direct read of the entire 65,260,032-byte kernel file matched its
+original SHA-256 (`24d6f4ea…`), the root remained read-write, and no additional
+kernel warnings appeared after initialization at that check. The MP400 was
+identified by router UUID, not unstable domain numbering: it negotiated two
+20 Gb/s lanes in each direction on `501ac0000.cio`.
+
+## Follow-up priorities kept separate from boot acceptance
+
+1. Intermittent black-screen/no-SSH return after stock internal Linux starts.
+2. The newly observed SIO/IOMMU and device-link initialization warnings.
+3. PCIe tunnel reset-release timeouts despite later successful enumeration.
+4. Repeated `of_irq_parse_pci: failed with rc=-22`; verify complete interrupt
+   setup rather than hiding the messages.
+5. The single invalid GRUB environment report from `grub2-common` in running
+   Linux, not reproduced offline or in later boots. This is boot-configuration
+   management evidence, not a demonstrated pre-Linux GRUB failure.
+6. Earlier desktop resume/black-screen and WirePlumber shutdown findings are
+   outside these boot-only acceptances; they have not been declared fixed.
+
+No new ACK-timeout filtering, GPU reset policy or kernel patch was introduced
+during this bootloader consolidation.
+
+The regular installed boot also returned automatically to the original
+internal Ubuntu (boot `9f115de9-da96-4963-92ae-204f112633dd`). The independent
+Asahi bundle still matched rc3 after that return; its previous bundle and the
+original Ubuntu bundle matched their expected digests. Test return/restore
+units are disabled and temporary mounts are gone. A guarded rollback helper
+is saved on the internal system at
+`/var/lib/asahi-integrated-rc3-20261101/rollback.py`; it must be run explicitly
+from the original internal Ubuntu and refuses independently changed targets.
+It was syntax-checked but deliberately not executed, since rc3 is the accepted
+installed candidate.

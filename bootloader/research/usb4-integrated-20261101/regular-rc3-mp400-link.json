@@ -1,0 +1,12 @@
+{
+  "device_name": "246x",
+  "device": "0x2463",
+  "vendor": "0xb8",
+  "unique_id": "01544c17-5069-cb4f-ffff-ffffffffffff",
+  "authorized": "1",
+  "rx_speed": "20.0 Gb/s",
+  "tx_speed": "20.0 Gb/s",
+  "rx_lanes": "2",
+  "tx_lanes": "2",
+  "physical_path": "/sys/devices/platform/soc/501ac0000.cio/501f00000.nhi/domain0/0-0/0-1"
+}

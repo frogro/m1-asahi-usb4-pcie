@@ -1,0 +1,10 @@
+7dd9bc657620925bf4aa796efb91ac29c570cf4cbf1ddab612ef6dfe9cf5cc47  /mnt/asahi-usb4-test/m1n1/boot.bin
+8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60  /boot/efi/m1n1/boot.bin
+{
+  "boot_id": "523b5ee3-fe76-4659-96c8-65d4b184557b",
+  "kernel": "7.2.12-usb4sd4-egpu1",
+  "root_uuid": "a2220ec6-aada-4bda-8049-ca5638794afd",
+  "prior_bundle_restored": true,
+  "integration": "20261101-usb4-integrated-rc3"
+}
+300.09 2345.80

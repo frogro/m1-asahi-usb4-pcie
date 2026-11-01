@@ -1,0 +1,16 @@
+Sun Nov  1 18:05:39 UTC 2026
+8caed138-f834-46bb-b7e0-9860872a10f1
+7.2.12-usb4sd4-egpu3
+/dev/nvme1n1p3 1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935
+BOOT_IMAGE=(hd3,gpt2)/Image-7.2.12-usb4sd4-egpu3 root=UUID=1d4d5fd6-ea8a-4bb0-bf3c-2fc1f9e65935 rootwait rw console=tty0 console=ttySAC0,115200n8 earlycon loglevel=7 panic=20 rd.retry=60 rd.timeout=90 rd.shell=0 rd.emergency=reboot pcie_apple_pciec.pciec_topology_events=1 pcie_apple_pciec.pciec_link_events=0 pcie_apple_pciec.pciec_reset_ack_clear=0 pciehp.pciehp_poll_mode=0 pci=hpbussize=16,hpmmiosize=32M,hpmmioprefsize=512M,realloc=on appledrm.hdmi_audio=1 amdgpu.runpm=0 amdgpu.aspm=0 amdgpu.rebar=0 systemd.unit=multi-user.target
+20261101-usb4-integrated-rc3  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+● usb4-mp400-return.timer - Five-minute return for USB4 EFI test
+     Loaded: loaded (/etc/systemd/system/usb4-mp400-return.timer; enabled; preset: enabled)
+     Active: active (waiting) since Sun 2026-11-01 18:05:35 UTC; 3s ago
+ Invocation: 487c9c821bc14df3b745088a6b95f43a
+    Trigger: Sun 2026-11-01 18:10:22 UTC; 4min 43s left
+   Triggers: ● usb4-mp400-return.service
+
+Nov 01 18:05:35 asahi-yotta-test systemd[1]: Started usb4-mp400-return.timer - Five-minute return for USB4 EFI test.

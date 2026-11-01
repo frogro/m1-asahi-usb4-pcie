@@ -62,7 +62,7 @@
   ],
   "upstream_source": "https://github.com/AsahiLinux/u-boot",
   "no_m1n1_source_modifications": true,
-  "hardware_result": "Two rc2 native USB4 root boots and one rc3 boot with verified xHCI OS-halt path reached Linux. rc2 first return succeeded; second return reached internal stock Linux/GDM but HDMI was black and SSH absent. rc3 return to original internal Ubuntu confirmed by SSH and root UUID. No claim of full reboot stability.",
+  "hardware_result": "Native USB4 MP400 external-root boots passed on rc2 and rc3; rc3 independent USB-A boot with MP400 disconnected and return passed. Regular installed rc3 boot reached external NVMe root, user-confirmed GRUB/text console, dock and all four Radeon drivers. Earlier intermittent return failure remains open; see per-boot evidence.",
   "kernel_findings_deferred": [
     "PCIe tunnel reset release timeouts recovered by normal enumeration",
     "NetworkManager-wait-online timeout",
@@ -70,7 +70,8 @@
     "SanDisk retains older egpu1 image and missing AVD firmware; not modified in this bootloader test",
     "grub2-common service failure under investigation",
     "Black screen/no SSH after fourth TB-root shutdown: phase not yet determined; must not be assumed a kernel or U-Boot fault.",
-    "rc2 return reached internal stock kernel and GDM; user reported black screen/no SSH, manual recovery succeeded. Cause not established."
+    "rc2 return reached internal stock kernel and GDM; user reported black screen/no SSH, manual recovery succeeded. Cause not established.",
+    "Regular installed rc3 boot 8caed138: apple-sio late IOMMU probe and __device_links_no_driver warnings; boot succeeded, cause not established."
   ],
   "confirmed_hardware_rc1": [
     "TB3 Samsung root with unchanged egpu3 kernel",

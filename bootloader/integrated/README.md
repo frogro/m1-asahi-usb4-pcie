@@ -157,8 +157,12 @@ silenced. These findings are retained separately from successful USB4 boot.
 
 The currently installed kernel, its modules and its original initramfs were
 not rebuilt/replaced during this integration. The selected-root initramfs is
-an additional file; the original remains available. Hardware test bundles use
-one-shot selection and restore the preceding independent Asahi bootloader.
+an additional file; the original remains available. Initial hardware tests used one-shot selection and restored the preceding
+independent Asahi bootloader. After the USB4 and independent USB3 acceptances,
+rc3 was installed in the independent Asahi entry with verified rollback copies.
+The original Apple Ubuntu default and its bundle remain unchanged. The external
+menu example now uses the additional selected-root initramfs for both Samsung
+entries; generate it for the actual enclosure, not by copying these UUIDs.
 
 ## rc3 independent USB3 comparison
 
@@ -171,3 +175,17 @@ bundle was automatically restored. This retains the existing USB3 boot option
 without a Thunderbolt/USB4 system disk. The older SanDisk egpu1 image still
 reports its known missing AVD firmware and a PCIe tunnel reset timeout; this
 is a bootloader regression test, not acceptance of that older full system.
+
+The installed rc3 bundle SHA-256 is
+`212f460d8b2df1108c237b4c7f239107a04104aa9f33f1eb1cf57f99bd18dd9e`.
+On this Mac, backups are in `/var/lib/asahi-integrated-rc3-20261101`, plus
+`m1n1/boot-before-usb4-rc3.bin` on the independent Asahi ESP and
+`grub/grub-before-usb4-rc3.cfg` on the external boot partition. No kernel or
+initramfs was copied to the internal boot partition. See the installation
+manifest and boot evidence before extending the hardware compatibility claim.
+
+The regular installed Samsung text entry passed a further boot and automatic
+return to the original internal Ubuntu. The user observed its GRUB menu and
+text console. rc3 remains installed in the independent Asahi entry, and the
+test return/restore timers are disabled. A guarded rollback helper is stored
+with the internal backup directory; no automatic rollback remains armed.

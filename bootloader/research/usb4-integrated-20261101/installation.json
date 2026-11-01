@@ -1,0 +1,12 @@
+{
+  "version": "20261101-usb4-integrated-rc3",
+  "permanent_independent_asahi_installation": true,
+  "bundle_sha256": "212f460d8b2df1108c237b4c7f239107a04104aa9f33f1eb1cf57f99bd18dd9e",
+  "external_grub_sha256": "da874909ff25f495a341370cc591d17ed0282b617abc9a702edd47ce3c29b216",
+  "root_initrd_sha256": "502d6026a8b0cff10b8c29b7a9689e5b353ad285d7805fe58f261509d175a409",
+  "original_ubuntu_bundle_unchanged": true,
+  "apple_default_changed": false,
+  "backup_directory": "/var/lib/asahi-integrated-rc3-20261101",
+  "external_test_units_disabled": true,
+  "reboot_requested": false
+}

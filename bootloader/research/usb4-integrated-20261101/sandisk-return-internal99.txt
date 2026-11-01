@@ -1,0 +1,5 @@
+Sun Nov  1 18:03:08 UTC 2026
+7.2.0-1001-asahi-arm
+/dev/nvme0n1p6 e4d52d5a-56e9-4320-90f4-4223563b08d6
+7c714ad2-1518-4166-8145-c0af2c6b4ecc
+disabled
