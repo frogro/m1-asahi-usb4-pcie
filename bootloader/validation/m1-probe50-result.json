@@ -1,0 +1,84 @@
+{
+  "probe": 50,
+  "utc": "2026-11-01T00:09:43.792834+00:00",
+  "run_directory": "/home/frank/usb4-test-work/uboot-hardware-test-20261031/probe50-handoff-power/hv-run-20261101T000840Z",
+  "result": "PMGR observation completed; no active port1 PCIe/CIO domain before or after explicit USB start",
+  "raw": {
+    "before": {
+      "0x23b700420": "0x22ff",
+      "0x23b700428": "0x300",
+      "0x23b700430": "0x300",
+      "0x23b700438": "0x300",
+      "0x23b700440": "0x300",
+      "0x23b700448": "0x23ff",
+      "0x23b700450": "0x300",
+      "0x23b700458": "0x300",
+      "0x23b700460": "0x300",
+      "0x23b700468": "0x300",
+      "0x23d280088": "0x2ff",
+      "0x23d280090": "0x2ff",
+      "0x23d280098": "0x2ff",
+      "0x23d2800a0": "0x2ff"
+    },
+    "after": {
+      "0x23b700420": "0x22ff",
+      "0x23b700428": "0x300",
+      "0x23b700430": "0x300",
+      "0x23b700438": "0x300",
+      "0x23b700440": "0x300",
+      "0x23b700448": "0x20ff",
+      "0x23b700450": "0x300",
+      "0x23b700458": "0x300",
+      "0x23b700460": "0x300",
+      "0x23b700468": "0x300",
+      "0x23d280088": "0x2ff",
+      "0x23d280090": "0xff",
+      "0x23d280098": "0x2ff",
+      "0x23d2800a0": "0xff"
+    }
+  },
+  "changed_raw_registers": [
+    {
+      "address": "0x23b700448",
+      "before": "0x23ff",
+      "after": "0x20ff",
+      "xor": "0x300"
+    },
+    {
+      "address": "0x23d280090",
+      "before": "0x2ff",
+      "after": "0xff",
+      "xor": "0x200"
+    },
+    {
+      "address": "0x23d2800a0",
+      "before": "0x2ff",
+      "after": "0xff",
+      "xor": "0x200"
+    }
+  ],
+  "target_actual_reset_disable_unchanged": true,
+  "raw_changes_only_history_flags": true,
+  "usb_start_before_first_snapshot": false,
+  "console_serial_only": true,
+  "explicit_usb_start_passed": true,
+  "usb_storage_devices_found": 0,
+  "controller_mmio_by_diagnostic": false,
+  "new_link_training_attempted": false,
+  "external_sector_read_commands": false,
+  "internal_nvme_control_hashes_match": true,
+  "reset_observed": true,
+  "automatic_return_verified": true,
+  "uart_sha256": "a970095c06425a7df9fc64191fa46f6175aa7abd66fb8a12864c3b45dbfadd2f",
+  "limits": [
+    "m1n1 power-state cleanup precedes this measurement",
+    "PMGR observation is not direct tunnel-state inspection",
+    "No conclusion about raw iBoot handoff or real external macOS startup"
+  ],
+  "conclusion": "No powered inherited CIO/PCIe path exists at this U-Boot-entry observation point; automatic USB start is not responsible for switching these domains off in this run",
+  "next_step": "Do not repeat unchanged probe. Audit earlier handoff evidence and transient link-training events; a real external macOS boot cannot be inferred from the internal Sonoma Test entry.",
+  "return_kernel": "7.2.0-1001-asahi-arm",
+  "boot_bundle_unchanged": true,
+  "boot_bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+  "grub_next_entry_empty": true
+}

@@ -1,0 +1,82 @@
+--- /dev/null
++++ b/cmd/apple_handoff_pd.c
+@@ -0,0 +1,65 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* RAM-only J274 PMGR observation. No controller MMIO or device probing.
++ * PMGR bit interpretation follows drivers/power/domain/apple-pmgr.c.
++ */
++#include <command.h>
++#include <dm/ofnode.h>
++#include <linux/ioport.h>
++#include <asm/io.h>
++#include <mapmem.h>
++
++static const struct handoff_domain {
++ const char *parent;
++ u64 address;
++ u32 size, offset;
++} handoff_domains[] = {
++#define ATC(off) { "/soc/power-management@23b700000", 0x23b700000ULL, 0x14000, off }
++ ATC(0x420), ATC(0x428), ATC(0x430), ATC(0x438), ATC(0x440),
++ ATC(0x448), ATC(0x450), ATC(0x458), ATC(0x460), ATC(0x468),
++#define USB(off) { "/soc/power-management@23d280000", 0x23d280000ULL, 0x4000, off }
++ USB(0x88), USB(0x90), USB(0x98), USB(0xa0),
++};
++
++static int do_handoffpd(struct cmd_tbl *cmdtp, int flag, int argc,
++                        char *const argv[])
++{
++ struct resource res;
++ unsigned int i;
++ u32 offset, value;
++ char path[128];
++ ofnode parent, child;
++ if (argc != 2 || (strcmp(argv[1], "before") && strcmp(argv[1], "after")))
++  return CMD_RET_USAGE;
++ if (!ofnode_device_is_compatible(ofnode_root(), "apple,j274"))
++  return CMD_RET_FAILURE;
++ /* Validate the complete fixed allowlist before the first MMIO read. */
++ for (i = 0; i < ARRAY_SIZE(handoff_domains); i++) {
++  const struct handoff_domain *d = &handoff_domains[i];
++  parent = ofnode_path(d->parent);
++  snprintf(path, sizeof(path), "%s/power-controller@%x", d->parent, d->offset);
++  child = ofnode_path(path);
++  if (!ofnode_device_is_compatible(parent, "apple,t8103-pmgr") ||
++      ofnode_read_resource(parent, 0, &res) ||
++      res.start != d->address || resource_size(&res) != d->size ||
++      !ofnode_device_is_compatible(child, "apple,pmgr-pwrstate") ||
++      ofnode_read_u32(child, "reg", &offset) || offset != d->offset) {
++   printf("HANDOFF-PD rejected %s before MMIO\n", path);
++   return CMD_RET_FAILURE;
++  }
++ }
++ printf("HANDOFF-PD BEGIN %s\n", argv[1]);
++ for (i = 0; i < ARRAY_SIZE(handoff_domains); i++) {
++  const struct handoff_domain *d = &handoff_domains[i];
++  value = readl(map_sysmem(d->address + d->offset, 4));
++  printf("HANDOFF-PD %s addr=%#llx raw=%08x target=%u actual=%u reset=%u disabled=%u valid=%u\n",
++         argv[1], (unsigned long long)(d->address + d->offset), value,
++         value & 15, (value >> 4) & 15, !!(value & BIT(31)),
++         !!(value & BIT(10)), value != 0xffffffff);
++ }
++ printf("HANDOFF-PD END %s reads=%u controller_reads=0 writes=0\n",
++        argv[1], (unsigned int)ARRAY_SIZE(handoff_domains));
++ return CMD_RET_SUCCESS;
++}
++U_BOOT_CMD(handoffpd, 2, 0, do_handoffpd,
++           "observe fixed J274 power registers without probing controllers",
++           "before|after - PMGR only; not raw Apple handoff or a link test");
+--- /dev/null
++++ b/board/apple/mac/probe50.env
+@@ -0,0 +1,4 @@
++stdin=serial
++stdout=serial
++stderr=serial
++boot_targets=nvme
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -311,3 +311,4 @@
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_nhi_m1_inventory.o
+ 
+ obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_pciec_m1.o
++obj-$(CONFIG_CMD_APPLE_ATC_M1) += apple_handoff_pd.o

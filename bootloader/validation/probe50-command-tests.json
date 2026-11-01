@@ -1,0 +1,8 @@
+{
+  "cases": 42,
+  "passed": true,
+  "production_body_tested": true,
+  "ASan": true,
+  "UBSan": true,
+  "scope": "fixed read allowlist and DT rejection before MMIO; not hardware proof"
+}
