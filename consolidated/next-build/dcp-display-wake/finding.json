@@ -1,0 +1,29 @@
+{
+  "status": "investigation and regression test queued; no speculative patch",
+  "kernel": "7.2.12-usb4sd4-egpu1",
+  "boot": "cbc184c2-98e9-4c4b-babd-1674e4de8e9c",
+  "root": "SanDisk USB",
+  "user_observation": "Screen returned briefly after idle, then black",
+  "ssh_remained_available": true,
+  "system_suspend_entry_exit_in_current_kernel_log": false,
+  "findings": [
+    "DCP hotplug disconnect/reconnect and valid_mode=0",
+    "DCP fControllerPowerState=0 and timings not enabled",
+    "DRM flip_done, CRTC/plane commit wait timeouts",
+    "kworker blocked"
+  ],
+  "next_steps": [
+    "Reproduce idle display-off/on with latest kernel separately from full suspend",
+    "Trace DCP reconnect, power and modeset ordering",
+    "Check upstream fix applicability before adding a patch",
+    "Do not conflate with queued audio-open mutex unlock correction"
+  ],
+  "temporary_userspace_settings": {
+    "old_idle_delay": 300,
+    "new_idle_delay": 0,
+    "old_ac_sleep_type": "suspend",
+    "new_ac_sleep_type": "nothing",
+    "scope": "frogro on older SanDisk system"
+  },
+  "evidence_file": "/mnt/android-build/Codex/asahi-bootloader-20261031/usb4-native-mp400-20261101/sandisk-resume-black.txt"
+}
