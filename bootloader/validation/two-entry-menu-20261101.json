@@ -47,7 +47,8 @@
         "DCP failed to create PIODMA iomem child device"
       ],
       "interpretation": "Failure is reproducible through original Ubuntu GRUB too; not specific to new two-entry menu. Shared kernel/initramfs, firmware/device-tree assumptions, storage access and retained hardware state remain candidates; photo alone does not establish fatal cause."
-    }
+    },
+    "legacy_boot_stack_comparison": "UI passed with pre-reinstallation bundle and unchanged Googlebooks Image/initrd/cable; see googlebooks-legacy-compat-20261101.json. UI with current rc3 still fails."
   },
   "efi_correction": "Initial standalone memdisk config unreadable, reproduced in QEMU; direct embedded early normal dispatch verified in QEMU.",
   "qemu": {

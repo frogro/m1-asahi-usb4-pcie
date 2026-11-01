@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-01",
+  "original_kernel": "7.0.2-m1-googlebook",
+  "kernel_sha256": "f82722b226d646362a1a95c351dec4bde1f447dec1d7635e53beed645f98cbb1",
+  "initrd_sha256": "2373d74f9d5dfdb982961a71c9ab15e44f1ac79f5eb006c5c9a468ff49b1f47e",
+  "comparison": [
+    {
+      "boot_chain": "current original Ubuntu",
+      "bundle_sha256": "8ba8fc1d6eea83f2626860784d36a8ac5afc052110352b4ba64afdd3ce57fe60",
+      "result": "no Googlebooks UI; AVD -22 and DCP PIODMA failure"
+    },
+    {
+      "boot_chain": "current integrated Asahi Linux rc3",
+      "bundle_sha256": "212f460d8b2df1108c237b4c7f239107a04104aa9f33f1eb1cf57f99bd18dd9e",
+      "result": "same visible failure"
+    },
+    {
+      "boot_chain": "pre-Ubuntu-reinstall bundle temporarily on independent Asahi ESP; corrected two-entry GRUB retained",
+      "bundle_sha256": "28d7359550dfc4406625769f4ff85e06bcad5e5d9e09ac1d7ad74006ef40996c",
+      "result": "Googlebooks graphical UI confirmed by user"
+    }
+  ],
+  "unchanged_between_last_two_runs": [
+    "Googlebooks Image",
+    "Googlebooks initrd",
+    "OWC disk/partition identity",
+    "direct USB-C connection and USB3 cable",
+    "corrected two-entry GRUB EFI/config"
+  ],
+  "usb_evidence": "Ubuntu enumerates OWC UAS at 10000 Mb/s. USB -71 also appears before successful Ubuntu enumeration; not alone a fatal storage result.",
+  "dt_findings": {
+    "DART": "current display providers use #iommu-cells=5; Googlebooks base driver rejects args_count != 1; pre-reinstall DT uses 1 plus apple,dma-range",
+    "AVD": "current DT avd@269080000 lacks reg-name piodma; bundled legacy AVD driver requests that resource; old boot DT has no AVD node and relied on runtime overlay"
+  },
+  "limits": [
+    "Old entire bundle was swapped for comparison, not DT alone. Exact contribution of every boot component not isolated.",
+    "No claim that all Android functionality, AVD decode or dock path was revalidated."
+  ],
+  "fallback": {
+    "original_ubuntu_untouched": true,
+    "integrated_bundle_backup": "/var/lib/googlebook-compat-20261101/integrated-before.bin",
+    "restore_service": "googlebook-compat-restore.service",
+    "restoration": "verified after boot ceb77101-0e53-4486-ade1-d164ecd00166; rc3 hash restored, original Ubuntu and Googlebooks kernel/initramfs hashes unchanged; restore service disabled"
+  },
+  "actual_module_confirmation": {
+    "apple-dart.ko": "a0d79e687c81e1bd8b9b1a6b83ccf35d42f347504ec23524631b3b67a5bd17ef",
+    "check": "Actual initramfs module apple_dart_of_xlate compares args_count to 1 at offset 0x1654, matching reviewed GPL kernel source",
+    "apple-avd.ko": "cab0147e4c13134d11e075682f411f86e6fdf2cfc4c1a56768990c5ca4a4f71b"
+  }
+}
