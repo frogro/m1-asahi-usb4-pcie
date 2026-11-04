@@ -1,0 +1,25 @@
+{
+  "version": "20261104-storage-scope-development",
+  "base_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "source_identity_verified": true,
+  "software_tests_passed": true,
+  "uboot_sha256": "8eaaf126424077f4b62bc5cae6b6f71b630a79ca6ec34b694bd589497eb22edb",
+  "installed": false,
+  "hardware_test_of_this_rebuild": false,
+  "full_googlebook_image_built": false,
+  "scope_checks": 28,
+  "historical_hardware_candidate": {
+    "uboot_sha256": "a5ed16fc2aadf7ca232f005c086a7641cc2649297895f2301c2776cc02a917fd",
+    "m1n1_sha256": "2946af402a4766167ea16f266860ce648d0751feacd9bb401dd1ea2889a4da69",
+    "bundle_sha256": "8a2cbfb97687ca5758d6db0072573bd03d7ca2bf5eb05d45e7eca6655e713aec",
+    "source": "saved Nov03 scope source, successful Nov04 controlled comparison",
+    "direct_storage_port": 0,
+    "linux_owned_egpu_port": 1,
+    "kernel": "7.2.12-googlebook-usb4-egpu1",
+    "both_displays_observed": true,
+    "generic_port_or_dock_validation": false
+  },
+  "excluded_experiments": [
+    "Nov04 USB address/reset RC1 and RC2: not accepted production fixes"
+  ]
+}
