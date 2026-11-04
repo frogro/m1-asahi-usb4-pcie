@@ -5,6 +5,14 @@ the November 3 storage-port restriction used in the successful November 4
 Googlebook comparison. It is separate from the older `integrated` default.
 It does not install a bootloader or build a complete Googlebook image.
 
+The restricted profile must not become the normal multi-device default. A local
+attempt to use it as that default was reverted on November 4: replacing the WD
+in Yotta with Samsung in Fanxiang also changes the target UUID and may change
+the port. The normal automatic transport profile was restored, retaining the
+common Ubuntu/Googlebook GRUB menu. Reliable eGPU handover after discovery on
+both ports remains an open regression. A fixed device/port scope is a comparison
+tool, not its general solution.
+
 The controlled comparison reused the same U-Boot payload and m1n1 binary. Only
 `bootcmd` (`tbboot recovery` to `tbboot`) and the target ESP changed. Initializing
 only the storage controller before Linux allowed Googlebook to load its kernel
