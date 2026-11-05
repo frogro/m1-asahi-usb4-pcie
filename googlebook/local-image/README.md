@@ -37,3 +37,21 @@ is explicitly excluded. Never accept a format prompt for an existing disk.
 Retain the previous complete disk image and the matching initramfs/vendor before
 installation. A full local disk backup remains a separate offline operation,
 not part of a public build or this non-installing ramdisk assembler.
+
+## Build the matching module inputs
+
+Use the unpacked kernel package and the full firmware directory from the working
+local Googlebook setup (including Apple, Broadcom and any selected GPU firmware):
+
+```sh
+python3 build-module-images.py unpacked-kernel matched-private-firmware module-output \
+  --release 7.2.12-googlebook-usb4-egpu2
+```
+
+This decompresses modules, reruns depmod against the matching System.map, checks
+vermagic, resolves the early preload order from the new dependency graph and
+builds both EROFS images with the original Android SELinux labels. Use an
+erofs-utils build that supports `--file-contexts`; there is no fallback that
+silently discards labels. Supply `--preload module-output/preload.inc` to the
+ramdisk assembler and pin the resulting image hashes in the private profile.
+Firmware and complete generated images remain on the local machine.

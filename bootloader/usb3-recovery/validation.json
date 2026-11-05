@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-05",
+  "source_tests": {
+    "recovery": 112,
+    "port_retry": 290,
+    "ssp_parser": 6440,
+    "handoff": 134
+  },
+  "hardware": "Earlier USB3 Googlebook GUI via Dynabook passed; full current scope is in docs/runtime-integration-20261105.md"
+}

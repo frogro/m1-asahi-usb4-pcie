@@ -4,7 +4,7 @@ import argparse,gzip,hashlib,json,re,stat,subprocess,tempfile,uuid
 from pathlib import Path
 from newc import read_newc,write_newc
 p=argparse.ArgumentParser(description=__doc__)
-p.add_argument('profile',type=Path);p.add_argument('base',type=Path);p.add_argument('vendor_dlkm',type=Path);p.add_argument('system_dlkm',type=Path);p.add_argument('output',type=Path);p.add_argument('--cc',default='aarch64-linux-gnu-gcc')
+p.add_argument('profile',type=Path);p.add_argument('base',type=Path);p.add_argument('vendor_dlkm',type=Path);p.add_argument('system_dlkm',type=Path);p.add_argument('output',type=Path);p.add_argument('--cc',default='aarch64-linux-gnu-gcc');p.add_argument('--preload',type=Path)
 a=p.parse_args();cfg=json.loads(a.profile.read_text());here=Path(__file__).resolve().parent
 if a.output.exists():raise SystemExit('Output must not exist')
 release=cfg['kernel_release']
@@ -24,7 +24,7 @@ fstab=next(b for n,f,b in records if n=='first_stage_ramdisk/fstab.android-deskt
 if not all(x in fstab for x in [b'GBOOK_VENDOR_LOOP',b'GBOOK_SYSTEM_LOOP']):raise SystemExit('Expected loop module placeholders')
 with tempfile.TemporaryDirectory() as temp:
  work=Path(temp)
- for name in ['bootstrap.c','root-access.h','preload.inc']:(work/name).write_bytes((here/name).read_bytes())
+ for name in ['bootstrap.c','root-access.h','preload.inc']:(work/name).write_bytes((a.preload if name=='preload.inc' and a.preload else here/name).read_bytes())
  (work/'profile.h').write_text('\n'.join('#define '+macro+' '+json.dumps(cfg[key]) for macro,key in [('SELECTED_ROUTER','selected_router'),('SELECTED_SUPER','selected_super'),('SELECTED_DOCK','selected_dock')])+'\n')
  subprocess.run([a.cc,'-static','-O2','-Wall','-Wextra','-DEXPECTED_RELEASE='+json.dumps(release),str(work/'bootstrap.c'),'-o',str(work/'bootstrap')],check=True)
  # Validate every module in the replacement EROFS using the target ABI.
@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory() as temp:
    if vermagic!=release:raise SystemExit('Module ABI mismatch: '+str(module))
    module_count+=1
   if name=='vendor_dlkm':
-   for rel in re.findall(r'load_module\("/m1-modulefs/([^\"]+)',(here/'preload.inc').read_text()):
+   for rel in re.findall(r'load_module\("/m1-modulefs/([^\"]+)',(work/'preload.inc').read_text()):
     if not (tree/rel).is_file():raise SystemExit('Missing preload module: '+rel)
  if not module_count:raise SystemExit('Empty module images')
  replacements={'m1-bootstrap':(work/'bootstrap').read_bytes(),'googlebook-vendor_dlkm.erofs':inputs['vendor_dlkm'],'googlebook-system_dlkm.erofs':inputs['system_dlkm']}
