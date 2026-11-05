@@ -1,6 +1,7 @@
 name: Runtime integration source checks
 on:
   push:
+    branches: [main]
     paths: ['consolidated/display-20261105/**', 'googlebook/**', 'initramfs/**', 'build/**', '.github/workflows/runtime-source-checks.yml']
   pull_request:
     paths: ['consolidated/display-20261105/**', 'googlebook/**', 'initramfs/**', 'build/**', '.github/workflows/runtime-source-checks.yml']

@@ -1,6 +1,7 @@
 name: U-Boot development checks (no installation)
 on:
   push:
+    branches: [main]
     paths: ['bootloader/**', '.github/workflows/bootloader-checks.yml']
   pull_request:
     paths: ['bootloader/**', '.github/workflows/bootloader-checks.yml']
