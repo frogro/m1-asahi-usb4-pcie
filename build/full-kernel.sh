@@ -38,7 +38,8 @@ python3 "$repo/consolidated/20261030/apply-to-checkout.py" "$work/linux" --apply
 revision=usb4sd3
 if [[ "${INCLUDE_EGPU:-false}" == true ]]; then
  python3 "$repo/consolidated/egpu179/apply.py" "$work/linux"
- revision=usb4sd4-egpu3
+ revision=usb4sd4-egpu4
+ python3 "$repo/consolidated/display-20261105/apply.py" "$work/linux"
  cp "$repo/consolidated/egpu179/README.md" "$repo/artifacts/EGPU-LIMITS.md"
  cp "$repo/consolidated/egpu179/integration-audit-20261031.md" "$repo/artifacts/EGPU-INTEGRATION-AUDIT.md"
  cp "$repo/consolidated/egpu179/initialization-followup-20261031.md" "$repo/artifacts/EGPU-INITIALIZATION-FOLLOWUP.md"

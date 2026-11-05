@@ -1,0 +1,31 @@
+Subject: [PATCH] usb: typec: cd321x: drain queued updates on probe unwind
+
+Initial connect may queue update_work before IRQ registration. If that
+registration fails, stop the update before freeing the partner and
+port resources. Also drain updates in CD321x unregister for other
+probe-error paths. The cancel operation is idempotent on the normal
+remove path.
+
+---
+--- a/drivers/usb/typec/tipd/core.c
++++ b/drivers/usb/typec/tipd/core.c
+@@ -1328,6 +1328,9 @@
+ {
+ 	struct cd321x *cd321x = container_of(tps, struct cd321x, tps);
+ 
++	/* Probe unwind can reach here after connect() queued an update. */
++	cancel_delayed_work_sync(&cd321x->update_work);
++
+ 	typec_thunderbolt_switch_put(cd321x->tbt_switch);
+ 	cd321x->tbt_switch = NULL;
+ 	typec_mux_put(cd321x->mux);
+@@ -1862,6 +1865,9 @@
+ 	return 0;
+ 
+ err_disconnect:
++	/* Stop asynchronous partner updates before disconnect frees the partner. */
++	if (tps->data->remove)
++		tps->data->remove(tps);
+ 	tps6598x_disconnect(tps, 0);
+ err_unregister_port:
+ 	tps->data->unregister_port(tps);

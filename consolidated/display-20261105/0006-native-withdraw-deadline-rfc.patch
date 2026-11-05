@@ -1,0 +1,164 @@
+Subject: [PATCH RFC 6/6] drm/apple: allow bounded native HPD-low completion wait
+
+M1 hot-unplug trace acknowledged HPD-low after about three seconds,
+following display power-off. The legacy one-second EPIC wait expired first.
+Use an explicit five-second wait for the opt-in native withdrawal only.
+Keep existing callers at one second, strict reply checks and fail-closed
+ownership on an actual timeout. Hardware validation remains pending.
+
+---
+diff --git a/drivers/gpu/drm/apple/afk.c b/drivers/gpu/drm/apple/afk.c
+--- a/drivers/gpu/drm/apple/afk.c
++++ b/drivers/gpu/drm/apple/afk.c
+@@ -906,7 +906,8 @@
+ 
+ static int afk_send_command_len(struct apple_epic_service *service, u8 type,
+ 		     const void *payload, size_t payload_len, void *output,
+-		     size_t output_len, u32 *retcode, size_t *received)
++		     size_t output_len, u32 *retcode, size_t *received,
++		     unsigned int timeout_ms)
+ {
+ 	struct epic_cmd cmd;
+ 	void *rxbuf, *txbuf;
+@@ -970,7 +971,7 @@
+ 		goto err_free_cmd;
+ 
+ 	ret = wait_for_completion_timeout(&completion,
+-					  msecs_to_jiffies(MSEC_PER_SEC));
++					  msecs_to_jiffies(timeout_ms));
+ 
+ 	if (ret <= 0) {
+ 		spin_lock_irqsave(&service->lock, flags);
+@@ -1012,12 +1013,13 @@
+ 		     size_t output_len, u32 *retcode)
+ {
+ 	return afk_send_command_len(service, type, payload, payload_len, output,
+-				    output_len, retcode, NULL);
++				    output_len, retcode, NULL, MSEC_PER_SEC);
+ }
+ 
+ static int afk_service_call_common(struct apple_epic_service *service, u16 group, u32 command,
+ 		     const void *data, size_t data_len, size_t data_pad,
+-		     void *output, size_t output_len, size_t output_pad, bool checked)
++		     void *output, size_t output_len, size_t output_pad, bool checked,
++		     unsigned int timeout_ms)
+ {
+ 	struct epic_service_call *call;
+ 	void *bfr;
+@@ -1043,7 +1045,7 @@
+ 	memcpy(bfr + sizeof(*call), data, data_len);
+ 
+ 	ret = afk_send_command_len(service, EPIC_SUBTYPE_STD_SERVICE, bfr, bfr_len,
+-			       bfr, bfr_len, &retcode, &received);
++			       bfr, bfr_len, &retcode, &received, timeout_ms);
+ 	if (ret)
+ 		goto out;
+ 	if (retcode) {
+@@ -1235,7 +1237,7 @@
+ 		     void *output, size_t output_len, size_t output_pad)
+ {
+ 	return afk_service_call_common(service, group, command, data, data_len,
+-			data_pad, output, output_len, output_pad, true);
++			data_pad, output, output_len, output_pad, true, MSEC_PER_SEC);
+ }
+ 
+ int afk_service_call(struct apple_epic_service *service, u16 group, u32 command,
+@@ -1243,5 +1245,18 @@
+ 		     void *output, size_t output_len, size_t output_pad)
+ {
+ 	return afk_service_call_common(service, group, command, data, data_len,
+-			data_pad, output, output_len, output_pad, false);
+-}
++			data_pad, output, output_len, output_pad, false, MSEC_PER_SEC);
++}
++
++/* Preserve legacy deadlines unless a caller explicitly selects a bounded wait. */
++int afk_service_call_checked_timeout(struct apple_epic_service *service,
++		     u16 group, u32 command, const void *data, size_t data_len,
++		     size_t data_pad, void *output, size_t output_len,
++		     size_t output_pad, unsigned int timeout_ms)
++{
++	if (!timeout_ms || timeout_ms > 5000)
++		return -EINVAL;
++
++	return afk_service_call_common(service, group, command, data, data_len,
++			data_pad, output, output_len, output_pad, true, timeout_ms);
++}
+diff --git a/drivers/gpu/drm/apple/afk.h b/drivers/gpu/drm/apple/afk.h
+--- a/drivers/gpu/drm/apple/afk.h
++++ b/drivers/gpu/drm/apple/afk.h
+@@ -199,6 +199,10 @@
+ int afk_send_command(struct apple_epic_service *service, u8 type,
+ 		     const void *payload, size_t payload_len, void *output,
+ 		     size_t output_len, u32 *retcode);
++int afk_service_call_checked_timeout(struct apple_epic_service *service,
++		     u16 group, u32 command, const void *data, size_t data_len,
++		     size_t data_pad, void *output, size_t output_len,
++		     size_t output_pad, unsigned int timeout_ms);
+ int afk_service_call_checked(struct apple_epic_service *service, u16 group, u32 command,
+ 		     const void *data, size_t data_len, size_t data_pad,
+ 		     void *output, size_t output_len, size_t output_pad);
+diff --git a/drivers/gpu/drm/apple/dptxep.c b/drivers/gpu/drm/apple/dptxep.c
+--- a/drivers/gpu/drm/apple/dptxep.c
++++ b/drivers/gpu/drm/apple/dptxep.c
+@@ -146,7 +146,8 @@
+ 	return afk_service_call(service, 0, 7, NULL, 0, 16, NULL, 0, 16);
+ }
+ 
+-int dptxport_set_hpd(struct apple_epic_service *service, bool hpd)
++int dptxport_set_hpd_timeout(struct apple_epic_service *service, bool hpd,
++			     unsigned int timeout_ms)
+ {
+ 	struct dcpdptx_hotplug_cmd cmd, resp;
+ 	int ret;
+@@ -156,8 +157,8 @@
+ 	if (hpd)
+ 		cmd.unk = cpu_to_le32(1);
+ 
+-	ret = afk_service_call_checked(service, 8, 8, &cmd, sizeof(cmd), 12, &resp,
+-			       sizeof(resp), 12);
++	ret = afk_service_call_checked_timeout(service, 8, 8, &cmd, sizeof(cmd), 12,
++				       &resp, sizeof(resp), 12, timeout_ms);
+ 	if (ret) {
+ 		dev_info(service->ep->dcp->dev,
+ 			 "DP97 HPD requested=%u transport_ret=%d (reply not decoded)\n", hpd, ret);
+@@ -169,6 +170,11 @@
+ 	if (le32_to_cpu(resp.unk) != hpd)
+ 		return -EINVAL;
+ 	return 0;
++}
++
++int dptxport_set_hpd(struct apple_epic_service *service, bool hpd)
++{
++	return dptxport_set_hpd_timeout(service, hpd, 1000);
+ }
+ 
+ static int
+diff --git a/drivers/gpu/drm/apple/dptxep.h b/drivers/gpu/drm/apple/dptxep.h
+--- a/drivers/gpu/drm/apple/dptxep.h
++++ b/drivers/gpu/drm/apple/dptxep.h
+@@ -84,5 +84,7 @@
+ 		     u8 die);
+ int dptxport_request_display(struct apple_epic_service *service);
+ int dptxport_release_display(struct apple_epic_service *service);
++int dptxport_set_hpd_timeout(struct apple_epic_service *service, bool hpd,
++			     unsigned int timeout_ms);
+ int dptxport_set_hpd(struct apple_epic_service *service, bool hpd);
+ #endif
+diff --git a/drivers/gpu/drm/apple/native-dp.inc b/drivers/gpu/drm/apple/native-dp.inc
+--- a/drivers/gpu/drm/apple/native-dp.inc
++++ b/drivers/gpu/drm/apple/native-dp.inc
+@@ -85,7 +85,12 @@
+ 		port->connected = true;
+ 	} else {
+ 		mutex_unlock(&dcp->hpd_mutex);
+-		ret = dptxport_set_hpd(port->service, false);
++		/* The HPD-low reply follows display power-off. On M1 this took
++		 * about three seconds in the unplug trace, beyond the legacy
++		 * one-second EPIC deadline. Retain ownership while waiting for
++		 * the checked reply; a real timeout still quarantines the route.
++		 */
++		ret = dptxport_set_hpd_timeout(port->service, false, 5000);
+ 		mutex_lock(&dcp->hpd_mutex);
+ 		if (ret)
+ 			goto fault;

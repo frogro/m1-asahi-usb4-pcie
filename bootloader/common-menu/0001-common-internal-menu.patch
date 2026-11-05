@@ -1,0 +1,42 @@
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -736,6 +736,7 @@
+  const char *local_bootcmd = ofnode_read_string(ofnode_path("/config"), "u-boot,local-bootcmd");
+  char port_arg[2] = {0,0};
+  char *start[] = { "atcm1", port_arg, NULL };
++ bool common_menu = ofnode_read_bool(ofnode_path("/config"), "u-boot,common-menu");
+  bool explicit_target;
+  int ret, port, mode[2] = {0,0}, eligible = 0;
+  size_t chosen;
+@@ -752,6 +753,13 @@
+  }
+  if (!target) target = ofnode_read_string(ofnode_path("/config"), "u-boot,boot-partuuid");
+  explicit_target = target != NULL;
++ /* A common internal EFI menu chooses the OS after all healthy transports
++  * have been enumerated. Do not silently override an explicit disk target. */
++ if (common_menu && (target ||
++     !apple_boot_partuuid_valid(ofnode_read_string(ofnode_path("/config"),
++                                                  "u-boot,recovery-partuuid")) ||
++     ofnode_read_bool(ofnode_path("/config"), "u-boot,usb3-inventory-test")))
++  return CMD_RET_FAILURE;
+  if ((target && !apple_boot_partuuid_valid(target)) ||
+      (preferred && !apple_boot_partuuid_valid(preferred))) return CMD_RET_FAILURE;
+  media = calloc(APPLE_BOOT_MEDIA_MAX_CANDIDATES, sizeof(*media));
+@@ -810,6 +818,17 @@
+   if (ret) goto failed;
+   sources[port].state = APPLE_BOOT_SOURCE_COMPLETE;
+  }
++ if (common_menu) {
++  ret = apple_boot_media_select(&inventory, NULL, &chosen);
++  if (ret && ret != -ENOENT && ret != -ENOTUNIQ)
++   goto failed;
++  /* Use the existing identity-checked internal ESP and shared EFI teardown.
++   * Keep every discovered external block device available to GRUB. Neither
++   * a missing preferred OS nor multiple bootable disks selects an OS here. */
++  printf("TB-MEDIA common internal menu candidates=%zu\n", inventory.media_count);
++  ret = apple_pciec_m1_boot_recovery();
++  goto failed;
++ }
+  ret = apple_boot_media_select(&inventory, target, &chosen);
+  printf("TB-MEDIA selection ret=%d candidates=%zu target=%s\n", ret, inventory.media_count, target ? target : "automatic-unique");
+  if (!ofnode_read_bool(ofnode_path("/config"), "u-boot,usb3-inventory-test") &&

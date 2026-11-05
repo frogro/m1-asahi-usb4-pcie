@@ -1,0 +1,63 @@
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -1708,6 +1708,35 @@
+  /* Halt only; never free buffers, reset PHY or clear DART ownership here. */
+  return handshake(&ctrl->hcor->or_usbsts, STS_HALT, STS_HALT, 100000);
+ }
++/* EFI no longer needs USB storage. Match normal xHCI teardown with HCRST,
++ * not just RUN=0, before Linux installs its own DMA translations. Buffers
++ * stay allocated; a failed reset must never be treated as a safe handoff. */
++int xhci_m1_os_handoff(struct xhci_ctrl *ctrl)
++{
++	u32 command, status;
++	u64 dcbaa, crcr;
++	int ret;
++
++	if (!ctrl || !ctrl->m1_diag || !ctrl->hcor)
++		return -EINVAL;
++	ret = xhci_m1_diag_stop(ctrl);
++	if (ret)
++		return ret;
++	ret = xhci_reset(ctrl->hcor);
++	if (ret)
++		return ret;
++	command = xhci_readl(&ctrl->hcor->or_usbcmd);
++	status = xhci_readl(&ctrl->hcor->or_usbsts);
++	dcbaa = xhci_readq(&ctrl->hcor->or_dcbaap);
++	crcr = xhci_readq(&ctrl->hcor->or_crcr);
++	printf("USB-OS reset command=%x status=%x dcbaa=%llx crcr=%llx\n",
++	       command, status, (unsigned long long)dcbaa, (unsigned long long)crcr);
++	if ((command & (CMD_RUN | CMD_RESET)) || !(status & STS_HALT) ||
++	    (status & (STS_CNR | STS_FATAL | STS_HCE)) ||
++	    (dcbaa & ~0x3fULL) || (crcr & ~0x3fULL))
++		return -EIO;
++	return 0;
++}
+ 
+ #endif
+ 
+--- a/include/usb/xhci.h
++++ b/include/usb/xhci.h
+@@ -1333,6 +1333,7 @@
+ int xhci_m1_diag_start(struct udevice *dev, struct xhci_hccr *hccr,
+                      struct xhci_hcor *hcor, struct xhci_ctrl **retained);
+ int xhci_m1_diag_stop(struct xhci_ctrl *ctrl);
++int xhci_m1_os_handoff(struct xhci_ctrl *ctrl);
+ int xhci_m1_diag_descriptor(struct xhci_ctrl *ctrl);
+ int xhci_m1_diag_enumerate(struct xhci_ctrl *ctrl);
+ 
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -127,10 +127,10 @@
+ #if CONFIG_IS_ENABLED(USB_XHCI_HCD)
+  int ret;
+  if (!boot_xhci) return 0;
+- ret = xhci_m1_diag_stop(boot_xhci);
++ ret = xhci_m1_os_handoff(boot_xhci);
+  if (ret) return ret;
+  boot_xhci = NULL;
+- puts("USB4-XHCI OS halt verified; DMA buffers retained\n");
++ puts("USB4-XHCI OS reset verified; DMA buffers retained\n");
+  return 0;
+ #else
+  return 0;

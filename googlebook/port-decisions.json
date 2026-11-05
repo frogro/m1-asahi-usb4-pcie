@@ -1,0 +1,8 @@
+{
+  "dm-default-key": "Retain current Makefile ordering and add object; buffer_head helper was removed upstream so obsolete hunk has no target. Generic bio fscrypt skip/merge checks retained.",
+  "cpufreq-times": "Preserve existing sched/clock header and add cpufreq_times header",
+  "headers": "hex.h added to default-key/incfs, existing sched clock header preserved",
+  "dm-fallback": "retain Android explicit __blk_crypto_submit_bio path",
+  "r87": "Excluded: documented reverted experiment",
+  "incfs-inode-format": "Linux 7.2 inode number is u64; use %llu with explicit cast"
+}

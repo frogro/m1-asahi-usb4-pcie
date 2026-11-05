@@ -1,0 +1,9 @@
+--- a/vendor/etc/fstab.android-desktop
++++ b/vendor/etc/fstab.android-desktop
+@@ -22,3 +22,6 @@
+ 
+ /dev/block/by-name/persist /mnt/vendor/persist ext4 noatime,nosuid,nodev,barrier=1 wait
+ 
++
++# Removable USB storage; native PCIe/NVMe system disks do not match.
++/devices/platform/*/usb*/*/host*/*/block/sd* auto auto defaults voldmanaged=usb:auto
