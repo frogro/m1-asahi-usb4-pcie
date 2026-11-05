@@ -1,0 +1,32 @@
+Description: Reconfigure monitors after successful runtime GPU addition
+Author: Local Ubuntu Asahi development
+Forwarded: no
+Last-Update: 2026-11-04
+
+--- a/src/backends/native/meta-backend-native.c
++++ b/src/backends/native/meta-backend-native.c
+@@ -53,6 +53,7 @@
+ #include "backends/native/meta-device-pool-private.h"
+ #include "backends/native/meta-drm-lease.h"
+ #include "backends/native/meta-kms.h"
++#include "backends/native/meta-kms-private.h"
+ #include "backends/native/meta-kms-device.h"
+ #include "backends/native/meta-monitor-manager-native.h"
+ #include "backends/native/meta-render-device-gbm.h"
+@@ -656,6 +657,16 @@
+           g_warning ("Failed to hotplug secondary gpu '%s': %s",
+                      device_path, error->message);
+         }
++    }
++  else if (!meta_backend_is_headless (backend))
++    {
++      /* Device creation has already read the connector state. A subsequent
++       * hotplug event may therefore report no state change, even though the
++       * monitor manager has not seen this GPU yet. Notify it after GPU
++       * registration and the synchronous renderer/cursor setup have finished.
++       */
++      meta_kms_emit_resources_changed (meta_backend_native_get_kms (native),
++                                       META_KMS_RESOURCE_CHANGE_FULL);
+     }
+ }
+ 

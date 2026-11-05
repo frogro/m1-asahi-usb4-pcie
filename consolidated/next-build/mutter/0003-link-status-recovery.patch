@@ -1,0 +1,132 @@
+--- a/src/backends/native/meta-kms-connector-private.h
++++ b/src/backends/native/meta-kms-connector-private.h
+@@ -23,6 +23,7 @@
+ {
+   META_KMS_CONNECTOR_PROP_CRTC_ID = 0,
+   META_KMS_CONNECTOR_PROP_DPMS,
++  META_KMS_CONNECTOR_PROP_LINK_STATUS,
+   META_KMS_CONNECTOR_PROP_UNDERSCAN,
+   META_KMS_CONNECTOR_PROP_UNDERSCAN_HBORDER,
+   META_KMS_CONNECTOR_PROP_UNDERSCAN_VBORDER,
+@@ -43,6 +44,13 @@
+   META_KMS_CONNECTOR_PROP_VRR_CAPABLE,
+   META_KMS_CONNECTOR_N_PROPS
+ } MetaKmsConnectorProp;
++
++typedef enum _MetaKmsConnectorLinkStatus
++{
++  META_KMS_CONNECTOR_LINK_STATUS_GOOD,
++  META_KMS_CONNECTOR_LINK_STATUS_BAD,
++  META_KMS_CONNECTOR_LINK_STATUS_N_PROPS,
++} MetaKmsConnectorLinkStatus;
+ 
+ typedef enum _MetaKmsConnectorDpms
+ {
+--- a/src/backends/native/meta-kms-connector.h
++++ b/src/backends/native/meta-kms-connector.h
+@@ -54,6 +54,7 @@
+   int suggested_x;
+   int suggested_y;
+   gboolean hotplug_mode_update;
++  gboolean link_status_bad;
+ 
+   MtkMonitorTransform panel_orientation_transform;
+ 
+--- a/src/backends/native/meta-kms-connector.c
++++ b/src/backends/native/meta-kms-connector.c
+@@ -54,6 +54,7 @@
+ {
+   MetaKmsProp props[META_KMS_CONNECTOR_N_PROPS];
+   MetaKmsEnum dpms_enum[META_KMS_CONNECTOR_DPMS_N_PROPS];
++  MetaKmsEnum link_status_enum[META_KMS_CONNECTOR_LINK_STATUS_N_PROPS];
+   MetaKmsEnum underscan_enum[META_KMS_CONNECTOR_UNDERSCAN_N_PROPS];
+   MetaKmsEnum privacy_screen_sw_enum[META_KMS_CONNECTOR_PRIVACY_SCREEN_N_PROPS];
+   MetaKmsEnum privacy_screen_hw_enum[META_KMS_CONNECTOR_PRIVACY_SCREEN_N_PROPS];
+@@ -394,6 +395,10 @@
+   prop = &props[META_KMS_CONNECTOR_PROP_SUGGESTED_Y];
+   if (prop->prop_id)
+     state->suggested_y = prop->value;
++
++  prop = &props[META_KMS_CONNECTOR_PROP_LINK_STATUS];
++  if (prop->prop_id)
++    state->link_status_bad = prop->value == META_KMS_CONNECTOR_LINK_STATUS_BAD;
+ 
+   prop = &props[META_KMS_CONNECTOR_PROP_HOTPLUG_MODE_UPDATE];
+   if (prop->prop_id)
+@@ -949,6 +954,14 @@
+ meta_kms_connector_state_changes (MetaKmsConnectorState *state,
+                                   MetaKmsConnectorState *new_state)
+ {
++  /* A brief disconnect can leave the EDID and modes unchanged while the
++   * driver still requires a modeset to retrain the link. */
++  if (state->link_status_bad != new_state->link_status_bad)
++    {
++      meta_topic (META_DEBUG_KMS, "connector link status changed");
++      return META_KMS_RESOURCE_CHANGE_FULL;
++    }
++
+   if (state->current_crtc_id != new_state->current_crtc_id)
+     {
+       meta_topic (META_DEBUG_KMS, "current CRTC ID changed");
+@@ -1384,6 +1397,11 @@
+     {
+       MetaKmsModeSet *mode_set = l->data;
+       MetaKmsCrtc *crtc = mode_set->crtc;
++
++      /* Atomic modesets reset link-status explicitly; legacy SETCRTC
++       * resets it in the kernel. Predict only for enabled connectors. */
++      if (mode_set->mode && g_list_find (mode_set->connectors, connector))
++        current_state->link_status_bad = FALSE;
+ 
+       if (current_state->current_crtc_id == meta_kms_crtc_get_id (crtc))
+         {
+@@ -1482,6 +1500,13 @@
+           .enum_values = prop_table->dpms_enum,
+           .num_enum_values = META_KMS_CONNECTOR_DPMS_N_PROPS,
+         },
++      [META_KMS_CONNECTOR_PROP_LINK_STATUS] =
++        {
++          .name = "link-status",
++          .type = DRM_MODE_PROP_ENUM,
++          .enum_values = prop_table->link_status_enum,
++          .num_enum_values = META_KMS_CONNECTOR_LINK_STATUS_N_PROPS,
++        },
+       [META_KMS_CONNECTOR_PROP_UNDERSCAN] =
+         {
+           .name = "underscan",
+@@ -1610,6 +1635,16 @@
+       [META_KMS_CONNECTOR_DPMS_OFF] =
+         {
+           .name = "Off",
++        },
++    },
++    .link_status_enum = {
++      [META_KMS_CONNECTOR_LINK_STATUS_GOOD] =
++        {
++          .name = "Good",
++        },
++      [META_KMS_CONNECTOR_LINK_STATUS_BAD] =
++        {
++          .name = "Bad",
+         },
+     },
+     .underscan_enum = {
+--- a/src/backends/native/meta-kms-impl-device-atomic.c
++++ b/src/backends/native/meta-kms-impl-device-atomic.c
+@@ -435,6 +435,16 @@
+       for (l = mode_set->connectors; l; l = l->next)
+         {
+           MetaKmsConnector *connector = l->data;
++
++          /* Reset the link in the same ALLOW_MODESET transaction as the
++           * mode, never in a separate property-only update. */
++          if (meta_kms_connector_get_prop_id (connector,
++                                              META_KMS_CONNECTOR_PROP_LINK_STATUS) &&
++              !add_connector_property (impl_device, connector, req,
++                                       META_KMS_CONNECTOR_PROP_LINK_STATUS,
++                                       META_KMS_CONNECTOR_LINK_STATUS_GOOD,
++                                       error))
++            return FALSE;
+ 
+           if (!add_connector_property (impl_device,
+                                        connector, req,

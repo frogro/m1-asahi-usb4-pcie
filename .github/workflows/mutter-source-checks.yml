@@ -1,0 +1,25 @@
+name: Mutter source package replay
+on:
+  push:
+    paths: ['consolidated/next-build/mutter/**', '.github/workflows/mutter-source-checks.yml']
+  pull_request:
+    paths: ['consolidated/next-build/mutter/**', '.github/workflows/mutter-source-checks.yml']
+permissions:
+  contents: read
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Fetch and verify pinned Ubuntu source package
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/mutter-source"
+          cd "$RUNNER_TEMP/mutter-source"
+          for name in mutter_50.1-0ubuntu2.5.dsc mutter_50.1.orig.tar.xz mutter_50.1-0ubuntu2.5.debian.tar.xz; do
+            curl --fail --location --retry 3 --output "$name" "https://ports.ubuntu.com/ubuntu-ports/pool/main/m/mutter/$name"
+          done
+          sha256sum -c "$GITHUB_WORKSPACE/consolidated/next-build/mutter/ubuntu-source.sha256"
+          dpkg-source --no-check -x mutter_50.1-0ubuntu2.5.dsc
+      - name: Apply complete local packaging series
+        run: python3 consolidated/next-build/mutter/prepare-source.py "$RUNNER_TEMP/mutter-source/mutter-50.1"
