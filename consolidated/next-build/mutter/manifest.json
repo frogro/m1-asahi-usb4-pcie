@@ -1,0 +1,27 @@
+{
+  "installed_version": "50.1-0ubuntu2.5+asahi.hotplug3",
+  "patches": [
+    {
+      "file": "0001-runtime-gpu-topology.patch",
+      "sha256": "faf219bf34389b024a0372e05a0b7f05a9a1676010a5358eb2f0fa7e469275fc"
+    },
+    {
+      "file": "0002-per-view-cursor-backport.patch",
+      "sha256": "e611f8ad1679cd287b0f78afef54450c2b431d7f1b8eb61d138e59f1926c7099"
+    },
+    {
+      "file": "0003-link-status-recovery.patch",
+      "sha256": "bdd008e42bfd8ae590b5e517536247b131255d662e91e53f5b6bd5b9271a1263"
+    },
+    {
+      "file": "0004-debian-symbols.patch",
+      "sha256": "6d852b38321be6a36cb888f76c2618e04bc2a23b9bd15a9361bccd22d03badb6"
+    }
+  ],
+  "publication": {
+    "runtime_gpu_topology": "local; Forwarded: no; no submitted PR identified",
+    "cursor": "upstream MR5207, gnome-50 commit 4b852db14f1c8c882fbb7e58499ffe171c094d9d; local backport adaptations",
+    "link_status": "local candidate; no submitted PR identified"
+  },
+  "build_caveat": "Use prepare-source.py on the pinned Ubuntu source package; then build and run the documented test groups in an isolated matching Ubuntu environment."
+}
