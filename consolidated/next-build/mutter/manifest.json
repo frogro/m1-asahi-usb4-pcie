@@ -19,9 +19,9 @@
     }
   ],
   "publication": {
-    "runtime_gpu_topology": "local; Forwarded: no; no submitted PR identified",
+    "runtime_gpu_topology": "Repository PR #2; GNOME upstream MR pending authenticated submission",
     "cursor": "upstream MR5207, gnome-50 commit 4b852db14f1c8c882fbb7e58499ffe171c094d9d; local backport adaptations",
-    "link_status": "local candidate; no submitted PR identified"
+    "link_status": "Repository PR #2; GNOME upstream MR pending authenticated submission"
   },
   "build_caveat": "Use prepare-source.py on the pinned Ubuntu source package; then build and run the documented test groups in an isolated matching Ubuntu environment."
 }
