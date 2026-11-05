@@ -1,0 +1,749 @@
+--- a/common/usb_hub.c
++++ b/common/usb_hub.c
+@@ -162,6 +162,106 @@
+ 	return ret;
+ }
+ 
++/* USB 3.1 BOS sublink attributes and extended port status, not VID/PID. */
++static int usb_hub_ssp_speed(const u8 *bos, unsigned int length, u32 status)
++{
++	unsigned int off, caps = 0, seen_ssp = 0;
++	int speed = USB_SPEED_SUPER;
++
++	if (length < 5 || bos[0] != 5 || bos[1] != USB_DT_BOS ||
++	    get_unaligned_le16(bos + 2) != length)
++		return -EINVAL;
++	for (off = 5; off < length;) {
++		unsigned int len = bos[off], n, i;
++
++		if (len < 3 || len > length - off || bos[off + 1] != 0x10)
++			return -EINVAL;
++		caps++;
++		if (bos[off + 2] == 0x0a) {
++			bool found = false;
++
++			if (++seen_ssp != 1 || len < 12)
++				return -EINVAL;
++			n = (get_unaligned_le32(bos + off + 4) & 0x1f) + 1;
++			if (len != 12 + 4 * n)
++				return -EINVAL;
++			for (i = 0; i < n; i++) {
++				u32 attr = get_unaligned_le32(bos + off + 12 + 4 * i);
++				unsigned int type = (attr >> 6) & 3;
++				unsigned int mantissa = (attr >> 16) & 0xff;
++				unsigned int exponent = (attr >> 4) & 3;
++
++				/* Only the negotiated, symmetric receive sublink. */
++				if ((attr & 15) != (status & 15) || type == 2)
++					continue;
++				if (found || type != 0)
++					return -EOPNOTSUPP;
++				found = true;
++				if (((attr >> 14) & 3) == 0)
++					continue;
++				if (((attr >> 14) & 3) != 1)
++					return -EOPNOTSUPP;
++				for (; exponent < 3; exponent++)
++					mantissa /= 1000;
++				/* xHCI standard speed ID 5: symmetric Gen2 x1. */
++				if (mantissa != 10 || (status & 0xff00) ||
++				    ((status >> 4) & 15) != (status & 15))
++					return -EOPNOTSUPP;
++				speed = USB_SPEED_SUPER_PLUS;
++			}
++			if (!found)
++				return -EINVAL;
++		}
++		off += len;
++	}
++	if (caps != bos[4])
++		return -EINVAL;
++	return speed;
++}
++
++static int usb_hub_negotiated_speed(struct usb_device *dev, int port)
++{
++	ALLOC_CACHE_ALIGN_BUFFER(u8, bos, USB_BUFSIZ);
++	ALLOC_CACHE_ALIGN_BUFFER(u8, status, 8);
++	unsigned int length;
++	int ret;
++	u32 ext;
++
++#if CONFIG_IS_ENABLED(DM_USB)
++	if (usb_hub_is_root_hub(dev->dev))
++		return USB_SPEED_SUPER;
++#endif
++	if (!usb_hub_is_superspeed(dev) || dev->descriptor.bcdUSB < 0x0310)
++		return USB_SPEED_SUPER;
++	ret = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0), USB_REQ_GET_DESCRIPTOR,
++			      USB_DIR_IN, USB_DT_BOS << 8, 0, bos, 5,
++			      USB_CNTL_TIMEOUT);
++	if (ret != 5)
++		return ret < 0 ? ret : -EPROTO;
++	length = get_unaligned_le16(bos + 2);
++	if (bos[0] != 5 || bos[1] != USB_DT_BOS || length < 5 || length > USB_BUFSIZ)
++		return -EINVAL;
++	ret = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0), USB_REQ_GET_DESCRIPTOR,
++			      USB_DIR_IN, USB_DT_BOS << 8, 0, bos, length,
++			      USB_CNTL_TIMEOUT);
++	if (ret != length)
++		return ret < 0 ? ret : -EPROTO;
++	/* USB 3.1 hub GET_STATUS, selector 2, eight-byte port status. */
++	ret = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0), USB_REQ_GET_STATUS,
++			     USB_DIR_IN | USB_RT_PORT, 2, port + 1, status, 8,
++			     USB_CNTL_TIMEOUT);
++	if (ret != 8)
++		return ret < 0 ? ret : -EPROTO;
++	if ((get_unaligned_le16(status) & 3) != 3)
++		return -ENOTCONN;
++	ext = get_unaligned_le32(status + 4);
++	ret = usb_hub_ssp_speed(bos, length, ext);
++	printf("USB-HUB speed hub=%04x:%04x port=%u ext=%08x speed=%d\n",
++	       dev->descriptor.idVendor, dev->descriptor.idProduct, port + 1,
++	       ext, ret);
++	return ret;
++}
++
+ static void usb_hub_power_on(struct usb_hub_device *hub)
+ {
+ 	int i;
+@@ -419,6 +519,39 @@
+ 	return 0;
+ }
+ 
++/* Reset only the failed child, after its host controller released the slot. */
++int usb_hub_reset_child(struct usb_device *hub, int port, int old_speed)
++{
++	unsigned short status;
++	int ret, speed;
++
++	if (!hub || port < 1 || port > hub->maxchild)
++		return -EINVAL;
++	ret = usb_hub_port_reset(hub, port - 1, &status);
++	if (ret)
++		return ret < 0 ? ret : -ENOTCONN;
++	switch (status & USB_PORT_STAT_SPEED_MASK) {
++	case USB_PORT_STAT_SUPER_SPEED:
++		speed = usb_hub_negotiated_speed(hub, port - 1);
++		break;
++	case USB_PORT_STAT_HIGH_SPEED:
++		speed = USB_SPEED_HIGH;
++		break;
++	case USB_PORT_STAT_LOW_SPEED:
++		speed = USB_SPEED_LOW;
++		break;
++	default:
++		speed = USB_SPEED_FULL;
++		break;
++	}
++	if (speed < 0)
++		return speed;
++	if (speed != old_speed)
++		return -ENOTCONN;
++	mdelay(50);
++	return 0;
++}
++
+ int usb_hub_port_connect_change(struct usb_device *dev, int port)
+ {
+ 	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
+@@ -465,7 +598,9 @@
+ 
+ 	switch (portstatus & USB_PORT_STAT_SPEED_MASK) {
+ 	case USB_PORT_STAT_SUPER_SPEED:
+-		speed = USB_SPEED_SUPER;
++		speed = usb_hub_negotiated_speed(dev, port);
++		if (speed < 0)
++			return speed;
+ 		break;
+ 	case USB_PORT_STAT_HIGH_SPEED:
+ 		speed = USB_SPEED_HIGH;
+@@ -481,9 +616,10 @@
+ 	/*
+ 	 * USB 2.0 7.1.7.5: devices must be able to accept a SetAddress()
+ 	 * request (refer to Section 11.24.2 and Section 9.4 respectively)
+-	 * after the reset recovery time 10 ms
+-	 */
+-	mdelay(10);
++	 * after the reset recovery time 10 ms. Match Linux hub recovery:
++	 * allow an additional 40 ms before the first address transaction.
++	 */
++	mdelay(50);
+ 
+ #if CONFIG_IS_ENABLED(DM_USB)
+ 	struct udevice *child;
+--- a/common/usb.c
++++ b/common/usb.c
+@@ -1256,19 +1256,25 @@
+ int usb_setup_device(struct usb_device *dev, bool do_read,
+ 		     struct usb_device *parent)
+ {
+-	int addr;
+-	int ret;
+-
+-	/* We still haven't set the Address yet */
+-	addr = dev->devnum;
+-	dev->devnum = 0;
+-
+-	ret = usb_prepare_device(dev, addr, do_read, parent);
+-	if (ret)
+-		return ret;
+-	ret = usb_select_config(dev);
+-
+-	return ret;
++	int addr = dev->devnum;
++	int ret, attempt;
++
++	/* A second pass is permitted only after a confirmed slot release. */
++	for (attempt = 0; attempt < 2; attempt++) {
++		dev->devnum = 0;
++		dev->enumeration_reset_needed = false;
++		ret = usb_prepare_device(dev, addr, do_read, parent);
++		if (!ret)
++			return usb_select_config(dev);
++		if (ret != -EPROTO || !dev->enumeration_reset_needed ||
++		    dev->slot_id || !parent || attempt == 1)
++			return ret;
++		ret = usb_hub_reset_child(parent, dev->portnr, dev->speed);
++		printf("USB-ENUM child port=%u reset-for-retry=%d\n", dev->portnr, ret);
++		if (ret)
++			return ret;
++	}
++	return -EPROTO;
+ }
+ 
+ #if !CONFIG_IS_ENABLED(DM_USB)
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -353,6 +353,7 @@
+ 		}
+ 		/* Fall through - SS and HS isoc/int have same decoding */
+ 
++	case USB_SPEED_SUPER_PLUS:
+ 	case USB_SPEED_SUPER:
+ 		if (usb_endpoint_xfer_int(endpt_desc) ||
+ 		    usb_endpoint_xfer_isoc(endpt_desc)) {
+@@ -680,140 +681,158 @@
+  * @param udev pointer to the Device Data Structure
+  * Return: 0 if successful else error code on failure
+  */
++/* Verify command identity before changing ownership of any DMA allocation. */
++static int xhci_slot_command(struct xhci_ctrl *ctrl, dma_addr_t input,
++			     unsigned int slot, trb_type type,
++			     unsigned int *completion, unsigned int *allocated)
++{
++	union xhci_trb *event;
++	dma_addr_t command;
++	u64 reported;
++	unsigned int id, code, max_slots;
++
++	if (ctrl->m1_diag && ctrl->m1_dma_failed)
++		return -EFAULT;
++	if (ctrl->hcor && (xhci_readl(&ctrl->hcor->or_usbsts) &
++			   (STS_HALT | STS_FATAL | STS_HCE))) {
++		printf("USB-SLOT halted command=%u slot=%u status=%x; no retry\n",
++		       type, slot, xhci_readl(&ctrl->hcor->or_usbsts));
++		return -EIO;
++	}
++	command = xhci_queue_command(ctrl, input, slot, 0, type);
++	event = xhci_wait_for_event_timeout(ctrl, TRB_COMPLETION, XHCI_TIMEOUT);
++	if (!event) {
++		printf("USB-SLOT timeout command=%u slot=%u trb=%llx status=%x\n",
++		       type, slot, (unsigned long long)command,
++		       ctrl->hcor ? xhci_readl(&ctrl->hcor->or_usbsts) : 0);
++		return -ETIMEDOUT;
++	}
++	reported = le32_to_cpu(event->generic.field[0]) |
++		   ((u64)le32_to_cpu(event->generic.field[1]) << 32);
++	id = TRB_TO_SLOT_ID(le32_to_cpu(event->event_cmd.flags));
++	code = GET_COMP_CODE(le32_to_cpu(event->event_cmd.status));
++	xhci_acknowledge_event(ctrl);
++	if ((reported & ~0xfULL) != command)
++		return -EPROTO;
++	if (type == TRB_ENABLE_SLOT) {
++		max_slots = HCS_MAX_SLOTS(xhci_readl(&ctrl->hccr->cr_hcsparams1));
++		if (code != COMP_SUCCESS)
++			return -EIO;
++		if (!allocated || !id || id >= MAX_HC_SLOTS || id > max_slots ||
++		    ctrl->devs[id])
++			return -EPROTO;
++		*allocated = id;
++	} else if (!slot || id != slot) {
++		return -EPROTO;
++	}
++	*completion = code;
++	return 0;
++}
++
++static int xhci_disable_device_slot(struct usb_device *udev)
++{
++	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
++	unsigned int code;
++	int ret;
++
++	ret = xhci_slot_command(ctrl, 0, udev->slot_id, TRB_DISABLE_SLOT,
++				&code, NULL);
++	if (ret)
++		return ret;
++	if (code != COMP_SUCCESS)
++		return -EIO;
++	/* The completion is the ownership barrier; never free on timeout. */
++	xhci_free_virt_device(ctrl, udev->slot_id);
++	udev->slot_id = 0;
++	return 0;
++}
++
++static int xhci_enable_device_slot(struct usb_device *udev)
++{
++	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
++	unsigned int code, slot;
++	int ret, cleanup;
++
++	ret = xhci_slot_command(ctrl, 0, 0, TRB_ENABLE_SLOT, &code, &slot);
++	if (ret)
++		return ret;
++	udev->slot_id = slot;
++	ret = xhci_alloc_virt_device(ctrl, slot);
++	if (!ret && ctrl->m1_diag && ctrl->m1_dma_failed)
++		ret = -EFAULT;
++	if (!ret)
++		return 0;
++	/* Retain partial allocations if Disable Slot cannot be confirmed. */
++	cleanup = xhci_disable_device_slot(udev);
++	return cleanup ? cleanup : ret;
++}
++
++#define XHCI_ADDRESS_ATTEMPTS 4
++
+ static int xhci_address_device(struct usb_device *udev, int root_portnr)
+ {
+-	int ret = 0;
+ 	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
+-	struct xhci_slot_ctx *slot_ctx;
+-	struct xhci_input_control_ctx *ctrl_ctx;
+-	struct xhci_virt_device *virt_dev;
+-	int slot_id = udev->slot_id;
+-	union xhci_trb *event;
+-
+-	virt_dev = ctrl->devs[slot_id];
+-
+-	/*
+-	 * This is the first Set Address since device plug-in
+-	 * so setting up the slot context.
+-	 */
+-	debug("Setting up addressable devices %p\n", ctrl->dcbaa);
+-	xhci_setup_addressable_virt_dev(ctrl, udev, root_portnr);
+-
+-	ctrl_ctx = xhci_get_input_control_ctx(virt_dev->in_ctx);
+-	ctrl_ctx->add_flags = cpu_to_le32(SLOT_FLAG | EP0_FLAG);
+-	ctrl_ctx->drop_flags = 0;
+-
+-	if (ctrl->m1_live && ctrl->m1_dma_failed) return -EFAULT;
+-	xhci_queue_command(ctrl, virt_dev->in_ctx->dma,
+-			   slot_id, 0, TRB_ADDR_DEV);
+-	event = xhci_wait_for_event(ctrl, TRB_COMPLETION);
+-	if (!event)
+-		return -ETIMEDOUT;
+-
+-	if (ctrl->m1_live && TRB_TO_SLOT_ID(le32_to_cpu(event->event_cmd.flags)) != slot_id)
+-		return -EPROTO;
+-	BUG_ON(TRB_TO_SLOT_ID(le32_to_cpu(event->event_cmd.flags)) != slot_id);
+-
+-	switch (GET_COMP_CODE(le32_to_cpu(event->event_cmd.status))) {
+-	case COMP_CTX_STATE:
+-	case COMP_EBADSLT:
+-		printf("Setup ERROR: address device command for slot %d.\n",
+-								slot_id);
+-		ret = -EINVAL;
+-		break;
+-	case COMP_TX_ERR:
+-		puts("Device not responding to set address.\n");
+-		ret = -EPROTO;
+-		break;
+-	case COMP_DEV_ERR:
+-		puts("ERROR: Incompatible device"
+-					"for address device command.\n");
+-		ret = -ENODEV;
+-		break;
+-	case COMP_SUCCESS:
+-		debug("Successful Address Device command\n");
+-		udev->status = 0;
+-		break;
+-	default:
+-		printf("ERROR: unexpected command completion code 0x%x.\n",
+-			GET_COMP_CODE(le32_to_cpu(event->event_cmd.status)));
+-		ret = -EINVAL;
+-		break;
+-	}
+-
+-	xhci_acknowledge_event(ctrl);
+-
+-	if (ret < 0)
+-		/*
+-		 * TODO: Unsuccessful Address Device command shall leave the
+-		 * slot in default state. So, issue Disable Slot command now.
+-		 */
+-		return ret;
+-
+-	xhci_inval_cache((uintptr_t)virt_dev->out_ctx->bytes,
+-			 virt_dev->out_ctx->size);
+-	slot_ctx = xhci_get_slot_ctx(ctrl, virt_dev->out_ctx);
+-
+-	debug("xHC internal address is: %d\n",
+-		le32_to_cpu(slot_ctx->dev_state) & DEV_ADDR_MASK);
+-
+-	return 0;
+-}
+-
+-/**
+- * Issue Enable slot command to the controller to allocate
+- * device slot and assign the slot id. It fails if the xHC
+- * ran out of device slots, the Enable Slot command timed out,
+- * or allocating memory failed.
+- *
+- * @param udev	pointer to the Device Data Structure
+- * Return: Returns 0 on succes else return error code on failure
+- */
++	struct xhci_input_control_ctx *input;
++	struct xhci_virt_device *virt;
++	unsigned int attempt, code, failed_slot;
++	int ret;
++
++	for (attempt = 0; attempt < XHCI_ADDRESS_ATTEMPTS; attempt++) {
++		if (!udev->slot_id || udev->slot_id >= MAX_HC_SLOTS ||
++		    !ctrl->devs[udev->slot_id])
++			return -EINVAL;
++		virt = ctrl->devs[udev->slot_id];
++		xhci_setup_addressable_virt_dev(ctrl, udev, root_portnr);
++		input = xhci_get_input_control_ctx(virt->in_ctx);
++		input->add_flags = cpu_to_le32(SLOT_FLAG | EP0_FLAG);
++		input->drop_flags = 0;
++		xhci_flush_cache((uintptr_t)virt->in_ctx->bytes, virt->in_ctx->size);
++		ret = xhci_slot_command(ctrl, virt->in_ctx->dma, udev->slot_id,
++					TRB_ADDR_DEV, &code, NULL);
++		if (ret)
++			return ret;
++		if (code == COMP_SUCCESS) {
++			udev->status = 0;
++			if (attempt)
++				printf("USB-ADDRESS recovered attempt=%u slot=%u\n",
++				       attempt + 1, udev->slot_id);
++			return 0;
++		}
++		if (code != COMP_TX_ERR) {
++			printf("USB-ADDRESS failed slot=%u completion=%u; no retry\n",
++			       udev->slot_id, code);
++			return code == COMP_DEV_ERR ? -ENODEV : -EINVAL;
++		}
++		printf("USB-ADDRESS error status=%x speed=%u\n",
++		       ctrl->hcor ? xhci_readl(&ctrl->hcor->or_usbsts) : 0, udev->speed);
++		failed_slot = udev->slot_id;
++		ret = xhci_disable_device_slot(udev);
++		printf("USB-ADDRESS transaction-error attempt=%u slot=%u disable=%d\n",
++		       attempt + 1, failed_slot, ret);
++		if (ret)
++			return ret;
++		if (attempt + 1 == XHCI_ADDRESS_ATTEMPTS) {
++			udev->enumeration_reset_needed = true;
++			return -EPROTO;
++		}
++		mdelay(200);
++		ret = xhci_enable_device_slot(udev);
++		printf("USB-ADDRESS new-slot=%u enable=%d\n", udev->slot_id, ret);
++		if (ret)
++			return ret;
++	}
++	return -EPROTO;
++}
++
+ static int _xhci_alloc_device(struct usb_device *udev)
+ {
+ 	struct xhci_ctrl *ctrl = xhci_get_ctrl(udev);
+-	union xhci_trb *event;
+-	int ret;
+-
+-	/*
+-	 * Root hub will be first device to be initailized.
+-	 * If this device is root-hub, don't do any xHC related
+-	 * stuff.
+-	 */
+-	if (ctrl->rootdev == 0) {
++
++	if (!ctrl->rootdev) {
+ 		udev->speed = USB_SPEED_SUPER;
+ 		return 0;
+ 	}
+-
+-	xhci_queue_command(ctrl, 0, 0, 0, TRB_ENABLE_SLOT);
+-	event = xhci_wait_for_event(ctrl, TRB_COMPLETION);
+-	if (!event)
+-		return -ETIMEDOUT;
+-
+-	if (ctrl->m1_live && GET_COMP_CODE(le32_to_cpu(event->event_cmd.status)) != COMP_SUCCESS)
+-		return -EIO;
+-	BUG_ON(GET_COMP_CODE(le32_to_cpu(event->event_cmd.status))
+-		!= COMP_SUCCESS);
+-
+-	udev->slot_id = TRB_TO_SLOT_ID(le32_to_cpu(event->event_cmd.flags));
+-	if (ctrl->m1_live && (!udev->slot_id || udev->slot_id>=MAX_HC_SLOTS)) {
+-		xhci_acknowledge_event(ctrl);
+-		return -EPROTO;
+-	}
+-
+-	xhci_acknowledge_event(ctrl);
+-
+-	ret = xhci_alloc_virt_device(ctrl, udev->slot_id);
+-	if (ret < 0) {
+-		/*
+-		 * TODO: Unsuccessful Address Device command shall leave
+-		 * the slot in default. So, issue Disable Slot command now.
+-		 */
+-		puts("Could not allocate xHCI USB device data structures\n");
+-		return ret;
+-	}
+-
+-	return 0;
++	return xhci_enable_device_slot(udev);
+ }
+ 
+ /*
+@@ -1689,6 +1708,7 @@
+  /* Halt only; never free buffers, reset PHY or clear DART ownership here. */
+  return handshake(&ctrl->hcor->or_usbsts, STS_HALT, STS_HALT, 100000);
+ }
++
+ #endif
+ 
+ static int xhci_lowlevel_stop(struct xhci_ctrl *ctrl)
+--- a/drivers/usb/host/xhci-ring.c
++++ b/drivers/usb/host/xhci-ring.c
+@@ -289,12 +289,13 @@
+  * @param slot_id	Slot ID to encode in the flags field (opt.)
+  * @param ep_index	Endpoint index to encode in the flags field (opt.)
+  * @param cmd		Command type to enqueue
+- * Return: none
+- */
+-void xhci_queue_command(struct xhci_ctrl *ctrl, dma_addr_t addr, u32 slot_id,
++ * Return: DMA address of the submitted command TRB
++ */
++dma_addr_t xhci_queue_command(struct xhci_ctrl *ctrl, dma_addr_t addr, u32 slot_id,
+ 			u32 ep_index, trb_type cmd)
+ {
+ 	u32 fields[4];
++	dma_addr_t command_dma;
+ 
+ 	BUG_ON(prepare_ring(ctrl, ctrl->cmd_ring, EP_STATE_RUNNING));
+ 
+@@ -311,10 +312,11 @@
+ 	if (cmd >= TRB_RESET_EP && cmd <= TRB_SET_DEQ)
+ 		fields[3] |= EP_ID_FOR_TRB(ep_index);
+ 
+-	queue_trb(ctrl, ctrl->cmd_ring, false, fields);
++	command_dma = queue_trb(ctrl, ctrl->cmd_ring, false, fields);
+ 
+ 	/* Ring the command ring doorbell */
+ 	xhci_writel(&ctrl->dba->doorbell[0], DB_VALUE_HOST);
++	return command_dma;
+ }
+ 
+ /*
+@@ -458,7 +460,8 @@
+  * @param expected	TRB type expected from Event TRB
+  * Return: pointer to event trb
+  */
+-union xhci_trb *xhci_wait_for_event(struct xhci_ctrl *ctrl, trb_type expected)
++union xhci_trb *xhci_wait_for_event_timeout(struct xhci_ctrl *ctrl,
++					trb_type expected, unsigned long timeout)
+ {
+ 	trb_type type;
+ 	unsigned long ts = get_timer(0);
+@@ -497,7 +500,7 @@
+ 				le32_to_cpu(event->generic.field[3]));
+ 
+ 		xhci_acknowledge_event(ctrl);
+-	} while (get_timer(ts) < ((ctrl->m1_direct_udev || ctrl->m1_live) ? 500 : XHCI_TIMEOUT));
++	} while (get_timer(ts) < timeout);
+ 
+ 	if (expected == TRB_TRANSFER)
+ 		return NULL;
+@@ -505,6 +508,12 @@
+ 	printf("XHCI timeout on event type %d...\n", expected);
+ 
+ 	return NULL;
++}
++
++union xhci_trb *xhci_wait_for_event(struct xhci_ctrl *ctrl, trb_type expected)
++{
++	return xhci_wait_for_event_timeout(ctrl, expected,
++		(ctrl->m1_direct_udev || ctrl->m1_live) ? 500 : XHCI_TIMEOUT);
+ }
+ 
+ /*
+@@ -822,9 +831,10 @@
+ 	if(ctrl->m1_live && (++live_events>8 || get_timer(ctrl->m1_live_started)>=(ctrl->m1_live_os ? 120000 : (ctrl->m1_live_efi ? 30000 : 10000)))) {
+ 		xhci_m1_diag_stop(ctrl);return -ETIMEDOUT;
+ 	}
+-	event = xhci_wait_for_event(ctrl, TRB_TRANSFER);
++	event = xhci_wait_for_event_timeout(ctrl, TRB_TRANSFER, XHCI_TIMEOUT);
+ 	if (!event) {
+-		debug("XHCI bulk transfer timed out, aborting...\n");
++		printf("USB-BULK timeout slot=%u ep=%u length=%u status=%x\n",
++		       slot_id, ep_index, length, xhci_readl(&ctrl->hcor->or_usbsts));
+ 		if(ctrl->m1_live)xhci_m1_diag_stop(ctrl);
+ 		else abort_td(udev, ep_index);
+ 		udev->status = USB_ST_NAK_REC;  /* closest thing to a timeout */
+@@ -838,6 +848,8 @@
+ 	   EVENT_TRB_LEN(le32_to_cpu(event->trans_event.transfer_len))>(u32)available_length ||
+ 	   (GET_COMP_CODE(le32_to_cpu(event->trans_event.transfer_len))==COMP_SUCCESS &&
+ 	    EVENT_TRB_LEN(le32_to_cpu(event->trans_event.transfer_len))))) {
++		printf("USB-BULK invalid completion slot=%u ep=%u event=%08x len=%08x requested=%u\n",
++		       slot_id, ep_index, field, le32_to_cpu(event->trans_event.transfer_len), available_length);
+ 		xhci_m1_diag_stop(ctrl);return -EPROTO;
+ 	}
+ 	if ((uintptr_t)(le64_to_cpu(event->trans_event.buffer)) !=
+@@ -853,7 +865,14 @@
+ 	BUG_ON(TRB_TO_EP_INDEX(field) != ep_index);
+ 
+ 	record_transfer_result(udev, event, available_length);
+-	if(ctrl->m1_live && udev->status){xhci_m1_diag_stop(ctrl);return -EIO;}
++	if (ctrl->m1_live && udev->status) {
++		printf("USB-BULK failed slot=%u ep=%u completion=%u status=%lx actual=%u\n",
++		       slot_id, ep_index, GET_COMP_CODE(le32_to_cpu(event->trans_event.transfer_len)),
++		       udev->status, udev->act_len);
++		xhci_acknowledge_event(ctrl);
++		xhci_m1_diag_stop(ctrl);
++		return -EIO;
++	}
+ 	xhci_acknowledge_event(ctrl);
+ 	xhci_inval_cache((uintptr_t)buffer, length);
+ 	xhci_dma_unmap(ctrl, buf_64, length);
+--- a/drivers/usb/host/xhci-mem.c
++++ b/drivers/usb/host/xhci-mem.c
+@@ -143,36 +143,37 @@
+  * @param ptr	pointer to "xhci_ctrl" whose virtual devices are to be freed
+  * Return: none
+  */
++void xhci_free_virt_device(struct xhci_ctrl *ctrl, unsigned int slot_id)
++{
++	struct xhci_virt_device *virt_dev;
++	int i;
++
++	/* Caller must have confirmed that xHCI no longer owns this slot. */
++	if (!slot_id || slot_id >= MAX_HC_SLOTS)
++		return;
++	virt_dev = ctrl->devs[slot_id];
++	if (!virt_dev)
++		return;
++	ctrl->dcbaa->dev_context_ptrs[slot_id] = 0;
++	xhci_flush_cache((uintptr_t)&ctrl->dcbaa->dev_context_ptrs[slot_id],
++			 sizeof(__le64));
++	for (i = 0; i < 31; i++)
++		if (virt_dev->eps[i].ring)
++			xhci_ring_free(ctrl, virt_dev->eps[i].ring);
++	if (virt_dev->in_ctx)
++		xhci_free_container_ctx(ctrl, virt_dev->in_ctx);
++	if (virt_dev->out_ctx)
++		xhci_free_container_ctx(ctrl, virt_dev->out_ctx);
++	free(virt_dev);
++	ctrl->devs[slot_id] = NULL;
++}
++
+ static void xhci_free_virt_devices(struct xhci_ctrl *ctrl)
+ {
+-	int i;
+-	int slot_id;
+-	struct xhci_virt_device *virt_dev;
+-
+-	/*
+-	 * refactored here to loop through all virt_dev
+-	 * Slot ID 0 is reserved
+-	 */
+-	for (slot_id = 0; slot_id < MAX_HC_SLOTS; slot_id++) {
+-		virt_dev = ctrl->devs[slot_id];
+-		if (!virt_dev)
+-			continue;
+-
+-		ctrl->dcbaa->dev_context_ptrs[slot_id] = 0;
+-
+-		for (i = 0; i < 31; ++i)
+-			if (virt_dev->eps[i].ring)
+-				xhci_ring_free(ctrl, virt_dev->eps[i].ring);
+-
+-		if (virt_dev->in_ctx)
+-			xhci_free_container_ctx(ctrl, virt_dev->in_ctx);
+-		if (virt_dev->out_ctx)
+-			xhci_free_container_ctx(ctrl, virt_dev->out_ctx);
+-
+-		free(virt_dev);
+-		/* make sure we are pointing to NULL */
+-		ctrl->devs[slot_id] = NULL;
+-	}
++	unsigned int slot_id;
++
++	for (slot_id = 1; slot_id < MAX_HC_SLOTS; slot_id++)
++		xhci_free_virt_device(ctrl, slot_id);
+ }
+ 
+ /**
+@@ -795,6 +796,9 @@
+ 	slot_ctx->dev_info |= cpu_to_le32(route);
+ 
+ 	switch (speed) {
++	case USB_SPEED_SUPER_PLUS:
++		slot_ctx->dev_info |= cpu_to_le32(5U << 20);
++		break;
+ 	case USB_SPEED_SUPER:
+ 		slot_ctx->dev_info |= cpu_to_le32(SLOT_SPEED_SS);
+ 		break;
+@@ -864,6 +868,7 @@
+ 	debug("SPEED = %d\n", speed);
+ 
+ 	switch (speed) {
++	case USB_SPEED_SUPER_PLUS:
+ 	case USB_SPEED_SUPER:
+ 		ep0_ctx->ep_info2 |= cpu_to_le32(MAX_PACKET(512));
+ 		debug("Setting Packet size = 512bytes\n");
+--- a/include/usb.h
++++ b/include/usb.h
+@@ -157,6 +157,8 @@
+ #endif
+ 	/* slot_id - for xHCI enabled devices */
+ 	unsigned int slot_id;
++	/* Address failed; host confirmed release of all device DMA ownership. */
++	bool enumeration_reset_needed;
+ #if CONFIG_IS_ENABLED(DM_USB)
+ 	struct udevice *dev;		/* Pointer to associated device */
+ 	struct udevice *controller_dev;	/* Pointer to associated controller */
+@@ -819,6 +821,8 @@
+  *		(should be false for XHCI buses, true otherwise)
+  * @parent:	Parent device (either UCLASS_USB or UCLASS_USB_HUB)
+  * Return: 0 if OK, -ve on error */
++int usb_hub_reset_child(struct usb_device *hub, int port, int speed);
++
+ int usb_setup_device(struct usb_device *dev, bool do_read,
+ 		     struct usb_device *parent);
+ 
+--- a/include/usb/xhci.h
++++ b/include/usb/xhci.h
+@@ -1258,9 +1258,11 @@
+ 		    struct xhci_container_ctx *out_ctx);
+ void xhci_setup_addressable_virt_dev(struct xhci_ctrl *ctrl,
+ 				     struct usb_device *udev, int hop_portnr);
+-void xhci_queue_command(struct xhci_ctrl *ctrl, dma_addr_t addr,
++dma_addr_t xhci_queue_command(struct xhci_ctrl *ctrl, dma_addr_t addr,
+ 			u32 slot_id, u32 ep_index, trb_type cmd);
+ void xhci_acknowledge_event(struct xhci_ctrl *ctrl);
++union xhci_trb *xhci_wait_for_event_timeout(struct xhci_ctrl *ctrl,
++					trb_type expected, unsigned long timeout);
+ union xhci_trb *xhci_wait_for_event(struct xhci_ctrl *ctrl, trb_type expected);
+ int xhci_bulk_tx(struct usb_device *udev, unsigned long pipe,
+ 		 int length, void *buffer);
+@@ -1270,6 +1272,8 @@
+ void xhci_flush_cache(uintptr_t addr, u32 type_len);
+ void xhci_inval_cache(uintptr_t addr, u32 type_len);
+ void xhci_cleanup(struct xhci_ctrl *ctrl);
++/* Only after Disable Slot completed, or after the controller is halted. */
++void xhci_free_virt_device(struct xhci_ctrl *ctrl, unsigned int slot_id);
+ struct xhci_ring *xhci_ring_alloc(struct xhci_ctrl *ctrl, unsigned int num_segs,
+ 				  bool link_trbs);
+ int xhci_alloc_virt_device(struct xhci_ctrl *ctrl, unsigned int slot_id);

@@ -1,0 +1,700 @@
+Subject: [PATCH] RFC: apple: arbitrate native ports and DP-IN after DRM readiness
+
+Local development candidate after native HPD patches 1-3.
+No automatic enablement: requires explicit experimental device tree.
+Full system suspend and HPD IRQ forwarding remain unsupported.
+Not upstream-ready; hardware validation required before deployment.
+
+---
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -358,6 +358,8 @@
+ }
+ 
+ static void dp91_binding_stop(struct apple_dcp *dcp);
++static int dcp_auto_dp_start(struct apple_dcp *dcp);
++static void dcp_auto_dp_stop(struct apple_dcp *dcp);
+ static struct device_attribute dev_attr_dpin_connect;
+ 
+ #define DPTX_CONNECT_TIMEOUT msecs_to_jiffies(2000)
+@@ -444,7 +446,7 @@
+ {
+ 	struct apple_dcp *dcp = platform_get_drvdata(pdev);
+ 
+-	if (dcp->native_dp_provider)
++	if (dcp->native_dp_provider || dcp->auto_dp)
+ 		return -EBUSY;
+ 	return dcp_dptx_connect(dcp, port);
+ }
+@@ -453,7 +455,7 @@
+ {
+ 	struct apple_dcp *dcp = platform_get_drvdata(pdev);
+ 
+-	if (dcp->native_dp_provider)
++	if (dcp->native_dp_provider || dcp->auto_dp)
+ 		return -EBUSY;
+ 
+ 	disconnected_hpd_event(dcp->connector);
+@@ -1186,6 +1188,7 @@
+ 
+ #include "dpin-binding.inc"
+ #include "native-dp.inc"
++#include "auto-dp.inc"
+ 
+ static int dcp_platform_probe(struct platform_device *pdev)
+ {
+@@ -1339,7 +1342,10 @@
+ 	}
+ 
+ 	{
+-		int ret = dcp_native_dp_init(dcp);
++		int ret = dcp_auto_dp_init(dcp);
++
++		if (!ret && !dcp->auto_dp)
++			ret = dcp_native_dp_init(dcp);
+ 
+ 		if (ret)
+ 			return ret;
+@@ -1378,7 +1384,7 @@
+ {
+ 	struct apple_dcp *dcp = dev_get_drvdata(dev);
+ 
+-	if (dcp->native_dp_registered)
++	if (dcp->native_dp_registered || dcp->auto_dp)
+ 		return -EBUSY; /* Native HPD suspend/replay is not implemented yet. */
+ 
+ 	if (dcp->avep)
+diff --git a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
+--- a/drivers/gpu/drm/apple/dcp-internal.h
++++ b/drivers/gpu/drm/apple/dcp-internal.h
+@@ -17,6 +17,7 @@
+ #include <linux/usb/typec_mux.h>
+ 
+ #include "dptxep.h"
++#include "dcp-route-policy.h"
+ #include "iomfb.h"
+ #include "iomfb_v12_3.h"
+ #include "iomfb_v13_3.h"
+@@ -27,6 +28,23 @@
+ #define DCP_MAX_PLANES 4
+ 
+ struct apple_dcp;
++
++struct dcp_auto_route {
++	struct apple_dcp *dcp;
++	struct device *provider;
++	struct phy *phy;
++	struct mux_control *mux;
++	struct apple_cd321x_dp_sink sink;
++	u64 event_sequence;
++	u64 output_route;
++	u64 generation;
++	u8 output_port;
++	unsigned int id;
++	unsigned int phy_index;
++	bool native;
++	bool registered;
++	bool mux_owned;
++};
+ struct apple_dcp_afkep;
+ 
+ struct dcpav_service_epic;
+@@ -260,6 +278,14 @@
+ 	struct gpio_desc *hdmi_pwren;
+ 	struct gpio_desc *dp2hdmi_pwren;
+ 
++	bool auto_dp;
++	bool auto_dp_ready;
++	bool auto_dp_registered;
++	struct apple_dp_policy auto_dp_policy;
++	struct dcp_auto_route auto_dp_routes[APPLE_DP_ROUTES];
++	struct work_struct auto_dp_work;
++	struct notifier_block auto_dp_notifier;
++
+ 	struct device *native_dp_provider;
+ 	struct apple_cd321x_dp_sink native_dp_sink;
+ 	bool native_dp_registered;
+diff --git a/drivers/gpu/drm/apple/dpin-binding.inc b/drivers/gpu/drm/apple/dpin-binding.inc
+--- a/drivers/gpu/drm/apple/dpin-binding.inc
++++ b/drivers/gpu/drm/apple/dpin-binding.inc
+@@ -204,6 +204,10 @@
+ 
+ 	if (!dcp)
+ 		return;
++	if (dcp->auto_dp) {
++		dcp_auto_dp_stop(dcp);
++		return;
++	}
+ 	mutex_lock(&dcp->dp91_mutex);
+ 	dcp->dp118_stopping = true;
+ 	registered = xchg(&dcp->dp110_registered, false);
+@@ -364,6 +368,8 @@
+  struct apple_dcp *dcp = platform_get_drvdata(pdev);
+  struct dptx_port *port = &dcp->dptxport[0];
+  int ret;
++ if (dcp->auto_dp)
++  return 0;
+  if (!dpin_autostart || !port->dpin_provider)
+   return 0;
+  mutex_lock(&dcp->dp91_mutex);
+diff --git a/drivers/gpu/drm/apple/native-dp.inc b/drivers/gpu/drm/apple/native-dp.inc
+--- a/drivers/gpu/drm/apple/native-dp.inc
++++ b/drivers/gpu/drm/apple/native-dp.inc
+@@ -119,6 +119,8 @@
+ 	struct apple_dcp *dcp = platform_get_drvdata(pdev);
+ 	int ret;
+ 
++	if (dcp->auto_dp)
++		return dcp_auto_dp_start(dcp);
+ 	if (!dcp->native_dp_provider || dcp->native_dp_registered)
+ 		return 0;
+ 	if (!dcp->active || !dcp->connector || !dcp->dptxport[0].enabled ||
+@@ -141,6 +143,10 @@
+ 	struct apple_dcp *dcp = platform_get_drvdata(pdev);
+ 	int ret;
+ 
++	if (dcp->auto_dp) {
++		dcp_auto_dp_stop(dcp);
++		return;
++	}
+ 	if (!dcp->native_dp_registered)
+ 		return;
+ 	/* detach drains callbacks before DRM/modeset/firmware teardown. */
+diff --git a/drivers/gpu/drm/apple/auto-dp.inc b/drivers/gpu/drm/apple/auto-dp.inc
+new file mode 100644
+--- /dev/null
++++ b/drivers/gpu/drm/apple/auto-dp.inc
+@@ -0,0 +1,373 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* Experimental M1 shared-DCP routing. Inactive without an explicit DT opt-in.
++ * dp91_mutex serializes owner changes; no PD, CIO or TB domain lock may be
++ * held while calling firmware. Native withdrawal callbacks execute before
++ * the PD provider changes its pins. Dock withdrawal is acknowledged before
++ * the TB provider retires its token. A failure blocks all further selection.
++ */
++
++static int dcp_auto_dp_drain(struct apple_dcp *dcp)
++{
++	struct apple_epic_service *service = dcp->dptxport[0].service;
++	unsigned long flags;
++	bool idle;
++
++	flush_workqueue(service->ep->wq);
++	spin_lock_irqsave(&service->lock, flags);
++	idle = bitmap_empty(service->cmd_map, MAX_PENDING_CMDS);
++	spin_unlock_irqrestore(&service->lock, flags);
++	return idle ? 0 : -EBUSY;
++}
++
++static int dcp_auto_dp_acquire(struct apple_dcp *dcp, unsigned int id)
++{
++	struct dcp_auto_route *route = &dcp->auto_dp_routes[id];
++	struct dptx_port *port = &dcp->dptxport[0];
++	int ret;
++
++	lockdep_assert_held(&dcp->dp91_mutex);
++	/* Only an idle arbiter may reach here; the previous route was drained. */
++	if (port->connected || port->dpin_token)
++		return -EUCLEAN;
++	port->phy_ops = (union phy_configure_opts) {};
++	port->lane_count = 0;
++	port->link_rate = 0;
++	port->pending_link_rate = 0;
++	dcp->dptx_phy = route->phy_index;
++	if (route->native) {
++		ret = mux_control_try_select(route->mux, dcp->index);
++		if (ret)
++			return ret;
++		route->mux_owned = true;
++		port->dpin_provider = NULL;
++		port->route_type = DPTX_ROUTE_PHY;
++		dcp->phy = route->phy;
++		return dcp_native_dp_hpd(dcp, true);
++	}
++	dcp->phy = NULL;
++	port->atcphy = NULL;
++	port->route_type = DPTX_ROUTE_USB4;
++	port->dpin_provider = route->provider;
++	port->dpin_attempted = false;
++	port->dpin_withdraw_attempted = false;
++	port->dpin_withdrawn = false;
++	port->dpin_reconnect_attempted = false;
++	return dp118_connect_locked(dcp, false);
++}
++
++static int dcp_auto_dp_release(struct apple_dcp *dcp, unsigned int id)
++{
++	struct dcp_auto_route *route = &dcp->auto_dp_routes[id];
++	struct dptx_port *port = &dcp->dptxport[0];
++	int ret;
++
++	lockdep_assert_held(&dcp->dp91_mutex);
++	if (route->native) {
++		ret = dcp_native_dp_hpd(dcp, false);
++	} else {
++		ret = dp107_withdraw(dcp);
++	}
++	if (ret)
++		return ret;
++	/* Keep the old callback routing until every firmware callback is done. */
++	ret = dcp_auto_dp_drain(dcp);
++	if (ret)
++		return ret;
++	if (route->native) {
++		if (!route->mux_owned)
++			return -EUCLEAN;
++		ret = mux_control_deselect(route->mux);
++		if (ret)
++			return ret;
++		route->mux_owned = false;
++	} else {
++		ret = codex_dpin_call(route->provider, READ_ONCE(port->dpin_token),
++				      CODEX_DPIN_END, 0);
++		if (ret)
++			return ret;
++		WRITE_ONCE(port->dpin_token, 0);
++	}
++	dcp->phy = NULL;
++	port->atcphy = NULL;
++	port->dpin_provider = NULL;
++	return 0;
++}
++
++static int dcp_auto_dp_execute(struct apple_dcp *dcp,
++			       const struct apple_dp_command *cmd)
++{
++	int ret;
++
++	if (cmd->action == APPLE_DP_ACQUIRE)
++		ret = dcp_auto_dp_acquire(dcp, cmd->route);
++	else
++		ret = dcp_auto_dp_release(dcp, cmd->route);
++	apple_dp_policy_complete(&dcp->auto_dp_policy, cmd, ret);
++	dev_info(dcp->dev, "auto DP route=%u generation=%llu action=%u ret=%d\n",
++		 cmd->route, cmd->generation, cmd->action, ret);
++	return ret;
++}
++
++static void dcp_auto_dp_work(struct work_struct *work)
++{
++	struct apple_dcp *dcp = container_of(work, struct apple_dcp, auto_dp_work);
++	struct apple_dp_command cmd;
++
++	mutex_lock(&dcp->dp91_mutex);
++	while (dcp->auto_dp_ready &&
++	       apple_dp_policy_next(&dcp->auto_dp_policy, &cmd) == 1) {
++		if (dcp_auto_dp_execute(dcp, &cmd))
++			break;
++	}
++	mutex_unlock(&dcp->dp91_mutex);
++}
++
++/* Caller holds dp91_mutex. Withdraw this owner synchronously, but acquire
++ * any successor only on our worker, outside the provider's notification.
++ */
++static int dcp_auto_dp_request(struct dcp_auto_route *route, bool present)
++{
++	struct apple_dcp *dcp = route->dcp;
++	struct apple_dp_policy *policy = &dcp->auto_dp_policy;
++	struct apple_dp_command cmd;
++	int ret;
++
++	lockdep_assert_held(&dcp->dp91_mutex);
++	if (policy->phase == APPLE_DP_FAULT) {
++		/* Quarantine the uncertain display route, not an unrelated port's
++		 * storage/network teardown. No new acquisition is admitted.
++		 */
++		if (!present && policy->owner != (int)route->id &&
++		    policy->pending.route != route->id)
++			return 0;
++		return -EUCLEAN;
++	}
++	if (route->generation == ~(u64)0)
++		return -EOVERFLOW;
++	ret = apple_dp_policy_request(policy, route->id, ++route->generation, present);
++	if (ret)
++		return ret;
++	if (!present && policy->owner == (int)route->id) {
++		ret = apple_dp_policy_next(policy, &cmd);
++		if (ret != 1 || cmd.action != APPLE_DP_RELEASE)
++			return ret < 0 ? ret : -EUCLEAN;
++		ret = dcp_auto_dp_execute(dcp, &cmd);
++		if (ret)
++			return ret;
++	}
++	if (dcp->auto_dp_ready)
++		schedule_work(&dcp->auto_dp_work);
++	return 0;
++}
++
++static int dcp_auto_dp_native_hpd(void *data, bool high)
++{
++	struct dcp_auto_route *route = data;
++	int ret;
++
++	mutex_lock(&route->dcp->dp91_mutex);
++	ret = dcp_auto_dp_request(route, high);
++	mutex_unlock(&route->dcp->dp91_mutex);
++	return ret;
++}
++
++static int dcp_auto_dp_notify(struct notifier_block *nb,
++			      unsigned long action, void *data)
++{
++	struct apple_dcp *dcp = container_of(nb, struct apple_dcp, auto_dp_notifier);
++	struct codex_dp110_event *event = data;
++	struct dcp_auto_route *route = NULL;
++	int ret = 0;
++
++	if (!event->controller || event->input_index != 0)
++		return NOTIFY_DONE;
++	for (unsigned int i = 0; i < 2; i++) {
++		if (event->controller->parent == dcp->auto_dp_routes[i].provider) {
++			route = &dcp->auto_dp_routes[i];
++			break;
++		}
++	}
++	if (!route)
++		return NOTIFY_DONE;
++	mutex_lock(&dcp->dp91_mutex);
++	if (event->sequence <= route->event_sequence) {
++		ret = -ESTALE;
++		goto out;
++	}
++	route->event_sequence = event->sequence;
++	if (action == CODEX_DP_PATHS_READY) {
++		/* Replays of the same live path do not disconnect its owner. */
++		if (!dcp->auto_dp_policy.request[route->id].present) {
++			route->output_route = event->output_route;
++			route->output_port = event->output_port;
++			ret = dcp_auto_dp_request(route, true);
++		} else if (route->output_route != event->output_route ||
++			   route->output_port != event->output_port) {
++			/* A different sink requires the prior retirement handshake. */
++			dcp->auto_dp_policy.phase = APPLE_DP_FAULT;
++			ret = -EUCLEAN;
++		}
++	} else if (action == CODEX_DP_BEFORE_RETIREMENT ||
++		   action == CODEX_DP_CONTROLLER_RETIRING) {
++		ret = dcp_auto_dp_request(route, false);
++	} else {
++		ret = -EINVAL;
++	}
++out:
++	mutex_unlock(&dcp->dp91_mutex);
++	return notifier_from_errno(ret);
++}
++
++static int dcp_auto_dp_start(struct apple_dcp *dcp)
++{
++	int ret;
++
++	if (dcp->auto_dp_ready)
++		return 0;
++	if (dcp->auto_dp_policy.stopping)
++		return -ESHUTDOWN;
++	if (!dcp->active || !dcp->connector || !dcp->dptxport[0].enabled ||
++	    !dcp->dptxport[0].service)
++		return -ENODEV;
++	/* This flag prevents the legacy connection helper registering its own
++ * notifier. All owner changes use the shared arbiter in this opt-in mode.
++ */
++	dcp->dp110_registered = true;
++	dcp->auto_dp_notifier.notifier_call = dcp_auto_dp_notify;
++	ret = codex_dp110_register(&dcp->auto_dp_notifier);
++	if (ret)
++		goto fail;
++	dcp->auto_dp_registered = true;
++	for (unsigned int i = 2; i < APPLE_DP_ROUTES; i++) {
++		struct dcp_auto_route *route = &dcp->auto_dp_routes[i];
++
++		route->sink.set_hpd = dcp_auto_dp_native_hpd;
++		route->sink.data = route;
++		ret = apple_cd321x_dp_attach(route->provider, &route->sink);
++		if (ret)
++			goto fail;
++		route->registered = true;
++	}
++	for (unsigned int i = 0; i < 2; i++) {
++		ret = codex_dp121_replay_ready(dcp->auto_dp_routes[i].provider);
++		if (ret && ret != -ENODEV && ret != -ENOLINK)
++			goto fail;
++	}
++	mutex_lock(&dcp->dp91_mutex);
++	dcp->native_dp_ready = true;
++	dcp->auto_dp_ready = true;
++	mutex_unlock(&dcp->dp91_mutex);
++	schedule_work(&dcp->auto_dp_work);
++	return 0;
++fail:
++	dcp_auto_dp_stop(dcp);
++	return ret;
++}
++
++static void dcp_auto_dp_stop(struct apple_dcp *dcp)
++{
++	struct apple_dp_command cmd;
++	int ret;
++
++	mutex_lock(&dcp->dp91_mutex);
++	dcp->auto_dp_ready = false;
++	apple_dp_policy_stop(&dcp->auto_dp_policy);
++	if (apple_dp_policy_next(&dcp->auto_dp_policy, &cmd) == 1)
++		dcp_auto_dp_execute(dcp, &cmd);
++	mutex_unlock(&dcp->dp91_mutex);
++	cancel_work_sync(&dcp->auto_dp_work);
++	if (dcp->auto_dp_registered) {
++		codex_dp110_unregister(&dcp->auto_dp_notifier);
++		dcp->auto_dp_registered = false;
++	}
++	for (unsigned int i = 2; i < APPLE_DP_ROUTES; i++) {
++		struct dcp_auto_route *route = &dcp->auto_dp_routes[i];
++
++		if (!route->registered)
++			continue;
++		ret = apple_cd321x_dp_detach(route->provider, &route->sink);
++		if (ret)
++			dev_err(dcp->dev, "auto DP provider detach failed: %d\n", ret);
++		route->registered = false;
++	}
++	dcp->dp110_registered = false;
++	dcp->native_dp_ready = false;
++}
++
++static int dcp_auto_dp_init(struct apple_dcp *dcp)
++{
++	struct device *dev = dcp->dev;
++	struct device_node *np;
++	struct platform_device *pd;
++	struct i2c_client *client;
++	int ret;
++
++	if (!of_property_read_bool(dev->of_node, "apple,auto-dp-routing"))
++		return 0;
++	/* Explicit experimental hardware contract; do not infer port wiring. */
++	if (!dpin_autostart || !of_machine_is_compatible("apple,t8103") ||
++	    !of_device_is_compatible(dev->of_node, "apple,dcpext") ||
++	    dcp->phy || dcp->native_dp_provider ||
++	    !dcp->dptxport[0].dpin_provider ||
++	    of_property_present(dev->of_node, "apple,native-dp-port") ||
++	    of_count_phandle_with_args(dev->of_node, "apple,native-dp-ports", NULL) != 2 ||
++	    of_count_phandle_with_args(dev->of_node, "apple,dpin-ports", NULL) != 2)
++		return -EINVAL;
++	for (unsigned int i = 0; i < APPLE_DP_ROUTES; i++) {
++		struct dcp_auto_route *route = &dcp->auto_dp_routes[i];
++		char name[24];
++
++		route->dcp = dcp;
++		route->id = i;
++		route->phy_index = i % 2;
++		route->native = i >= 2;
++		np = of_parse_phandle(dev->of_node, route->native ?
++				      "apple,native-dp-ports" : "apple,dpin-ports", i % 2);
++		if (!np)
++			return -EINVAL;
++		if (route->native) {
++			if (!of_device_is_compatible(np, "apple,cd321x")) {
++				of_node_put(np);
++				return -EINVAL;
++			}
++			client = of_find_i2c_device_by_node(np);
++			route->provider = client ? &client->dev : NULL;
++		} else {
++			if (!of_device_is_compatible(np, "apple,t8103-usb4-acio") ||
++			    !of_property_read_bool(np, "codex,dpin-callback-test")) {
++				of_node_put(np);
++				return -EINVAL;
++			}
++			pd = of_find_device_by_node(np);
++			route->provider = pd ? &pd->dev : NULL;
++		}
++		of_node_put(np);
++		if (!route->provider)
++			return -EPROBE_DEFER;
++		ret = devm_add_action_or_reset(dev, dcp_native_dp_put_provider, route->provider);
++		if (ret)
++			return ret;
++		if (!device_is_bound(route->provider))
++			return -EPROBE_DEFER;
++		for (unsigned int j = 0; j < i; j++) {
++			if (route->provider == dcp->auto_dp_routes[j].provider)
++				return -EINVAL;
++		}
++		if (!device_link_add(dev, route->provider, DL_FLAG_AUTOREMOVE_CONSUMER))
++			return -ENODEV;
++		if (!route->native)
++			continue;
++		snprintf(name, sizeof(name), "dp%u-phy", i % 2);
++		route->phy = devm_phy_get(dev, name);
++		if (IS_ERR(route->phy))
++			return PTR_ERR(route->phy);
++		snprintf(name, sizeof(name), "dp%u-xbar", i % 2);
++		route->mux = devm_mux_control_get(dev, name);
++		if (IS_ERR(route->mux))
++			return PTR_ERR(route->mux);
++	}
++	apple_dp_policy_init(&dcp->auto_dp_policy);
++	INIT_WORK(&dcp->auto_dp_work, dcp_auto_dp_work);
++	dcp->auto_dp = true;
++	return 0;
++}
+diff --git a/drivers/gpu/drm/apple/dcp-route-policy.h b/drivers/gpu/drm/apple/dcp-route-policy.h
+new file mode 100644
+--- /dev/null
++++ b/drivers/gpu/drm/apple/dcp-route-policy.h
+@@ -0,0 +1,154 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef APPLE_DCP_ROUTE_POLICY_H
++#define APPLE_DCP_ROUTE_POLICY_H
++
++#include <linux/errno.h>
++#include <linux/types.h>
++
++/*
++ * Experimental arbitration core for the opt-in DCP route manager.
++ *
++ * One caller-owned mutex protects every operation. The caller drops that
++ * mutex for firmware calls and passes the exact command back to complete().
++ * Neither a new cable event nor a stale completion can retire a newer owner.
++ * Route indices are supplied by topology, not hardware product identifiers.
++ * At idle, the lowest requested index wins; an active owner is not preempted.
++ */
++#define APPLE_DP_ROUTES 4
++#define APPLE_DP_NO_OWNER (-1)
++
++enum apple_dp_phase {
++	APPLE_DP_IDLE,
++	APPLE_DP_ACQUIRING,
++	APPLE_DP_ACTIVE,
++	APPLE_DP_RELEASING,
++	APPLE_DP_FAULT,
++};
++
++enum apple_dp_action {
++	APPLE_DP_ACQUIRE,
++	APPLE_DP_RELEASE,
++};
++
++struct apple_dp_request {
++	u64 generation;
++	bool present;
++};
++
++struct apple_dp_command {
++	u64 cookie;
++	u64 generation;
++	unsigned int route;
++	enum apple_dp_action action;
++};
++
++struct apple_dp_policy {
++	struct apple_dp_request request[APPLE_DP_ROUTES];
++	struct apple_dp_command pending;
++	u64 sequence;
++	u64 owner_generation;
++	int owner;
++	enum apple_dp_phase phase;
++	bool stopping;
++};
++
++static inline void apple_dp_policy_init(struct apple_dp_policy *p)
++{
++	*p = (struct apple_dp_policy) { .owner = APPLE_DP_NO_OWNER };
++}
++
++/* Generations advance on level/route transitions, not on HPD IRQ pulses. */
++static inline int apple_dp_policy_request(struct apple_dp_policy *p,
++					  unsigned int route, u64 generation,
++					  bool present)
++{
++	if (route >= APPLE_DP_ROUTES || !generation)
++		return -EINVAL;
++	if (generation <= p->request[route].generation)
++		return -ESTALE;
++	if (p->stopping && present)
++		return -ESHUTDOWN;
++	p->request[route].generation = generation;
++	p->request[route].present = present;
++	return 0;
++}
++
++static inline void apple_dp_policy_stop(struct apple_dp_policy *p)
++{
++	p->stopping = true;
++}
++
++/* Return 1 for a command, 0 for idle/unchanged, or a negative status. */
++static inline int apple_dp_policy_next(struct apple_dp_policy *p,
++				       struct apple_dp_command *cmd)
++{
++	unsigned int route;
++
++	if (p->phase == APPLE_DP_FAULT)
++		return -EUCLEAN;
++	if (p->phase == APPLE_DP_ACQUIRING || p->phase == APPLE_DP_RELEASING)
++		return -EINPROGRESS;
++	if (p->phase == APPLE_DP_ACTIVE) {
++		route = p->owner;
++		if (!p->stopping && p->request[route].present &&
++		    p->request[route].generation == p->owner_generation)
++			return 0;
++		p->pending.action = APPLE_DP_RELEASE;
++		p->pending.generation = p->owner_generation;
++	} else {
++		if (p->stopping)
++			return 0;
++		for (route = 0; route < APPLE_DP_ROUTES; route++) {
++			if (p->request[route].present)
++				break;
++		}
++		if (route == APPLE_DP_ROUTES)
++			return 0;
++		p->pending.action = APPLE_DP_ACQUIRE;
++		p->pending.generation = p->request[route].generation;
++	}
++	if (p->sequence == ~(u64)0) {
++		p->phase = APPLE_DP_FAULT;
++		return -EOVERFLOW;
++	}
++	p->pending.cookie = ++p->sequence;
++	p->pending.route = route;
++	p->phase = p->pending.action == APPLE_DP_ACQUIRE ?
++		   APPLE_DP_ACQUIRING : APPLE_DP_RELEASING;
++	*cmd = p->pending;
++	return 1;
++}
++
++/*
++ * Release success means firmware withdrawal AND provider token retirement
++ * AND crossbar release have all been acknowledged. Do not translate an
++ * expired token, a timeout or an unacknowledged command to success here.
++ * Any failed transaction quarantines the shared controller until teardown.
++ */
++static inline int apple_dp_policy_complete(struct apple_dp_policy *p,
++					   const struct apple_dp_command *cmd,
++					   int result)
++{
++	if ((p->phase != APPLE_DP_ACQUIRING && p->phase != APPLE_DP_RELEASING) ||
++	    cmd->cookie != p->pending.cookie ||
++	    cmd->route != p->pending.route ||
++	    cmd->generation != p->pending.generation ||
++	    cmd->action != p->pending.action)
++		return -ESTALE;
++	if (result) {
++		p->phase = APPLE_DP_FAULT;
++		return result;
++	}
++	if (cmd->action == APPLE_DP_ACQUIRE) {
++		p->owner = cmd->route;
++		p->owner_generation = cmd->generation;
++		p->phase = APPLE_DP_ACTIVE;
++	} else {
++		p->owner = APPLE_DP_NO_OWNER;
++		p->owner_generation = 0;
++		p->phase = APPLE_DP_IDLE;
++	}
++	return 0;
++}
++
++#endif

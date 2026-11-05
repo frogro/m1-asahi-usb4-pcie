@@ -1,0 +1,70 @@
+--- a/cmd/apple_atc_m1.c
++++ b/cmd/apple_atc_m1.c
+@@ -737,6 +737,7 @@
+  char port_arg[2] = {0,0};
+  char *start[] = { "atcm1", port_arg, NULL };
+  bool explicit_target;
++ u32 port_mask = 3;
+  int ret, port, mode[2] = {0,0}, eligible = 0;
+  size_t chosen;
+  if (argc != 1 && (argc != 2 || strcmp(argv[1], "recovery"))) return CMD_RET_USAGE;
+@@ -752,6 +753,14 @@
+  }
+  if (!target) target = ofnode_read_string(ofnode_path("/config"), "u-boot,boot-partuuid");
+  explicit_target = target != NULL;
++ /* Diagnostic scope is explicit and strict. An excluded port is never
++  * probed, reset or represented as physically absent. */
++ if (ofnode_read_bool(ofnode_path("/config"), "u-boot,boot-port-mask")) {
++  if (ofnode_read_u32(ofnode_path("/config"), "u-boot,boot-port-mask", &port_mask) ||
++      !port_mask || (port_mask & ~3U) || !target ||
++      !apple_boot_partuuid_valid(target)) return CMD_RET_FAILURE;
++ }
++
+  if ((target && !apple_boot_partuuid_valid(target)) ||
+      (preferred && !apple_boot_partuuid_valid(preferred))) return CMD_RET_FAILURE;
+  media = calloc(APPLE_BOOT_MEDIA_MAX_CANDIDATES, sizeof(*media));
+@@ -762,6 +771,11 @@
+  /* Preflight both ports before changing either controller. Never translate a
+   * broken/unknown source into 'absent', or boot a partial inventory. */
+  for (port = 0; port < 2; port++) {
++  if (!(port_mask & BIT(port))) {
++   sources[port].state = APPLE_BOOT_SOURCE_EXCLUDED;
++   printf("TB-MEDIA port%u deliberately untouched; Linux owns initialization\n", port);
++   continue;
++  }
+   ret = apple_boot_port_select(port);
+   if (ret) goto failed;
+   ret = load_config(ofnode_path(apple_boot_port()->phy), &hw, &status);
+@@ -787,7 +801,8 @@
+   * remains strict; absence or ambiguity never selects another external OS. */
+  if (!target) target = preferred;
+  for (port = 0; port < 2; port++) {
+-  if (sources[port].state == APPLE_BOOT_SOURCE_ABSENT) continue;
++  if (sources[port].state == APPLE_BOOT_SOURCE_ABSENT ||
++      sources[port].state == APPLE_BOOT_SOURCE_EXCLUDED) continue;
+   ret = apple_boot_port_select(port);
+   if (ret) goto failed;
+   port_arg[0] = '0' + port;
+--- a/include/apple_boot_media.h
++++ b/include/apple_boot_media.h
+@@ -15,6 +15,8 @@
+  APPLE_BOOT_SOURCE_ABSENT,
+  APPLE_BOOT_SOURCE_FAILED,
+  APPLE_BOOT_SOURCE_UNSAFE,
++ /* Deliberately untouched source; selection requires an explicit UUID. */
++ APPLE_BOOT_SOURCE_EXCLUDED,
+ };
+ struct apple_boot_source {
+  enum apple_boot_source_state state;
+--- a/lib/apple_boot_media.c
++++ b/lib/apple_boot_media.c
+@@ -52,6 +52,9 @@
+   case APPLE_BOOT_SOURCE_FAILED:
+    if (!error) error = s->error < 0 ? s->error : -EIO;
+    break;
++  case APPLE_BOOT_SOURCE_EXCLUDED:
++   if (!target || s->error) return -EINVAL;
++   break;
+   case APPLE_BOOT_SOURCE_COMPLETE:
+   case APPLE_BOOT_SOURCE_ABSENT:
+    if (s->error) return -EINVAL;

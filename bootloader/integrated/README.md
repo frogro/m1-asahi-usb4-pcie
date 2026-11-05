@@ -206,3 +206,10 @@ hardware and in QEMU. The corrected EFI automatically displayed both entries
 in QEMU and consumed the one-shot selection. See
 [menu evidence](../research/two-entry-menu-20261101.md) for hardware status.
 This changes GRUB packaging/configuration only, not U-Boot or any kernel.
+
+## Later storage-scope comparison
+
+The November 4 source reconciliation and restricted storage-port profile are in
+[`../storage-scope/README.md`](../storage-scope/README.md). They have a separate
+manifest and CI job; the earlier integrated profile above is retained. Complete
+Googlebook images remain local builds and are not assembled or uploaded by CI.

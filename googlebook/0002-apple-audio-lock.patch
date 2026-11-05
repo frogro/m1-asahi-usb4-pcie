@@ -1,0 +1,15 @@
+--- a/drivers/gpu/drm/apple/audio.c
++++ b/drivers/gpu/drm/apple/audio.c
+@@ -251,8 +251,10 @@
+ 
+ 	mutex_lock(&dcpaud->data_lock);
+ 	ret = dcpaud_init_dma(dcpaud);
+-	if (ret < 0)
+-		return ret;
++	if (ret < 0) {
++		mutex_unlock(&dcpaud->data_lock);
++		return ret;
++	}
+ 
+ 	if (!dcpaud->connected) {
+ 		mutex_unlock(&dcpaud->data_lock);

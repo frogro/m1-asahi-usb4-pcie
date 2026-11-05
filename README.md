@@ -1,5 +1,10 @@
 # M1 Asahi USB4 / PCIe
 
+Current integration: [5 November source, runtime and build matrix](docs/runtime-integration-20261105.md).
+The new Ubuntu egpu4 and Googlebook egpu2 recipes are separate candidates; the
+installed egpu3 module overlay remains a distinct, verified deployment.
+
+
 Experimental kernel patches and build outputs for Mac mini M1. This public repository was previously named `apple-silicon-usb4-pcie`.
 
 A [fresh external Ubuntu Asahi installer](installer/README.md) is prepared for a later installation test. It detects the USB device name (for example MP400), selects the newest published compatible build with verified kernel/modules/DTB checks, pins that selection for the installation, generates the initramfs and matching UUID-based GRUB entry, and preserves a one-time boot fallback. **The new installer has not completed a hardware installation test; Fedora Asahi Remix is not yet enabled.**

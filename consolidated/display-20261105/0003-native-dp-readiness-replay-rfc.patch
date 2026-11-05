@@ -1,0 +1,577 @@
+Subject: [PATCH RFC] apple: replay native DP HPD after DRM readiness
+
+Opt-in static native route with serialized state replay and checked
+withdrawal before Type-C reconfiguration. Refuse a simultaneous DP-IN
+consumer. A partial firmware error blocks the route until reset.
+
+Development candidate: dynamic port arbitration, HPD IRQ and system
+suspend are not implemented. Native-bound system suspend is rejected.
+No claim of upstream-ready bindings or API.
+
+---
+diff --git a/drivers/usb/typec/tipd/core.c b/drivers/usb/typec/tipd/core.c
+--- a/drivers/usb/typec/tipd/core.c
++++ b/drivers/usb/typec/tipd/core.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/i2c.h>
++#include <linux/apple-cd321x-dp.h>
+ #include <linux/acpi.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/of.h>
+@@ -540,6 +541,8 @@
+ 	}
+ }
+ 
++#include "native-dp.inc"
++
+ static int cd321x_typec_update_mode(struct tps6598x *tps, struct cd321x_status *st)
+ {
+ 	struct cd321x *cd321x = container_of(tps, struct cd321x, tps);
+@@ -703,7 +706,11 @@
+ 		.state = TYPEC_THUNDERBOLT_SWITCH_OFF,
+ 	};
+ 
++	guard(mutex)(&cd321x->dp_lock);
+ 	guard(mutex)(&tps->lock);
++
++	if (cd321x->dp_stopping || cd321x->dp_fault)
++		return;
+ 
+ 	st = cd321x->update_status;
+ 	cd321x->update_status.status_changed = 0;
+@@ -756,6 +763,23 @@
+ 		 "USB4TEST transition state=%#lx usb4=%d->%d role=%d->%d data=%#x disconnect=%d\n",
+ 		 cd321x->state.mode, old_usb4, new_usb4, old_role, new_role,
+ 		 st.data_status, was_disconnected);
++
++	/* Withdraw native video before changing pins, role, partner or orientation. */
++	if (cd321x->dp_hpd &&
++	    (!cd321x_native_dp_high(&st) || was_disconnected || partner_changed ||
++	     ((st.status ^ cd321x->dp_applied_status) & TPS_STATUS_PLUG_UPSIDE_DOWN) ||
++	     ((st.data_status ^ cd321x->dp_applied_data) &
++	      (TPS_DATA_STATUS_DP_PIN_ASSIGNMENT_MASK | TPS_DATA_STATUS_USB3_CONNECTION)))) {
++		ret = cd321x_native_dp_set_locked(cd321x, false);
++		if (ret) {
++			dev_err(tps->dev, "native DP withdrawal failed: %d\n", ret);
++			return;
++		}
++	}
++
++	if (st.status != cd321x->update_status.status ||
++	    st.data_status != cd321x->update_status.data_status)
++		return;
+ 
+ 	if (old_role != USB_ROLE_NONE &&
+ 	    (new_role != old_role || was_disconnected || usb4_changed ||
+@@ -837,6 +861,18 @@
+ 		dev_err(tps->dev, "failed to activate USB role: %d\n", ret);
+ 		return;
+ 	}
++
++	/* Do not publish an old connect if an IRQ changed the pending snapshot. */
++	if (st.status != cd321x->update_status.status ||
++	    st.data_status != cd321x->update_status.data_status)
++		return;
++	cd321x->dp_applied_status = st.status;
++	cd321x->dp_applied_data = st.data_status;
++	ret = cd321x_native_dp_set_locked(cd321x, cd321x_native_dp_high(&st));
++	if (ret)
++		dev_err(tps->dev, "native DP HPD update failed: %d\n", ret);
++	if (cd321x->dp_sink && (st.data_status & CD321X_DATA_STATUS_HPD_IRQ))
++		dev_warn_ratelimited(tps->dev, "native DP HPD IRQ not implemented\n");
+ 
+ 	power_supply_changed(tps->psy);
+ }
+@@ -1275,6 +1311,7 @@
+ 	struct cd321x *cd321x = container_of(tps, struct cd321x, tps);
+ 	int ret;
+ 
++	mutex_init(&cd321x->dp_lock);
+ 	INIT_DELAYED_WORK(&cd321x->update_work, cd321x_update_work);
+ 
+ 	ret = tps6598x_register_port(tps, fwnode);
+@@ -1753,6 +1790,8 @@
+ 	struct cd321x *cd321x = container_of(tps, struct cd321x, tps);
+ 
+ 	cancel_delayed_work_sync(&cd321x->update_work);
++	guard(mutex)(&cd321x->dp_lock);
++	cd321x->dp_stopping = true;
+ }
+ 
+ int tipd_init(struct tps6598x *tps)
+diff --git a/drivers/usb/typec/tipd/tps6598x.h b/drivers/usb/typec/tipd/tps6598x.h
+--- a/drivers/usb/typec/tipd/tps6598x.h
++++ b/drivers/usb/typec/tipd/tps6598x.h
+@@ -365,6 +365,8 @@
+ 	struct tps6598x_usb4_status_reg usb4_status;
+ };
+ 
++struct apple_cd321x_dp_sink;
++
+ struct cd321x {
+ 	struct tps6598x tps;
+ 
+@@ -380,6 +382,15 @@
+ 	bool mode_valid; /* Last mode was accepted by both providers. */
+ 
+ 	struct typec_thunderbolt_switch *tbt_switch;
++
++	/* Serializes native consumer callbacks and physical transitions. */
++	struct mutex dp_lock;
++	struct apple_cd321x_dp_sink *dp_sink;
++	bool dp_hpd;
++	bool dp_fault;
++	bool dp_stopping;
++	u32 dp_applied_status;
++	u32 dp_applied_data;
+ 
+ 	struct cd321x_status update_status;
+ 	struct delayed_work update_work;
+diff --git a/drivers/usb/typec/tipd/native-dp.inc b/drivers/usb/typec/tipd/native-dp.inc
+new file mode 100644
+--- /dev/null
++++ b/drivers/usb/typec/tipd/native-dp.inc
+@@ -0,0 +1,96 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/* Native DP state replay; physical routing remains an exclusive DT choice. */
++static bool cd321x_native_dp_high(const struct cd321x_status *st)
++{
++	return (st->status & TPS_STATUS_PLUG_PRESENT) &&
++	       (st->data_status & TPS_DATA_STATUS_DATA_CONNECTION) &&
++	       (st->data_status & TPS_DATA_STATUS_DP_CONNECTION) &&
++	       !(st->data_status & (TPS_DATA_STATUS_TBT_CONNECTION |
++				   CD321X_DATA_STATUS_USB4_CONNECTION)) &&
++	       (st->data_status & CD321X_DATA_STATUS_HPD_LEVEL);
++}
++
++static int cd321x_native_dp_set_locked(struct cd321x *cd, bool high)
++{
++	struct tps6598x *tps = &cd->tps;
++	int ret = 0;
++
++	lockdep_assert_held(&cd->dp_lock);
++	lockdep_assert_held(&tps->lock);
++	if (cd->dp_fault || cd->dp_stopping)
++		return -ESHUTDOWN;
++	if (cd->dp_hpd == high)
++		return 0;
++
++	/* The update worker owns dp_lock; IRQs may update the pending snapshot. */
++	mutex_unlock(&tps->lock);
++	if (cd->dp_sink)
++		ret = cd->dp_sink->set_hpd(cd->dp_sink->data, high);
++	mutex_lock(&tps->lock);
++	if (ret)
++		cd->dp_fault = true; /* A failed callback may have changed firmware state. */
++	else
++		cd->dp_hpd = high;
++	return ret;
++}
++
++int apple_cd321x_dp_attach(struct device *provider, struct apple_cd321x_dp_sink *sink)
++{
++	struct tps6598x *tps = dev_get_drvdata(provider);
++	struct cd321x *cd;
++	int ret = 0;
++
++	/* This initial implementation is for the I2C CD321x, not arbitrary tipd. */
++	if (!device_is_compatible(provider, "apple,cd321x") || !tps)
++		return -ENODEV;
++	if (!sink || !sink->set_hpd)
++		return -EINVAL;
++	cd = container_of(tps, struct cd321x, tps);
++	guard(mutex)(&cd->dp_lock);
++	if (cd->dp_stopping || cd->dp_fault)
++		return -ESHUTDOWN;
++	if (cd->dp_sink)
++		return -EBUSY;
++
++	/* A queued transition owns the next report; do not replay its old level. */
++	mutex_lock(&tps->lock);
++	if (cd->update_status.status != cd->dp_applied_status ||
++	    cd->update_status.data_status != cd->dp_applied_data)
++		cd->dp_hpd = false;
++	mutex_unlock(&tps->lock);
++
++	/* Replay while serialized with every physical transition, outside PD lock. */
++	if (cd->dp_hpd)
++		ret = sink->set_hpd(sink->data, true);
++	if (ret) {
++		/* The failed consumer may have partially acquired the hardware. */
++		cd->dp_fault = true;
++		return ret;
++	}
++	cd->dp_sink = sink;
++	return 0;
++}
++EXPORT_SYMBOL_GPL(apple_cd321x_dp_attach);
++
++int apple_cd321x_dp_detach(struct device *provider, struct apple_cd321x_dp_sink *sink)
++{
++	struct tps6598x *tps = dev_get_drvdata(provider);
++	struct cd321x *cd;
++	int ret = 0;
++
++	if (!device_is_compatible(provider, "apple,cd321x") || !tps)
++		return -ENODEV;
++	cd = container_of(tps, struct cd321x, tps);
++	guard(mutex)(&cd->dp_lock);
++	if (cd->dp_sink != sink)
++		return -ENOENT;
++	if (cd->dp_hpd)
++		ret = sink->set_hpd(sink->data, false);
++	/* Never retain a callback into an unbinding consumer. */
++	cd->dp_sink = NULL;
++	if (ret)
++		cd->dp_fault = true;
++	/* dp_hpd is the cable state; a future consumer must replay it. */
++	return ret;
++}
++EXPORT_SYMBOL_GPL(apple_cd321x_dp_detach);
+diff --git a/include/linux/apple-cd321x-dp.h b/include/linux/apple-cd321x-dp.h
+new file mode 100644
+--- /dev/null
++++ b/include/linux/apple-cd321x-dp.h
+@@ -0,0 +1,37 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _LINUX_APPLE_CD321X_DP_H
++#define _LINUX_APPLE_CD321X_DP_H
++
++#include <linux/errno.h>
++#include <linux/kconfig.h>
++#include <linux/types.h>
++
++struct device;
++
++/*
++ * Exclusive native-DP consumer. Calls are serialized by the provider, in
++ * sleepable context, without its PD status mutex. A failed withdrawal vetoes
++ * physical route changes. Callbacks must not re-enter this registration API.
++ * The consumer must have a device link to the bound provider before attaching.
++ */
++struct apple_cd321x_dp_sink {
++	int (*set_hpd)(void *data, bool high);
++	void *data;
++};
++
++#if IS_REACHABLE(CONFIG_TYPEC_TPS6598X_CORE)
++int apple_cd321x_dp_attach(struct device *provider, struct apple_cd321x_dp_sink *sink);
++int apple_cd321x_dp_detach(struct device *provider, struct apple_cd321x_dp_sink *sink);
++#else
++static inline int apple_cd321x_dp_attach(struct device *provider,
++					struct apple_cd321x_dp_sink *sink)
++{
++	return -EOPNOTSUPP;
++}
++static inline int apple_cd321x_dp_detach(struct device *provider,
++					struct apple_cd321x_dp_sink *sink)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++#endif
+diff --git a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
+--- a/drivers/gpu/drm/apple/dcp-internal.h
++++ b/drivers/gpu/drm/apple/dcp-internal.h
+@@ -4,6 +4,7 @@
+ #ifndef __APPLE_DCP_INTERNAL_H__
+ #define __APPLE_DCP_INTERNAL_H__
+ 
++#include <linux/apple-cd321x-dp.h>
+ #include <linux/backlight.h>
+ #include <linux/device.h>
+ #include <linux/ioport.h>
+@@ -259,6 +260,12 @@
+ 	struct gpio_desc *hdmi_pwren;
+ 	struct gpio_desc *dp2hdmi_pwren;
+ 
++	struct device *native_dp_provider;
++	struct apple_cd321x_dp_sink native_dp_sink;
++	bool native_dp_registered;
++	bool native_dp_ready;
++	bool native_dp_fault;
++
+ 	struct mutex hpd_mutex;
+ 	struct mutex dp91_mutex;
+ 	struct notifier_block dp110_notifier;
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -10,6 +10,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/iommu.h>
++#include <linux/i2c.h>
+ #include <linux/jiffies.h>
+ #include <linux/kconfig.h>
+ #include <linux/kernel.h>
+@@ -442,12 +443,18 @@
+ int dcp_dptx_connect_oob(struct platform_device *pdev, u32 port)
+ {
+ 	struct apple_dcp *dcp = platform_get_drvdata(pdev);
++
++	if (dcp->native_dp_provider)
++		return -EBUSY;
+ 	return dcp_dptx_connect(dcp, port);
+ }
+ 
+ int dcp_dptx_disconnect_oob(struct platform_device *pdev, u32 port)
+ {
+ 	struct apple_dcp *dcp = platform_get_drvdata(pdev);
++
++	if (dcp->native_dp_provider)
++		return -EBUSY;
+ 
+ 	disconnected_hpd_event(dcp->connector);
+ 
+@@ -1178,6 +1185,7 @@
+ };
+ 
+ #include "dpin-binding.inc"
++#include "native-dp.inc"
+ 
+ static int dcp_platform_probe(struct platform_device *pdev)
+ {
+@@ -1213,6 +1221,9 @@
+ 		int ret = dp91_binding_init(dcp);
+ 		if (ret)
+ 			return ret;
++		if (dcp->dptxport[0].dpin_provider &&
++		    of_property_present(dev->of_node, "apple,native-dp-port"))
++			return -EINVAL;
+ 	}
+ 
+ 	dcp->phy = devm_phy_optional_get(dev, "dp-phy");
+@@ -1298,8 +1309,11 @@
+ 				return PTR_ERR(dcp->xbar);
+ 			}
+ 			ret = mux_control_select(dcp->xbar, mux_index);
+-			if (ret)
++			if (ret) {
++				if (of_property_present(dev->of_node, "apple,native-dp-port"))
++					return ret;
+ 				dev_warn(dev, "mux_control_select failed: %d\n", ret);
++			}
+ 
+ 			/*
+ 			 * Switch atcphy to DP-only. should move to a Macbook Pro
+@@ -1325,6 +1339,13 @@
+ 	}
+ 
+ 	{
++		int ret = dcp_native_dp_init(dcp);
++
++		if (ret)
++			return ret;
++	}
++
++	{
+ 		int ret = component_add(&pdev->dev, &dcp_comp_ops);
+ 		if (!ret && dcp->dptxport[0].dpin_provider && !dpin_autostart) {
+ 			ret = device_create_file(dev, &dev_attr_dpin_connect);
+@@ -1356,6 +1377,9 @@
+ static int dcp_platform_suspend(struct device *dev)
+ {
+ 	struct apple_dcp *dcp = dev_get_drvdata(dev);
++
++	if (dcp->native_dp_registered)
++		return -EBUSY; /* Native HPD suspend/replay is not implemented yet. */
+ 
+ 	if (dcp->avep)
+ 		av_service_disconnect(dcp);
+diff --git a/drivers/gpu/drm/apple/dcp.h b/drivers/gpu/drm/apple/dcp.h
+--- a/drivers/gpu/drm/apple/dcp.h
++++ b/drivers/gpu/drm/apple/dcp.h
+@@ -29,6 +29,8 @@
+ 
+ #define to_apple_encoder(x) container_of(x, struct apple_encoder, base)
+ 
++int dcp_native_dp_start(struct platform_device *pdev);
++void dcp_native_dp_stop(struct platform_device *pdev);
+ void dcp_dpin_stop_events(struct platform_device *pdev);
+ void dcp_poweroff(struct platform_device *pdev);
+ void dcp_poweron(struct platform_device *pdev);
+diff --git a/drivers/gpu/drm/apple/apple_drv.c b/drivers/gpu/drm/apple/apple_drv.c
+--- a/drivers/gpu/drm/apple/apple_drv.c
++++ b/drivers/gpu/drm/apple/apple_drv.c
+@@ -529,6 +529,9 @@
+ 	{
+ 		struct drm_crtc *crtc;
+ 		drm_for_each_crtc(crtc, &apple->drm) {
++			ret = dcp_native_dp_start(to_apple_crtc(crtc)->dcp);
++			if (ret)
++				dev_warn(dev, "native DP listener unavailable: %d\n", ret);
+ 			ret = dcp_dpin_autostart(to_apple_crtc(crtc)->dcp);
+ 			if (ret)
+ 				dev_warn(dev, "DP121 initial listener unavailable: %d\n", ret);
+@@ -547,8 +550,10 @@
+ 	struct drm_crtc *crtc;
+ 
+ 	/* Drain external callbacks before acquiring modeset locks in shutdown. */
+-	drm_for_each_crtc(crtc, &apple->drm)
++	drm_for_each_crtc(crtc, &apple->drm) {
++		dcp_native_dp_stop(to_apple_crtc(crtc)->dcp);
+ 		dcp_dpin_stop_events(to_apple_crtc(crtc)->dcp);
++	}
+ 	drm_dev_unregister(&apple->drm);
+ 	dev_info(dev, "DP93 atomic shutdown begin\n");
+ 	drm_atomic_helper_shutdown(&apple->drm);
+diff --git a/drivers/gpu/drm/apple/native-dp.inc b/drivers/gpu/drm/apple/native-dp.inc
+new file mode 100644
+--- /dev/null
++++ b/drivers/gpu/drm/apple/native-dp.inc
+@@ -0,0 +1,152 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Opt-in exclusive native route, with initial HPD replay after DRM readiness.
++ * This does not implement dynamic native/DP-IN arbitration or HPD IRQ pulses.
++ */
++static void dcp_native_dp_put_provider(void *data)
++{
++	put_device(data);
++}
++
++static int dcp_native_dp_init(struct apple_dcp *dcp)
++{
++	struct device_node *np, *connector, *target;
++	struct i2c_client *client;
++	int ret;
++
++	np = of_parse_phandle(dcp->dev->of_node, "apple,native-dp-port", 0);
++	if (!np)
++		return 0;
++	/* Never take a controller away from the established DP-IN path. */
++	if (dcp->dptxport[0].dpin_provider || !dcp->phy || dcp->hdmi_hpd ||
++	    !of_device_is_compatible(dcp->dev->of_node, "apple,dcpext") ||
++	    !of_device_is_compatible(np, "apple,cd321x")) {
++		of_node_put(np);
++		return -EINVAL;
++	}
++	connector = of_get_child_by_name(np, "connector");
++	target = of_parse_phandle(connector, "displayport", 0);
++	of_node_put(connector);
++	if (target != dcp->dev->of_node) {
++		of_node_put(target);
++		of_node_put(np);
++		return -EINVAL;
++	}
++	of_node_put(target);
++	client = of_find_i2c_device_by_node(np);
++	of_node_put(np);
++	if (!client)
++		return -EPROBE_DEFER;
++	if (!device_is_bound(&client->dev)) {
++		put_device(&client->dev);
++		return -EPROBE_DEFER;
++	}
++	ret = devm_add_action_or_reset(dcp->dev, dcp_native_dp_put_provider, &client->dev);
++	if (ret)
++		return ret;
++	if (!device_link_add(dcp->dev, &client->dev, DL_FLAG_AUTOREMOVE_CONSUMER))
++		return -ENODEV;
++	dcp->native_dp_provider = &client->dev;
++	return 0;
++}
++
++static int dcp_native_dp_hpd(void *data, bool high)
++{
++	struct apple_dcp *dcp = data;
++	struct dptx_port *port = &dcp->dptxport[0];
++	int ret;
++
++	/* Provider serializes callbacks and drops its PD status lock for these. */
++	if (!dcp->native_dp_ready || dcp->native_dp_fault || dcp->crashed ||
++	    !dcp->active || !port->enabled || !port->service ||
++	    port->dpin_provider || !dcp->phy)
++		return -ENODEV;
++	if (port->connected == high)
++		return 0;
++
++	mutex_lock(&dcp->hpd_mutex);
++	if (high) {
++		reinit_completion(&port->linkcfg_completion);
++		port->atcphy = dcp->phy;
++		ret = dptxport_connect(port->service, 0, dcp->dptx_phy, dcp->dptx_die);
++		if (ret)
++			goto fault;
++		ret = dptxport_request_display(port->service);
++		if (ret)
++			goto fault;
++		mutex_unlock(&dcp->hpd_mutex);
++		/* Preserve the proven legacy sequence; a wait expiry is not link proof. */
++		if (!wait_for_completion_timeout(&port->linkcfg_completion, DPTX_CONNECT_TIMEOUT))
++			dev_dbg(dcp->dev, "native DP link configuration still pending at HPD\n");
++		ret = dptxport_set_hpd(port->service, true);
++		mutex_lock(&dcp->hpd_mutex);
++		if (ret)
++			goto fault;
++		port->connected = true;
++	} else {
++		mutex_unlock(&dcp->hpd_mutex);
++		ret = dptxport_set_hpd(port->service, false);
++		mutex_lock(&dcp->hpd_mutex);
++		if (ret)
++			goto fault;
++		ret = dptxport_release_display(port->service);
++		if (ret)
++			goto fault;
++		port->connected = false;
++	}
++	mutex_unlock(&dcp->hpd_mutex);
++	if (!high)
++		disconnected_hpd_event(dcp->connector);
++	if (dcp->avep) {
++		if (high)
++			av_service_connect(dcp);
++		else
++			av_service_disconnect(dcp);
++	}
++	dev_info(dcp->dev, "native DP HPD=%u applied after DRM readiness\n", high);
++	return 0;
++
++fault:
++	/* Partial firmware transactions are uncertain; never retry automatically. */
++	dcp->native_dp_fault = true;
++	mutex_unlock(&dcp->hpd_mutex);
++	dev_err(dcp->dev, "native DP HPD=%u failed: %d; route remains reserved\n", high, ret);
++	return ret;
++}
++
++int dcp_native_dp_start(struct platform_device *pdev)
++{
++	struct apple_dcp *dcp = platform_get_drvdata(pdev);
++	int ret;
++
++	if (!dcp->native_dp_provider || dcp->native_dp_registered)
++		return 0;
++	if (!dcp->active || !dcp->connector || !dcp->dptxport[0].enabled ||
++	    !dcp->dptxport[0].service)
++		return -ENODEV;
++	dcp->native_dp_sink.set_hpd = dcp_native_dp_hpd;
++	dcp->native_dp_sink.data = dcp;
++	dcp->native_dp_ready = true;
++	ret = apple_cd321x_dp_attach(dcp->native_dp_provider, &dcp->native_dp_sink);
++	if (ret) {
++		dcp->native_dp_ready = false;
++		return ret;
++	}
++	dcp->native_dp_registered = true;
++	return 0;
++}
++
++void dcp_native_dp_stop(struct platform_device *pdev)
++{
++	struct apple_dcp *dcp = platform_get_drvdata(pdev);
++	int ret;
++
++	if (!dcp->native_dp_registered)
++		return;
++	/* detach drains callbacks before DRM/modeset/firmware teardown. */
++	ret = apple_cd321x_dp_detach(dcp->native_dp_provider, &dcp->native_dp_sink);
++	dcp->native_dp_registered = false;
++	dcp->native_dp_ready = false;
++	if (ret)
++		dev_err(dcp->dev, "native DP withdrawal on stop failed: %d\n", ret);
++}

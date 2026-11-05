@@ -1,6 +1,7 @@
 name: U-Boot development checks (no installation)
 on:
   push:
+    branches: [main]
     paths: ['bootloader/**', '.github/workflows/bootloader-checks.yml']
   pull_request:
     paths: ['bootloader/**', '.github/workflows/bootloader-checks.yml']
@@ -15,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [prototype, integrated]
+        profile: [prototype, integrated, storage-scope, usb3-recovery, usb4-child, common-menu]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -30,6 +31,8 @@ jobs:
           set -euo pipefail
           manifest=bootloader/prototype.json
           if test "${{ matrix.profile }}" = integrated; then manifest=bootloader/integrated/manifest.json; fi
+          if test "${{ matrix.profile }}" = storage-scope; then manifest=bootloader/storage-scope/manifest.json; fi
+          case "${{ matrix.profile }}" in usb3-recovery|usb4-child|common-menu) manifest=bootloader/${{ matrix.profile }}/manifest.json ;; esac
           pin=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["base_commit"])' "$manifest")
           git init "$RUNNER_TEMP/u-boot"
           git -C "$RUNNER_TEMP/u-boot" remote add origin https://github.com/AsahiLinux/u-boot.git
@@ -37,7 +40,11 @@ jobs:
           git -C "$RUNNER_TEMP/u-boot" checkout --detach FETCH_HEAD
       - name: Apply patches, run sandbox tests and cross-build Apple M1
         run: |
-          if test "${{ matrix.profile }}" = integrated; then
+          if test "${{ matrix.profile }}" = common-menu || test "${{ matrix.profile }}" = usb4-child || test "${{ matrix.profile }}" = usb3-recovery; then
+            python3 bootloader/${{ matrix.profile }}/build.py "$RUNNER_TEMP/u-boot" "$RUNNER_TEMP/${{ matrix.profile }}-build" --jobs 4
+          elif test "${{ matrix.profile }}" = storage-scope; then
+            python3 bootloader/storage-scope/build.py "$RUNNER_TEMP/u-boot" "$RUNNER_TEMP/storage-scope-build" --jobs 4
+          elif test "${{ matrix.profile }}" = integrated; then
             python3 bootloader/integrated/build.py "$RUNNER_TEMP/u-boot" "$RUNNER_TEMP/integrated-build" --jobs 4
           else
             python3 bootloader/build-prototype.py "$RUNNER_TEMP/u-boot" "$RUNNER_TEMP/prototype-build" --jobs 4

@@ -1,0 +1,39 @@
+{
+  "base_after_egpu": "2a94cd6e4a81dceddd74461862caac4a255e50e3",
+  "patches": [
+    {
+      "file": "0001-cd321x-check-mode-transition-errors.patch",
+      "sha256": "1c6c4cc6f7178345594b21312861a144dc6274e246668dd52fc62f546dafc605"
+    },
+    {
+      "file": "0002-cd321x-drain-updates-on-probe-unwind.patch",
+      "sha256": "750a63b40a533e20305d36561d7627f8accd67a8b0cfe0052423e4e40e1aecb1"
+    },
+    {
+      "file": "0003-native-dp-readiness-replay-rfc.patch",
+      "sha256": "bee44aeddae1a5da85c01adaecf9f578326b245a413c6f0ffe3753e49625140b"
+    },
+    {
+      "file": "0004-dpin-per-controller-registry.patch",
+      "sha256": "352cbd6c1afa99ebec42c60e5f70a46f11c72255e89d873ccd51f438eb035c33"
+    },
+    {
+      "file": "0005-shared-dcp-auto-route-rfc.patch",
+      "sha256": "97cb42b2047c9dcca16255eac6720c0e34dc583b9db8615773e7ed167fb5890d"
+    },
+    {
+      "file": "0006-native-withdraw-deadline-rfc.patch",
+      "sha256": "9ca2f92480577ace82b3971071cafb00d7065a0b05c39e6c3cfddc48a4745f5c"
+    },
+    {
+      "file": "0007-quiesce-usb-before-native-dp-pins.patch",
+      "sha256": "68418569ff8428a32a32e7b32773fabcef1703d277d6a984414507dfc1069b99"
+    },
+    {
+      "file": "0008-legacy-provider-dt-compat.patch",
+      "sha256": "8158a2f4e9feb366df6335729d96bfcdecaf875be53d5ad9298f82c4562fae87"
+    }
+  ],
+  "hardware_coverage": "Both native ports, hotplug, native-to-Dynabook-to-native switching; final provider opt-in rename awaits normal reboot.",
+  "default_activation": false
+}

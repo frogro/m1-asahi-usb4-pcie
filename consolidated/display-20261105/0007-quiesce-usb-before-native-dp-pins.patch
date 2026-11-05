@@ -1,0 +1,46 @@
+Subject: [PATCH RFC 7/7] usb: typec: tipd: quiesce USB before native DP pin changes
+
+A replug may first activate USB3, then negotiate native DP with the same
+host role. Stop DWC3 before changing ATCPHY mode, as for USB4 transitions.
+Do not reset unchanged USB3/USB4 paths or HPD-only updates. Keep failed
+quiescence as a veto before any mux writes. Hardware test pending.
+
+---
+diff --git a/drivers/usb/typec/tipd/core.c b/drivers/usb/typec/tipd/core.c
+--- a/drivers/usb/typec/tipd/core.c
++++ b/drivers/usb/typec/tipd/core.c
+@@ -747,7 +747,7 @@
+ 				  &cd321x->cur_partner_identity, sizeof(struct usb_pd_identity))));
+ 
+ 	/*
+-	 * A USB4 <-> native USB transition can keep USB_ROLE_HOST. DWC3 must
++	 * USB4/native-USB and native-DP pin changes can keep USB_ROLE_HOST. DWC3 must
+ 	 * still be quiesced before the Type-C mux reprograms ATCPHY; otherwise
+ 	 * the PIPE handler is live and the PHY falls back to USB2.
+ 	 */
+@@ -758,6 +758,16 @@
+ 				    TPS_DATA_STATUS_TBT_CONNECTION)) &&
+ 		(st.data_status & CD321X_DATA_STATUS_USB4_CONNECTION);
+ 	bool usb4_changed = old_usb4 != new_usb4;
++	bool old_dp = cd321x->state.alt &&
++		cd321x->state.alt == cd321x->port_altmode_dp;
++	bool new_dp = (st.data_status & TPS_DATA_STATUS_DATA_CONNECTION) &&
++		(st.data_status & TPS_DATA_STATUS_DP_CONNECTION);
++	bool dp_changed = old_dp != new_dp ||
++		(old_dp && new_dp &&
++		 ((st.data_status ^ cd321x->dp_applied_data) &
++		  (TPS_DATA_STATUS_DP_PIN_ASSIGNMENT_MASK |
++		   TPS_DATA_STATUS_USB3_CONNECTION)));
++
+ 
+ 	dev_info(tps->dev,
+ 		 "USB4TEST transition state=%#lx usb4=%d->%d role=%d->%d data=%#x disconnect=%d\n",
+@@ -782,7 +792,7 @@
+ 		return;
+ 
+ 	if (old_role != USB_ROLE_NONE &&
+-	    (new_role != old_role || was_disconnected || usb4_changed ||
++	    (new_role != old_role || was_disconnected || usb4_changed || dp_changed ||
+ 	     !cd321x->mode_valid)) {
+ 		int ret = usb_role_switch_set_role(tps->role_sw, USB_ROLE_NONE);
+ 

@@ -1,0 +1,7 @@
+{
+  "date": "2026-11-05",
+  "source_tests": {
+    "ancestor_cases": 225
+  },
+  "historical_hardware": "Direct and dock responsive Android GUI passed; independent read soak incomplete"
+}

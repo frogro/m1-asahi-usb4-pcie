@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "version": "20261104-usb4-child-development",
+  "base_commit": "b33034a515a068381c4aa28831fb709e91300cd1",
+  "upstream_source": "https://github.com/AsahiLinux/u-boot",
+  "patches": [
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0001-iommu-resolve-pci-map-without-ofnode.patch",
+      "sha256": "6304abc0a6d29986c87c883a82993851c61eb44b14c873066f22cf91941d3fa9"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0002-iommu-apple-usb4-dart-prototype.patch",
+      "sha256": "ccc5e62020c67d172b10b05a56f898f3fdd4192de5114b554365d6484a46198e"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0003-iommu-validate-pci-map-ranges.patch",
+      "sha256": "7985915272c86bd320095f86244601427c23725fec220c13b4e67c726d3b31ba"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0004-mailbox-apple-bound-full-queue-waits.patch",
+      "sha256": "433b6772d8638c07aa493aba01f03030a43eec08e7ff3e1d063a7db696dc09f8"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0005-usb4-add-configuration-packet-codec.patch",
+      "sha256": "843b4acd83d6b3d198216e1fc19cabb17a99f318b8a6a9e1a5c969c7e9730760"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0006-iommu-apple-reject-invalid-dma-reservations.patch",
+      "sha256": "1d5d5cf02d7d071879151558e07c00ef230ee7d3e3fdf5dfa7260c2c17e24bb5"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0007-i2c-apple-add-bounded-polled-transfers.patch",
+      "sha256": "af8445c8f8b7c07d1e434587e057fac29d2df39ac3a9d836dd6108005ace92cc"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/../patches/0008-usb4-add-read-only-cd321x-status.patch",
+      "sha256": "71733d214d62deb61165fb97a1250a525af58b5dc9d0439f1d8a129dfcade96e"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/patches/0009-apple-integrate-tested-tb-boot-path.patch",
+      "sha256": "144ceca52bd3e89f736d614305602742310d999182e9a4e9b498e07645873d5f"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/patches/0010-apple-use-standard-EFI-boot-and-native-port-handover.patch",
+      "sha256": "8e34c4766f29040c19c8b49d195ea624229a23ba7de1f55cf332645fe8b3b919"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/patches/0011-apple-integrate-native-usb4-efi-boot.patch",
+      "sha256": "367a1d7024c3a1bab3f65de9590df1c90573385fd9ed55ef68326efe8dd757a7"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/../integrated/patches/0012-apple-halt-retained-usb4-xhci-before-efi-handover.patch",
+      "sha256": "92b1763d8adbc4ad7a478b35a55a6fc857b6fc847fb55ef58f936f0cd0d71b2f"
+    },
+    {
+      "file": "../usb3-recovery/../storage-scope/0013-reconcile-automatic-transport-and-dock-source.patch",
+      "sha256": "1cdf36b29762c35d408819bdbac5d7e1a663533b0f02f3b8e9feb069aefbc8c5"
+    },
+    {
+      "file": "../usb3-recovery/0014-recover-usb3-enumeration.patch",
+      "sha256": "39a07ed492e9cc9f8d8c2c9e86505c132dfe950cb491673455976f3152b5aa41"
+    },
+    {
+      "file": "../usb3-recovery/0015-reset-retained-xhci-at-handoff.patch",
+      "sha256": "7fc9bef7908b88d26139857fdb4ca30807ea97b5e1938cc09b92661018b21bae"
+    },
+    {
+      "file": "0016-configure-usb4-child-router.patch",
+      "sha256": "275b6656ff24dc2828cec8b4aadfa392401b5c4ece98cf142a56ea4a3387c9df"
+    }
+  ],
+  "config_sha256": "fa8a83c047dc4e50ef3f1ceb0e456493dd8335d7e1ce4e96c264961677cb33be",
+  "source_identity": {
+    "cmd/apple_atc_m1.c": "747c6dff4cc67d30ec545779953e240aec257f1f02c51c74d94ada95aa190b78",
+    "common/usb.c": "f5ebc02bc09e5976a79db64afb38f2b1b6ad67edb21c1af73340e7cdcd2bb9e1",
+    "common/usb_hub.c": "8acce55ec79ee2a2198b2913711ee27e0e8ff7e792d510f4a3c231b1a24dedd8",
+    "drivers/usb/host/xhci-mem.c": "03baca8c338c9879195a3c3907534c3a41148b80c3f09639911e83a06cd7532f",
+    "drivers/usb/host/xhci-ring.c": "1aad2a0b226bb61dc33dc3fec39e03376d702d4a4ab18e931cb3e7f63d816c68",
+    "drivers/usb/host/xhci.c": "f5c74143101afa8cecc9008e8a0c1ba9f3c913732582c7d243f18e26c51e0f24",
+    "include/apple_boot_media.h": "e2cfc5ac0fa02367af811c278fc842f802a562b1347610fb08b730d320fc90b4",
+    "include/usb.h": "0c55409c4e9d1ed7e355fdea72d6e1f86348c8f2ccb2c2001ef82cc1d9aeb571",
+    "include/usb/xhci.h": "932264d2c0d56758676fa95f71b6692307154cb0afd8ef189c700e0cf7b4ba68",
+    "lib/apple_boot_media.c": "2c8a63730e10018fe7ee6e75eaa6485fe524fe4ad761833bec3d3e9ba390e5d4",
+    "cmd/apple_nhi_m1_inventory.c": "efcf6483c612bfc9d8c13505b18a3420a782f5dbe41dd4f852405d7fcce232bb",
+    "cmd/apple_nhi_m1_ring.c": "cfa063e7fa13d469d76226c20c8827b3fafbcca1432fbf6eb361803e96d3f886",
+    "cmd/apple_nhi_m1_nested.inc": "2bbb123ae8ccbd01e329a00dc26b1ca0bd21e4a981024ce283210d12d072841d",
+    "include/apple_nhi_m1.h": "14b22e5d016c19fdb8cab9c86c944253cb41e9f1a7a4924760be7d8727b65683"
+  },
+  "status": "development candidate; one USB3 inventory pass and one user-observed Googlebook GUI; logs and repeat pending",
+  "full_googlebook_image_build": "local only; excluded from CI and releases",
+  "hardware_limits": [
+    "Fanxiang USB3 behind Dynabook with WD Googlebook, Mac port1",
+    "Repeated warm/cold boot and Linux handoff stability not established",
+    "Direct USB3/TB/USB4 regression not rerun with this candidate",
+    "Downstream USB4 child support remains separate"
+  ],
+  "tested_payload_sha256": "af63605298f4a73804859a418a5520a0789b340fd4507a96b4c8b5d904a1ee42"
+}

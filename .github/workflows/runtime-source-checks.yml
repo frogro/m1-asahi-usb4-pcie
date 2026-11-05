@@ -1,0 +1,45 @@
+name: Runtime integration source checks
+on:
+  push:
+    branches: [main]
+    paths: ['consolidated/display-20261105/**', 'googlebook/**', 'initramfs/**', 'build/**', '.github/workflows/runtime-source-checks.yml']
+  pull_request:
+    paths: ['consolidated/display-20261105/**', 'googlebook/**', 'initramfs/**', 'build/**', '.github/workflows/runtime-source-checks.yml']
+permissions:
+  contents: read
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        profile: [ubuntu, googlebook]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Fetch pinned kernel and replay storage/eGPU base
+        run: |
+          git init "$RUNNER_TEMP/linux"
+          git -C "$RUNNER_TEMP/linux" fetch --depth=1 https://github.com/UbuntuAsahi/linux.git f7734f4c91c0f47d9e762786968057bec99a0788
+          git -C "$RUNNER_TEMP/linux" checkout --detach FETCH_HEAD
+          git -C "$RUNNER_TEMP/linux" config user.name Validation
+          git -C "$RUNNER_TEMP/linux" config user.email validation@localhost
+          python3 consolidated/20261030/apply-to-checkout.py "$RUNNER_TEMP/linux" --apply
+          python3 consolidated/egpu179/apply.py "$RUNNER_TEMP/linux"
+      - name: Replay current profile and extracted source tests
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          set -euo pipefail
+          export ASAHI_TEST_BASE=$(git -C "$RUNNER_TEMP/linux" rev-parse HEAD)
+          if test "$PROFILE" = ubuntu; then
+            python3 consolidated/display-20261105/apply.py "$RUNNER_TEMP/linux"
+            for t in test-integration.py test-policy.py test-withdraw-consumer.py test-withdraw-transport.py test-dp-quiesce.py; do
+              python3 "consolidated/display-20261105/tests/$t" "$RUNNER_TEMP/linux"
+            done
+          else
+            for p in googlebook/0001-android-host-7.2.patch googlebook/0002-apple-audio-lock.patch googlebook/next-build/boot-storage-path/0001-thunderbolt-protect-selected-boot-path.patch; do
+              git -C "$RUNNER_TEMP/linux" apply --check "$GITHUB_WORKSPACE/$p"
+              git -C "$RUNNER_TEMP/linux" apply "$GITHUB_WORKSPACE/$p"
+            done
+            python3 googlebook/next-build/boot-storage-path/test-ancestors.py "$RUNNER_TEMP/linux/drivers/thunderbolt/switch.c" "$RUNNER_TEMP/ancestors"
+          fi

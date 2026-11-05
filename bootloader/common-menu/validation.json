@@ -1,0 +1,8 @@
+{
+  "date": "2026-11-05",
+  "source_tests": {
+    "scan_orchestration": 74
+  },
+  "normal_ubuntu_reboot": "passed, Samsung/Yotta behind Dynabook, persistent display overlay, both outputs enabled",
+  "rebuilt_binary_hardware_tested": false
+}

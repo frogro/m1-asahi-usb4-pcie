@@ -2,15 +2,20 @@ name: Consolidated M1 kernel (build only)
 on:
   workflow_dispatch:
     inputs:
+      kernel_profile:
+        description: 'OS kernel recipe; complete Googlebook images are never built here'
+        type: choice
+        options: [ubuntu, googlebook]
+        default: ubuntu
       include_egpu:
-        description: 'Build experimental 45-patch eGPU integration (hardware validation pending)'
+        description: 'Include eGPU, automatic display-routing sources and audio unlock (new full build needs hardware validation)'
         type: boolean
         required: false
         default: false
 permissions:
   contents: write
 concurrency:
-  group: consolidated-m1-full-build
+  group: consolidated-m1-full-build-${{ inputs.kernel_profile || 'ubuntu' }}
   cancel-in-progress: false
 jobs:
   kernel:
@@ -44,7 +49,12 @@ jobs:
       - name: Full Image, modules and DTBs
         env:
           INCLUDE_EGPU: ${{ inputs.include_egpu }}
-        run: build/full-kernel.sh
+        run: |
+          if test "${{ inputs.kernel_profile }}" = googlebook; then
+            googlebook/build-kernel.sh
+          else
+            build/full-kernel.sh
+          fi
       - name: Save outputs to a draft release (no Actions artifacts)
         if: always() && steps.release_prepare.outcome == 'success'
         env:

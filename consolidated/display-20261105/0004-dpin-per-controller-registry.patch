@@ -1,0 +1,102 @@
+Subject: [PATCH] apple: key DP-IN providers by controller device
+
+Local development candidate after native HPD patches 1-3.
+No automatic enablement: requires explicit experimental device tree.
+Full system suspend and HPD IRQ forwarding remain unsupported.
+Not upstream-ready; hardware validation required before deployment.
+
+---
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -166,6 +166,7 @@
+  * @tbt_switch: USB4/Thunderbolt switch triggered by the Type-C PD driver
+  */
+ struct apple_cio {
++	struct list_head dp91_registry_node;
+ 	struct mutex transition_lock;
+ 	bool dp127_stopping;
+ 	struct device *dev;
+@@ -1374,19 +1375,9 @@
+ 				     "Unable to register thunderbolt switch\n");
+ 
+ 	if (acio->dp91_phy) {
++		/* Each physical port has its own provider and generation token. */
+ 		down_write(&dp91_registry_lock);
+-		if (dp91_registered) {
+-			up_write(&dp91_registry_lock);
+-			typec_thunderbolt_switch_unregister(acio->tbt_switch);
+-			mutex_lock(&acio->transition_lock);
+-			mutex_lock(&acio->lock);
+-			if (acio->current_cable_info)
+-				apple_cio_stop(acio);
+-			mutex_unlock(&acio->lock);
+-			mutex_unlock(&acio->transition_lock);
+-			return -EBUSY;
+-		}
+-		dp91_registered = acio;
++		list_add_tail(&acio->dp91_registry_node, &dp91_providers);
+ 		up_write(&dp91_registry_lock);
+ 	}
+ 	return 0;
+@@ -1403,8 +1394,8 @@
+ 			apple_cio_stop(acio);
+ 	}
+ 	down_write(&dp91_registry_lock);
+-	if (dp91_registered == acio)
+-		dp91_registered = NULL;
++	if (acio->dp91_phy)
++		list_del(&acio->dp91_registry_node);
+ 	up_write(&dp91_registry_lock);
+ 	if (acio->dp91_regs)
+ 		iounmap(acio->dp91_regs);
+diff --git a/drivers/thunderbolt/dpin-provider.inc b/drivers/thunderbolt/dpin-provider.inc
+--- a/drivers/thunderbolt/dpin-provider.inc
++++ b/drivers/thunderbolt/dpin-provider.inc
+@@ -9,7 +9,23 @@
+ #include <linux/apple-display-crossbar.h>
+ #include <linux/rwsem.h>
+ static DECLARE_RWSEM(dp91_registry_lock);
+-static struct apple_cio *dp91_registered;
++static LIST_HEAD(dp91_providers);
++
++/* The registry read lock pins provider lifetime until the caller is done.
++ * Tokens remain provider-specific; a token from the other port is invalid.
++ * This registry does not grant ownership of the shared display controller.
++ */
++static struct apple_cio *dp91_find_provider(struct device *dev)
++{
++	struct apple_cio *acio;
++
++	lockdep_assert_held(&dp91_registry_lock);
++	list_for_each_entry(acio, &dp91_providers, dp91_registry_node) {
++		if (acio->dev == dev)
++			return acio;
++	}
++	return NULL;
++}
+ #if IS_REACHABLE(CONFIG_PHY_APPLE_ATC)
+ extern int codex_m1_dpin_clock_acquire(struct device *, u8, u64 *);
+ extern int codex_m1_dpin_clock_rate(struct device *, u64, u8);
+@@ -116,8 +132,8 @@
+ 		return -EINVAL;
+ 	*token = 0;
+ 	down_read(&dp91_registry_lock);
+-	acio = dp91_registered;
+-	if (!acio || acio->dev != dev)
++	acio = dp91_find_provider(dev);
++	if (!acio)
+ 		goto out;
+ 	mutex_lock(&acio->lock);
+ 	if (!acio->dp91_phy || acio->dp91_poisoned) {
+@@ -198,8 +214,8 @@
+ 	u32 ctrl, ack;
+ 	int ret = -ENODEV;
+ 	down_read(&dp91_registry_lock);
+-	acio = dp91_registered;
+-	if (!acio || acio->dev != dev)
++	acio = dp91_find_provider(dev);
++	if (!acio)
+ 		goto out;
+ 	mutex_lock(&acio->lock);
+ 	/* No register access until both generation and power are validated. */
