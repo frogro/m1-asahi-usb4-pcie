@@ -45,6 +45,7 @@ local Googlebook setup (including Apple, Broadcom and any selected GPU firmware)
 
 ```sh
 python3 build-module-images.py unpacked-kernel matched-private-firmware module-output \
+  --vendor-overlay locally-extracted-working-vendor-dlkm \
   --release 7.2.12-googlebook-usb4-egpu2
 ```
 
@@ -54,4 +55,7 @@ builds both EROFS images with the original Android SELinux labels. Use an
 erofs-utils build that supports `--file-contexts`; there is no fallback that
 silently discards labels. Supply `--preload module-output/preload.inc` to the
 ramdisk assembler and pin the resulting image hashes in the private profile.
+The required local overlay preserves Android init services outside `lib/modules`;
+in particular the boot entry imports `etc/init/googlebook-main.rc`. Compare these
+files and their on-image metadata against the working image before installation.
 Firmware and complete generated images remain on the local machine.

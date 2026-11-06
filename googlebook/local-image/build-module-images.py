@@ -5,6 +5,7 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('kernel_root',type=Path);p.add_argument('firmware',type=Path);p.add_argument('output',type=Path)
 p.add_argument('--release',required=True);p.add_argument('--mkfs',default='mkfs.erofs');p.add_argument('--fsck',default='fsck.erofs')
+p.add_argument('--vendor-overlay',type=Path,required=True,help='Locally extracted matching vendor_dlkm; retain Android init services outside lib/modules')
 a=p.parse_args();release=a.release
 if not re.fullmatch(r'[A-Za-z0-9._+-]+',release):raise SystemExit('Invalid release')
 root=a.kernel_root.resolve();out=a.output.resolve();here=Path(__file__).resolve().parent
@@ -13,6 +14,8 @@ config=dict(re.findall(r'^(CONFIG_\w+)=(.*)$',(root/'boot'/('config-'+release)).
 for key in ['EROFS_FS','BLK_DEV_LOOP','BLK_DEV_INITRD','RD_GZIP']:
  if config.get('CONFIG_'+key)!='y':raise SystemExit('Missing built-in '+key)
 if not (a.firmware/'apple/avd-fw-v2-t0.bin').is_file():raise SystemExit('Supply the complete matched local firmware tree, including Apple AVD')
+overlay=a.vendor_overlay.resolve()
+if not (overlay/'etc/init/googlebook-main.rc').is_file():raise SystemExit('Missing matching Googlebook Android init services')
 out.mkdir(parents=True);stage=out/'stage';mods=stage/'lib/modules'/release
 shutil.copytree(root/'lib/modules'/release,mods,symlinks=True)
 for n in ['build','source']:
@@ -30,7 +33,11 @@ files=list(mods.rglob('*.ko'))
 if not files:raise SystemExit('No modules')
 for m in files:
  if subprocess.check_output(['modinfo','-F','vermagic',str(m)],text=True).split()[0]!=release:raise SystemExit('ABI mismatch '+str(m))
-vendor=out/'vendor-tree';dest=vendor/'lib/modules';shutil.copytree(mods,dest,symlinks=True)
+vendor=out/'vendor-tree'
+# The main boot entry imports /vendor_dlkm/etc/init/googlebook-main.rc.
+# A modules-only filesystem loses those services even when all kernel ABIs match.
+shutil.copytree(overlay,vendor,symlinks=True,ignore=lambda path,names: ['modules'] if Path(path)==overlay/'lib' else [])
+dest=vendor/'lib/modules';shutil.copytree(mods,dest,symlinks=True)
 (dest/'modules.load').write_text('')
 soft=dest/'modules.softdep';soft.write_text(soft.read_text()+'\nsoftdep brcmfmac post: brcmfmac-wcc\n')
 shutil.copytree(a.firmware,dest/'firmware',symlinks=True)
