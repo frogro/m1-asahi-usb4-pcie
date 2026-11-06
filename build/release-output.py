@@ -123,10 +123,9 @@ def main():
     notes.write_text((result.read_text() if result.is_file() else
                      'Build incomplete or failed. Diagnostics only.\n') + record.read_text())
     subprocess.run(['python3', 'build/prepare-assets.py'], check=True)
-    gh('api', '--method', 'PATCH', 'repos/' + repo + '/releases/' + str(release['id']),
-       payload={'tag_name': tag, 'target_commitish': commit, 'draft': True,
-                'name': release['name'], 'body': notes.read_text()})
     upload(repo, tag, release['id'], sorted(f for f in out.iterdir() if f.is_file() and f.stat().st_size))
+    # release-notes.txt is an asset: do not PATCH draft metadata here.
+    # Updating draft metadata can fail or change its tag on this API.
     print('Draft assets uploaded and SHA-256 verified:', tag)
 
 
