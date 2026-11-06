@@ -97,16 +97,6 @@ def upload(repo, tag, release_id, paths):
             raise RuntimeError('Uploaded asset verification failed: ' + path.name)
 
 
-def update_notes(repo, tag, release_id, body):
-    endpoint = 'repos/' + repo + '/releases/' + str(release_id)
-    release = gh('api', endpoint)
-    if not release['draft'] or release['tag_name'] != tag:
-        raise RuntimeError('Notes target changed or was published')
-    # The tag and commit were already pinned by ensure_draft. Re-sending them
-    # unnecessarily invokes ref/workflow permission checks on this metadata edit.
-    gh('api', '--method', 'PATCH', endpoint, payload={'body': body})
-
-
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('phase', choices=['prepare', 'upload'])
@@ -124,7 +114,6 @@ def main():
     record = out / 'RUN.txt'
     record.write_text(f'Build-only output. No deployment.\nRun: https://github.com/{repo}/actions/runs/{run}\nCommit: {commit}\n')
     if args.phase == 'prepare':
-        update_notes(repo, tag, release['id'], release['body'])
         upload(repo, tag, release['id'], [record])
         print('Exact tag, draft creation and asset upload verified before compilation:', tag)
         return
@@ -135,8 +124,8 @@ def main():
                      'Build incomplete or failed. Diagnostics only.\n') + record.read_text())
     subprocess.run(['python3', 'build/prepare-assets.py'], check=True)
     upload(repo, tag, release['id'], sorted(f for f in out.iterdir() if f.is_file() and f.stat().st_size))
-    # Save verified build outputs before editing the optional release summary.
-    update_notes(repo, tag, release['id'], notes.read_text())
+    # release-notes.txt is an asset: do not PATCH draft metadata here.
+    # Updating draft metadata can fail or change its tag on this API.
     print('Draft assets uploaded and SHA-256 verified:', tag)
 
 

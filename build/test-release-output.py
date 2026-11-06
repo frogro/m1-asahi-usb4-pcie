@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Keep release metadata updates independent of tag/workflow permissions."""
+"""Exercise preparation/final upload without mutating draft release metadata."""
 import importlib.util
+import os
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -9,21 +11,27 @@ spec = importlib.util.spec_from_file_location('release_output', Path(__file__).w
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
-
-class ReleaseNotesTest(unittest.TestCase):
-    def test_updates_only_body(self):
-        with patch.object(module, 'gh', return_value={'draft': True, 'tag_name': 'test'}) as api:
-            module.update_notes('owner/repo', 'test', 123, 'Build checked')
-            self.assertEqual(api.call_args.kwargs, {'payload': {'body': 'Build checked'}})
-            self.assertEqual(api.call_count, 2)
-
-    def test_refuses_published_or_wrong_target(self):
-        for target in [{'draft': False, 'tag_name': 'test'}, {'draft': True, 'tag_name': 'other'}]:
-            with self.subTest(target=target), patch.object(module, 'gh', return_value=target) as api:
-                with self.assertRaises(RuntimeError):
-                    module.update_notes('owner/repo', 'test', 123, 'Build checked')
-                self.assertEqual(api.call_count, 1)
-
+class ReleaseUploadTest(unittest.TestCase):
+    def test_both_phases_leave_metadata_untouched(self):
+        env = {'GITHUB_REPOSITORY':'frogro/m1-asahi-usb4-pcie', 'GITHUB_SHA':'a'*40,
+               'GITHUB_RUN_ID':'123', 'GITHUB_RUN_ATTEMPT':'1'}
+        for phase in ['prepare', 'upload']:
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as temp:
+                previous = os.getcwd()
+                try:
+                    os.chdir(temp)
+                    with patch.dict(os.environ,env), patch('sys.argv',['release-output.py',phase]), \
+                         patch.object(module,'ensure_draft',return_value={'id':1}), \
+                         patch.object(module,'upload') as upload, \
+                         patch.object(module,'gh',side_effect=AssertionError('Unexpected metadata request')), \
+                         patch.object(module.subprocess,'run'):
+                        module.main()
+                        self.assertEqual(upload.call_count,1)
+                        names = [p.name for p in upload.call_args.args[3]]
+                        self.assertIn('RUN.txt',names)
+                        if phase=='upload': self.assertIn('release-notes.txt',names)
+                finally:
+                    os.chdir(previous)
 
 if __name__ == '__main__':
     unittest.main()
