@@ -10,7 +10,7 @@ export KBUILD_BUILD_USER=kernel-builder KBUILD_BUILD_HOST=github-actions KBUILD_
 export KBUILD_BUILD_TIMESTAMP='Tue Nov 10 00:00:00 UTC 2026'
 make() { command make LOCALVERSION= CC=gcc-15 HOSTCC=gcc-15 RUSTC=/usr/bin/rustc BINDGEN=/usr/bin/bindgen "$@"; }
 base=1ed3045d3f7e92f4a8cf69c99e06c415857407c0
-release=7.3.3-m1-usb4-rc1
+release=7.3.3-m1-usb4-rc2
 printf 'Build-only candidate %s from Asahi %s\n' "$release" "$base"
 git init "$work/linux"
 git -C "$work/linux" remote add origin https://github.com/AsahiLinux/linux.git
@@ -21,6 +21,10 @@ git -C "$work/linux" config user.email 'kernel-build@users.noreply.github.com'
 git -C "$work/linux" show "$base:drivers/gpu/drm/apple/audio.c" > "$work/audio-before.c"
 git -C "$work/linux" show "$base:drivers/gpu/drm/apple/av.c" > "$work/av-before.c"
 python3 "$repo/consolidated/asahi-7.3.3-20261110/apply.py" "$work/linux"
+python3 "$repo/consolidated/asahi-7.3.3-20261110/rc2/apply.py" "$work/linux" --before-dir "$work/rc2-before"
+python3 "$repo/consolidated/asahi-7.3.3-20261110/rc2/test-regressions.py" "$work/rc2-before" "$work/linux" --output "$work/rc2-tests"
+cp "$work/rc2-tests/results.json" "$repo/artifacts/rc2-regression-tests.json"
+cp "$repo/consolidated/asahi-7.3.3-20261110/rc2/manifest.json" "$repo/artifacts/rc2-source-manifest.json"
 python3 "$repo/consolidated/next-build/audio-open-lock/test-open.py" "$work/audio-before.c"
 python3 "$repo/consolidated/next-build/hdmi-audio-lifecycle/test-lifecycle.py" "$work/av-before.c" "$work/linux/drivers/gpu/drm/apple/av.c" --output "$work/audio-lifecycle-tests"
 cmp "$repo/consolidated/display-20261105/tests/dcp-route-policy.h" "$work/linux/drivers/gpu/drm/apple/dcp-route-policy.h"
@@ -32,7 +36,7 @@ cd "$work/linux"
 cp "$repo/build/running-kernel.config" .config
 # Tyr targets Mali CSF GPUs, not Apple AGX or the external Radeon. The pinned
 # Asahi tree has a Tyr/GPUVM API mismatch; do not build this unrelated driver.
-scripts/config --disable DRM_TYR --enable ANDROID_BINDER_IPC --enable ANDROID_BINDERFS --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-m1-usb4-rc1' \
+scripts/config --disable DRM_TYR --enable ANDROID_BINDER_IPC --enable ANDROID_BINDERFS --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-m1-usb4-rc2' \
  --set-str SYSTEM_TRUSTED_KEYS '' --set-str SYSTEM_REVOCATION_KEYS ''
 make olddefconfig
 python3 "$repo/build/asahi-current-check-config.py" "$repo/build/running-kernel.config" .config "$work/linux" "$repo/artifacts/config-comparison.json"
@@ -61,9 +65,10 @@ cp certs/signing_key.x509 "$repo/artifacts/module-signing-certificate.x509"
 # Pinned v0.2 firmware already carries the new driver's configuration header.
 bash "$repo/build/avd-firmware.sh" "$work/avd-firmware" "$stage" "$repo/artifacts"
 cp -a "$repo/build/rootfs-supplements/usr" "$stage/"
-mkdir -p "$stage/usr/share/doc/asahi-m1-usb4-rc1"
-cp "$repo/consolidated/asahi-7.3.3-20261110/README.md" "$stage/usr/share/doc/asahi-m1-usb4-rc1/"
-cp "$repo/initramfs/ubuntu/build-current-initramfs.sh" "$stage/usr/share/doc/asahi-m1-usb4-rc1/"
+mkdir -p "$stage/usr/share/doc/asahi-m1-usb4-rc2"
+cp "$repo/consolidated/asahi-7.3.3-20261110/README.md" "$stage/usr/share/doc/asahi-m1-usb4-rc2/"
+cp "$repo/consolidated/asahi-7.3.3-20261110/rc2/README.md" "$stage/usr/share/doc/asahi-m1-usb4-rc2/RC2.md"
+cp "$repo/initramfs/ubuntu/build-current-initramfs.sh" "$stage/usr/share/doc/asahi-m1-usb4-rc2/"
 tar --zstd -cf "$repo/artifacts/linux-$release-arm64.tar.zst" -C "$stage" .
 zstd -T2 -3 vmlinux -o "$repo/artifacts/vmlinux-$release.zst"
 sha256sum "$repo/artifacts/"*.tar.zst "$repo/artifacts/"vmlinux-*.zst > "$repo/artifacts/SHA256SUMS"

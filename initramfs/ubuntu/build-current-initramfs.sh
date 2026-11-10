@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Generate an additional initramfs only; never change boot selection or existing images.
 set -euo pipefail
-version=7.3.3-m1-usb4-rc1
+version=7.3.3-m1-usb4-rc2
 stage=${1:?Usage: sudo bash build-current-initramfs.sh /absolute/extracted-package /absolute/new/initramfs-path}
 out=${2:?Missing candidate initramfs output}
 stage=$(realpath -e "$stage")

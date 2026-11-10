@@ -1,0 +1,88 @@
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.c
+index 4a63b472f68ec8e6497813bb94baaddc2a37e0cf..a14c407b80f654dd9b83b3580d64ea19fccb2078 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.c
+@@ -298,11 +298,12 @@ static void amdgpu_vm_update_shared(struct amdgpu_vm_bo_base *base)
+ 	struct amdgpu_vm *vm = base->vm;
+ 	struct amdgpu_bo *bo = base->bo;
+ 	uint64_t size = amdgpu_bo_size(bo);
+-	uint32_t bo_memtype = amdgpu_bo_mem_stats_placement(bo);
++	uint32_t bo_memtype;
+ 	bool shared;
+ 
+ 	dma_resv_assert_held(bo->tbo.base.resv);
+ 	spin_lock(&vm->stats_lock);
++	bo_memtype = base->bo_memtype;
+ 	shared = drm_gem_object_is_shared_for_memory_stats(&bo->tbo.base);
+ 	if (base->shared != shared) {
+ 		base->shared = shared;
+@@ -348,7 +349,18 @@ static void amdgpu_vm_update_stats_locked(struct amdgpu_vm_bo_base *base,
+ 	struct amdgpu_vm *vm = base->vm;
+ 	struct amdgpu_bo *bo = base->bo;
+ 	int64_t size = sign * amdgpu_bo_size(bo);
+-	uint32_t bo_memtype = amdgpu_bo_mem_stats_placement(bo);
++	uint32_t bo_memtype;
++
++	/* Undo the original charge even if preferred_domains has changed.
++	 * A move subtracts the old charge before recording the new one.
++	 */
++	if (sign > 0) {
++		base->bo_memtype = amdgpu_bo_mem_stats_placement(bo);
++		base->stats_evicted = res && res->mem_type < __AMDGPU_PL_NUM &&
++			!(bo->preferred_domains &
++			  amdgpu_mem_type_to_domain(res->mem_type));
++	}
++	bo_memtype = base->bo_memtype;
+ 
+ 	/* For drm-total- and drm-shared-, BO are accounted by their preferred
+ 	 * placement, see also amdgpu_bo_mem_stats_placement.
+@@ -367,8 +379,7 @@ static void amdgpu_vm_update_stats_locked(struct amdgpu_vm_bo_base *base,
+ 		 */
+ 		if (bo->flags & AMDGPU_GEM_CREATE_DISCARDABLE)
+ 			vm->stats[res_memtype].drm.purgeable += size;
+-		if (!(bo->preferred_domains &
+-		      amdgpu_mem_type_to_domain(res_memtype)))
++		if (base->stats_evicted)
+ 			vm->stats[bo_memtype].evicted += size;
+ 	}
+ }
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.h b/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.h
+index d32183cd9e0fcde6d7392d2bbc9dcbc47c001d54..406e635a5ad005df345e20c9586b49c34d65069b 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.h
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_vm.h
+@@ -212,6 +212,12 @@ struct amdgpu_vm_bo_base {
+ 	 * protected by vm BO being reserved */
+ 	bool				shared;
+ 
++	/* Placement and eviction charge recorded by the last stats addition.
++	 * Protected by vm->stats_lock; preferred_domains may change meanwhile.
++	 */
++	uint32_t			bo_memtype;
++	bool				stats_evicted;
++
+ 	/* if the BO was moved and all mappings are invalid
+ 	 * protected by the BO being reserved */
+ 	bool				moved;
+diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+index 2ae27679977e90fc4fe65108d418ff9d05f28c9e..e633fa7883de0cc9a23c587fc2674ce2df06aa95 100644
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+@@ -872,11 +872,15 @@ static void amdgpu_dm_fini(struct amdgpu_device *adev)
+ 	 *
+ 	 * Quiesce workers first without dc_lock (they take dc_lock
+ 	 * themselves, so syncing under it would deadlock), then drive the
+-	 * FSM back to FULL_POWER_RUNNING under dc_lock.
++	 * FSM back to FULL_POWER_RUNNING under dc_lock while hardware is
++	 * accessible. Surprise removal has already set no_hw_access; asking
++	 * the disconnected DMCUB to exit idle cannot succeed in that case.
+ 	 */
+ 	amdgpu_dm_ism_disable(&adev->dm);
+-	scoped_guard(mutex, &adev->dm.dc_lock)
+-		amdgpu_dm_ism_force_full_power(&adev->dm);
++	if (!adev->no_hw_access) {
++		scoped_guard(mutex, &adev->dm.dc_lock)
++			amdgpu_dm_ism_force_full_power(&adev->dm);
++	}
+ 
+ 	amdgpu_dm_destroy_drm_device(&adev->dm);
+ 

@@ -1,6 +1,6 @@
 # Asahi 7.3.3 M1 USB4 integration candidate
 
-Target: `7.3.3-m1-usb4-rc1`, pinned Asahi release `asahi-7.3.3-1` at
+Current build target: `7.3.3-m1-usb4-rc2`, pinned Asahi release `asahi-7.3.3-1` at
 `1ed3045d3f7e92f4a8cf69c99e06c415857407c0`. Build-only candidate. No deployment,
 firmware flashing, boot-default change, Googlebook image rewrite or hardware
 qualification is implied by compilation.
@@ -73,4 +73,10 @@ six firmware hashes after creation: host install_optional_items had otherwise
 inserted the old firmware despite --fwdir ordering. Use the updated standalone
 `initramfs/ubuntu/build-current-initramfs.sh`, not the earlier copy embedded in
 that build's tarball. No kernel binary rebuild is required for this recipe fix.
-Hardware qualification and a matched bootloader/DT bundle remain outstanding.
+The rc1 hardware runs subsequently passed external-root boot, AVD decode,
+Radeon compute, native/Radeon/dock display, simultaneous dock HDMI plus Radeon
+USB-C display, and one Razer removal/reconnect. The old 7.2.12 kernel was restored.
+VM accounting and unplug-time DMCUB warnings remained. See [rc2 follow-ups](rc2/README.md)
+for the narrowly scoped source fixes and host regression tests. rc2 hardware
+qualification remains outstanding. The standalone initramfs recipe now targets
+rc2; use repository commit a2e39da for the rc1 recipe.

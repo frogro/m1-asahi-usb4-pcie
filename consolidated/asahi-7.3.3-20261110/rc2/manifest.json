@@ -1,0 +1,18 @@
+{
+  "release": "7.3.3-m1-usb4-rc2",
+  "base_commit": "1ed3045d3f7e92f4a8cf69c99e06c415857407c0",
+  "integrated_tree": "55a9b20fbb35c838e670a7c1394a65bf4135cf35",
+  "patch_sha256": "54d899977106a9af4a9763e03f22724083b7a89c62da886e065c83feff0aac7f",
+  "preimages": {
+    "drivers/gpu/drm/amd/amdgpu/amdgpu_vm.c": "2e14db33f670cb47d10c021bd422e3c3952354262380934ed07738cc478c84ce",
+    "drivers/gpu/drm/amd/amdgpu/amdgpu_vm.h": "8cdb47443ed20307fb5bfcc9345371d6e89343cd39c411bda20ac7377b46eb6d",
+    "drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c": "728a05379da8e78adca930f8b5b3472208a652bfc3d2167f8a78e9aa3da012d2"
+  },
+  "postimages": {
+    "drivers/gpu/drm/amd/amdgpu/amdgpu_vm.c": "c93c62babab7ba5c006d7a5bf03cb52c7d28d1ba596a7fe3c3a4990e4815c71a",
+    "drivers/gpu/drm/amd/amdgpu/amdgpu_vm.h": "46053523eaa36191975901575f49f4434c3fdcd9a67668d952e7a4ccde7d296a",
+    "drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c": "a468cd0bcdf99baf528ebab2b3d03d7b8e717c5468229f0fbc2350794841abc6"
+  },
+  "upstream_reference": "https://www.mail-archive.com/amd-gfx@lists.freedesktop.org/msg155275.html",
+  "hardware_status": "not tested"
+}

@@ -1,0 +1,26 @@
+{
+  "before-vm": {
+    "exit": 1,
+    "stdout": "cases=3920 unbalanced=2384 domain=632 sharing=632 move=1120\n",
+    "stderr": "",
+    "harness_sha256": "15bc84f528e63957c8b4955840bbfba29024f5d0094a4cede8f20bc3c246a298"
+  },
+  "before-dm": {
+    "exit": 1,
+    "stdout": "cases=2 invalid_power_requests=1\n",
+    "stderr": "",
+    "harness_sha256": "dd9fae6966cd2fc49f2c7f202ec37f7e8a4158104858ae9a5295796f5dae637f"
+  },
+  "after-vm": {
+    "exit": 0,
+    "stdout": "cases=3920 unbalanced=0 domain=0 sharing=0 move=0\n",
+    "stderr": "",
+    "harness_sha256": "1077b6ab28ddc4427986f60a32b1213a56e2b8f68531868b1e73c26dc7ace93e"
+  },
+  "after-dm": {
+    "exit": 0,
+    "stdout": "cases=2 invalid_power_requests=0\n",
+    "stderr": "",
+    "harness_sha256": "a70fd334f795f86dc84c7481b5d42cb5e59ff33f16862045467b7602562e6293"
+  }
+}
