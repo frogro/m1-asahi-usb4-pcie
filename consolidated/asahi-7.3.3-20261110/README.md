@@ -57,3 +57,10 @@ and module hashes, initramfs driver/hook/firmware inventory, and a functioning o
 boot entry. Then qualify cold boot/reboot, external-root direct I/O, native and
 dock displays, hotplug, audio recovery, eGPU and supported power states separately.
 The M1-only PCIe path is not validated on other Apple SoCs or arbitrary eGPUs.
+
+Build qualification update: run 42785369138 passed configuration migration and
+the affected-subsystem object compilation, then failed in the unrelated Tyr
+(Mali CSF) Rust GPU driver with E0063 (missing GPUVM OpMapRequest fields). This
+M1/AMDGPU candidate explicitly disables CONFIG_DRM_TYR; it does not change the
+shared GPUVM API to accommodate hardware absent from the target. Asahi AGX and
+AMDGPU remain required. Their object builds run before the full distro build.

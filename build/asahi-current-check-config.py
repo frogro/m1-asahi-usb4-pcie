@@ -21,6 +21,7 @@ for n in subprocess.check_output(['git','-C',str(source),'ls-files','*Kconfig*']
  if f.is_file():declared.update('CONFIG_'+m for m in re.findall(r'^\s*(?:menu)?config\s+(\w+)',f.read_text(errors='replace'),re.M))
 reviewed_losses = {
  'CONFIG_'+k: reason for keys, reason in [
+  (['DRM_TYR'], 'Mali CSF driver excluded from this M1/AMDGPU build: pinned Asahi GPUVM API mismatch (run 42785369138, E0063).'),
   (['CRYPTO_DEV_QCE','CRYPTO_DEV_QCE_SKCIPHER','CRYPTO_DEV_QCE_SHA','CRYPTO_DEV_QCE_AEAD','CRYPTO_DEV_QCE_ENABLE_ALL'], 'Upstream requires BROKEN or COMPILE_TEST: Qualcomm engine races secure world; not Apple hardware.'),
   (['IPQ_GCC_4019','QCOM_A7PLL','QCOM_GSBI'], 'Upstream restricts these Qualcomm 32-bit ARM drivers to ARM or COMPILE_TEST.'),
   (['INPUT_SOC_BUTTON_ARRAY','TCG_ATMEL'], 'Upstream restricts these hardware drivers to X86.'),

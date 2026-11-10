@@ -30,7 +30,9 @@ cp "$repo/consolidated/next-build/audio-open-lock/tests.json" "$repo/artifacts/a
 cp "$repo/consolidated/display-20261105/tests/policy-test-result.json" "$repo/artifacts/"
 cd "$work/linux"
 cp "$repo/build/running-kernel.config" .config
-scripts/config --enable ANDROID_BINDER_IPC --enable ANDROID_BINDERFS --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-m1-usb4-rc1' \
+# Tyr targets Mali CSF GPUs, not Apple AGX or the external Radeon. The pinned
+# Asahi tree has a Tyr/GPUVM API mismatch; do not build this unrelated driver.
+scripts/config --disable DRM_TYR --enable ANDROID_BINDER_IPC --enable ANDROID_BINDERFS --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-m1-usb4-rc1' \
  --set-str SYSTEM_TRUSTED_KEYS '' --set-str SYSTEM_REVOCATION_KEYS ''
 make olddefconfig
 python3 "$repo/build/asahi-current-check-config.py" "$repo/build/running-kernel.config" .config "$work/linux" "$repo/artifacts/config-comparison.json"
@@ -40,7 +42,7 @@ test "$(cat "$repo/artifacts/kernel-release.txt")" = "$release"
 cp "$repo/consolidated/asahi-7.3.3-20261110/manifest.json" "$repo/artifacts/source-manifest.json"
 git diff --check "$base"..HEAD
 # Build the affected subsystems first to report porting errors early.
-make -j2 drivers/gpu/drm/apple/ drivers/gpu/drm/amd/amdgpu/ drivers/thunderbolt/ drivers/pci/controller/ drivers/iommu/ drivers/usb/typec/tipd/ drivers/phy/apple/
+make -j2 drivers/gpu/drm/asahi/ drivers/gpu/drm/apple/ drivers/gpu/drm/amd/amdgpu/ drivers/thunderbolt/ drivers/pci/controller/ drivers/iommu/ drivers/usb/typec/tipd/ drivers/phy/apple/
 make -j2 Image modules dtbs
 stage="$work/stage"
 mkdir -p "$stage/boot"
