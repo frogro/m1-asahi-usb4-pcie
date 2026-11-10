@@ -1,0 +1,86 @@
+{
+  "baseline": {
+    "replacement_after_video_teardown": {
+      "returncode": -6,
+      "stdout": "",
+      "stderr": "test-baseline: /mnt/android-build/Codex/googlebook-resume-compare-20261106/hdmi-service-fix/test-baseline.c:210: main: Assertion `jack && opens==2' failed."
+    },
+    "stale_audio_teardown": {
+      "returncode": -6,
+      "stdout": "",
+      "stderr": "test-baseline: /mnt/android-build/Codex/googlebook-resume-compare-20261106/hdmi-service-fix/test-baseline.c:213: main: Assertion `jack && state.srv==&new_audio' failed."
+    },
+    "replacement_during_open": {
+      "returncode": -6,
+      "stdout": "",
+      "stderr": "test-baseline: /mnt/android-build/Codex/googlebook-resume-compare-20261106/hdmi-service-fix/test-baseline.c:215: main: Assertion `!jack' failed."
+    },
+    "unplug_during_open": {
+      "returncode": -6,
+      "stdout": "",
+      "stderr": "test-baseline: /mnt/android-build/Codex/googlebook-resume-compare-20261106/hdmi-service-fix/test-baseline.c:219: main: Assertion `closes==0' failed."
+    },
+    "stale_video_teardown": {
+      "returncode": -6,
+      "stdout": "",
+      "stderr": "test-baseline: /mnt/android-build/Codex/googlebook-resume-compare-20261106/hdmi-service-fix/test-baseline.c:222: main: Assertion `jack' failed."
+    },
+    "close_callback_no_deadlock": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "open_failure_retry": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "idempotent_open": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    }
+  },
+  "candidate": {
+    "replacement_after_video_teardown": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "stale_audio_teardown": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "replacement_during_open": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "unplug_during_open": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "stale_video_teardown": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "close_callback_no_deadlock": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "open_failure_retry": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    "idempotent_open": {
+      "returncode": 0,
+      "stdout": "PASS",
+      "stderr": ""
+    }
+  }
+}

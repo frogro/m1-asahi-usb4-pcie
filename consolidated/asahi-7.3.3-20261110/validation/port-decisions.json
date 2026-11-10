@@ -1,0 +1,11 @@
+{
+  "base": "f7734f4c91c0f47d9e762786968057bec99a0788",
+  "target": "1ed3045d3f7e92f4a8cf69c99e06c415857407c0",
+  "resolved_files": [
+    "drivers/gpu/drm/amd/amdgpu/amdgpu_ttm.c",
+    "drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c",
+    "drivers/gpu/drm/apple/dcp.c",
+    "drivers/thunderbolt/tb.c"
+  ],
+  "dmub_guard_relocated": true
+}

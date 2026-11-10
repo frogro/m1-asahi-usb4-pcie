@@ -1,0 +1,42 @@
+{
+  "baseline_text_matches_running": true,
+  "baseline_text_sha256": "25a6874f4d8cfc2fa08eef76ecbbc30e3c065e57cf7859b29e6c681a33814f0c",
+  "candidate_sha256": "ff58e22a1be7e02ae2d8f0152c50595b748a108165fe5d6e323c37d9f96ee6aa",
+  "candidate_srcversion": "CEF3122C38B5A27259AA522",
+  "vermagic": "7.2.12-usb4sd4-egpu4 SMP preempt mod_unload aarch64",
+  "runtime_test": {
+    "boot_id": "08d01e47-4c68-4b79-a770-b3fe3ba2801a",
+    "two_60_second_display_off_cycles": "audio availability restored after both firmware service replacements",
+    "wake_sample_count": 30,
+    "wake_samples_with_alsa_jack_on": 30,
+    "wireplumber_restarts": 0,
+    "physical_hdmi_blink": "still reproduced twice",
+    "normal_menu_and_module_selection": "restored after candidate loaded; test module active only in that boot",
+    "second_monitor": "Radeon disconnected at boot; user saw only native HDMI"
+  },
+  "scope": "Audio lifecycle only; delayed video interface restart is not fixed by this patch.",
+  "objcopy_normalized_local_original_sha256": "d6b3e2bbdcfd366c9108bd737a8d88ea31bd50fb175c99f5d08bfa5a9b4761e6",
+  "original_sha256": "f2f141ff7b48e3f47472836c08cf0ad01e0b3b4fb0386990148328e337b09b28",
+  "source": "Running GitHub egpu4 module, run 42192523808 at repository commit 5ac76150491e97e63cedc35d348cc81989bc6bd2",
+  "automatic_build_integration": false,
+  "known_limitations": [
+    "Does not prevent firmware video-interface restart",
+    "Does not reclaim retired AFK service slots",
+    "Long-run retirement, streaming audio, and other machines unvalidated"
+  ],
+  "noaudio_control": {
+    "boot_id": "6f48a4ac-db99-4e79-81e1-b5017abbc4e2",
+    "original_module": true,
+    "hdmi_audio": "N",
+    "cycles": 2,
+    "firmware_hpd_loss_after_poweron_seconds": [
+      1.975706,
+      1.955563
+    ],
+    "firmware_hpd_recovery_seconds": [
+      0.69504,
+      0.698273
+    ],
+    "conclusion": "AV endpoint activation is not necessary for wake-related video-interface teardown; audio lifecycle patch does not fix this separate fault."
+  }
+}

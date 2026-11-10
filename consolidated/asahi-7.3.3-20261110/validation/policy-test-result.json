@@ -1,0 +1,10 @@
+{
+  "result": "PASS: ownership, port selection, stale generations, failures, stop; 200000 interleaved events",
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "scope": "draft policy implementation; serialized event interleavings, not real concurrency or hardware",
+  "kernel_callbacks_connected": true,
+  "hardware_tested": false
+}

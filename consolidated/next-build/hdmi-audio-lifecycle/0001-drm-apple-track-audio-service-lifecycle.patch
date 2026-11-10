@@ -1,0 +1,206 @@
+Subject: [RFC] drm/apple: keep AV open state with the current service
+
+A native HDMI video teardown can be followed by a replacement audio
+service without an audio teardown callback. Clear stale open state on
+replacement and ignore callbacks from superseded services. Validate the
+captured generation after OPEN, and serialize OPEN/CLOSE without
+blocking the AFK receive worker.
+
+Local candidate: behavior harness and module build passed; two hardware
+wake cycles restored ALSA HDMI availability. Streaming is not yet validated. This does not fix the delayed firmware video-interface restart
+or the independent AFK slot-retirement limitation.
+
+---
+
+diff --git a/drivers/gpu/drm/apple/av.c b/drivers/gpu/drm/apple/av.c
+--- a/drivers/gpu/drm/apple/av.c
++++ b/drivers/gpu/drm/apple/av.c
+@@ -56,6 +56,11 @@
+ 	struct platform_device *audio_dev;
+ 	bool plugged;
+ 	struct mutex plug_lock;
++	/* Serialize OPEN/CLOSE, but never take this lock from an AFK callback. */
++	struct mutex lifecycle_lock;
++	/* Protected by plug_lock; invalidates an OPEN completed after hotplug. */
++	u64 service_generation;
++	struct apple_epic_service *video_srv;
+ 
+ 	struct apple_epic_service *srv;
+ 	struct rw_semaphore srv_rwsem;
+@@ -72,6 +77,11 @@
+ static void av_interface_init(struct apple_epic_service *service, const char *name,
+ 			      const char *class, s64 unit)
+ {
++	struct audiosrv_data *asrv = service->ep->dcp->audiosrv;
++
++	mutex_lock(&asrv->plug_lock);
++	asrv->video_srv = service;
++	mutex_unlock(&asrv->plug_lock);
+ }
+ 
+ static void av_interface_teardown(struct apple_epic_service *service)
+@@ -83,7 +93,14 @@
+ 
+ 	mutex_lock(&asrv->plug_lock);
+ 
++	if (asrv->video_srv != service) {
++		mutex_unlock(&asrv->plug_lock);
++		return;
++	}
++	asrv->video_srv = NULL;
+ 	asrv->plugged = false;
++	asrv->is_open = false;
++	asrv->service_generation++;
+ 	if (asrv->audio_dev)
+ 		dcpaud_disconnect(asrv->audio_dev);
+ 
+@@ -102,6 +119,9 @@
+ 	asrv->srv = service;
+ 	up_write(&asrv->srv_rwsem);
+ 
++	/* An OPEN on the previous service does not open this new service. */
++	asrv->is_open = false;
++	asrv->service_generation++;
+ 	asrv->plugged = true;
+ 	mutex_unlock(&asrv->plug_lock);
+ 	schedule_work(&asrv->start_av_service_wq);
+@@ -115,10 +135,17 @@
+ 	mutex_lock(&asrv->plug_lock);
+ 
+ 	down_write(&asrv->srv_rwsem);
++	if (asrv->srv != service) {
++		up_write(&asrv->srv_rwsem);
++		mutex_unlock(&asrv->plug_lock);
++		return;
++	}
+ 	asrv->srv = NULL;
+ 	up_write(&asrv->srv_rwsem);
+ 
+ 	asrv->plugged = false;
++	asrv->is_open = false;
++	asrv->service_generation++;
+ 	if (asrv->audio_dev)
+ 		dcpaud_disconnect(asrv->audio_dev);
+ 
+@@ -294,57 +321,72 @@
+ {
+ 	struct apple_epic_service *service;
+ 	struct audiosrv_data *asrv = dcp->audiosrv;
+-	int ret;
+-
+-	scoped_guard(rwsem_write, &asrv->srv_rwsem) {
+-		if (!asrv->srv)
+-			return;
+-		service = asrv->srv;
+-	}
+-
+-	/* open AV audio service */
+-	dev_info(dcp->dev, "%s: starting audio service, plugged:%d\n", __func__,  asrv->plugged);
+-	if (asrv->is_open)
+-		return;
+-
++	u64 generation;
++	int ret;
++
++	mutex_lock(&asrv->lifecycle_lock);
++	mutex_lock(&asrv->plug_lock);
++	/* Service replacement also holds plug_lock. AFK slots remain allocated
++	 * until endpoint shutdown; do not hold callback locks over firmware RPC.
++	 */
++	service = asrv->srv;
++	generation = asrv->service_generation;
++	if (!service || !asrv->plugged || READ_ONCE(service->torndown))
++		goto out_unlock_plug;
++
++	if (asrv->is_open) {
++		if (asrv->audio_dev)
++			dcpaud_connect(asrv->audio_dev, true);
++		goto out_unlock_plug;
++	}
++	mutex_unlock(&asrv->plug_lock);
++
++	dev_info(dcp->dev, "%s: opening audio service ch:%u generation:%llu\n",
++		 __func__, service->channel, generation);
+ 	ret = afk_service_call(service, 0, asrv->cmds.open, NULL, 0, 32,
+ 			       NULL, 0, 32);
+ 	if (ret) {
+ 		dev_err(dcp->dev, "error opening audio service: %d\n", ret);
+-		return;
+-	}
+-	mutex_lock(&asrv->plug_lock);
++		goto out_unlock_lifecycle;
++	}
++	mutex_lock(&asrv->plug_lock);
++	if (asrv->srv != service || asrv->service_generation != generation ||
++	    !asrv->plugged || READ_ONCE(service->torndown))
++		goto out_unlock_plug;
+ 	asrv->is_open = true;
+ 
+ 	if (asrv->audio_dev)
+ 		dcpaud_connect(asrv->audio_dev, asrv->plugged);
+-	mutex_unlock(&asrv->plug_lock);
++out_unlock_plug:
++	mutex_unlock(&asrv->plug_lock);
++out_unlock_lifecycle:
++	mutex_unlock(&asrv->lifecycle_lock);
+ }
+ 
+ void av_service_disconnect(struct apple_dcp *dcp)
+ {
+ 	struct apple_epic_service *service;
+ 	struct audiosrv_data *asrv = dcp->audiosrv;
+-	int ret;
+-
+-	scoped_guard(rwsem_write, &asrv->srv_rwsem) {
+-		if (!asrv->srv)
+-			return;
+-		service = asrv->srv;
+-	}
+-
+-	/* close AV audio service */
+-	dev_info(dcp->dev, "%s: stopping audio service\n", __func__);
+-	if (!asrv->is_open)
+-		return;
+-
+-	mutex_lock(&asrv->plug_lock);
++	bool close;
++	int ret;
++
++	mutex_lock(&asrv->lifecycle_lock);
++	mutex_lock(&asrv->plug_lock);
++	service = asrv->srv;
++	close = service && asrv->is_open && asrv->plugged &&
++		!READ_ONCE(service->torndown);
++	asrv->is_open = false;
+ 
+ 	if (asrv->audio_dev)
+ 		dcpaud_disconnect(asrv->audio_dev);
+ 
+ 	mutex_unlock(&asrv->plug_lock);
+ 
++	if (!close)
++		goto out_unlock_lifecycle;
++
++	dev_info(dcp->dev, "%s: closing audio service ch:%u\n",
++		 __func__, service->channel);
+ 	ret = afk_service_call(service, 0, asrv->cmds.close, NULL, 0, 16,
+ 			       NULL, 0, 16);
+ 	if (ret) {
+@@ -352,7 +394,8 @@
+ 	}
+ 	if (service->torndown)
+ 		service->enabled = false;
+-	asrv->is_open = false;
++out_unlock_lifecycle:
++	mutex_unlock(&asrv->lifecycle_lock);
+ }
+ 
+ static void av_work_service_start(struct work_struct *work)
+@@ -387,6 +430,7 @@
+ 		return -ENOMEM;
+ 	init_rwsem(&audiosrv_data->srv_rwsem);
+ 	mutex_init(&audiosrv_data->plug_lock);
++	mutex_init(&audiosrv_data->lifecycle_lock);
+ 
+ 	switch (dcp->fw_compat) {
+ 	case DCP_FIRMWARE_V_12_3:
