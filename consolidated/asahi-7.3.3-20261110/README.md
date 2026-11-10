@@ -64,3 +64,13 @@ the affected-subsystem object compilation, then failed in the unrelated Tyr
 M1/AMDGPU candidate explicitly disables CONFIG_DRM_TYR; it does not change the
 shared GPUVM API to accommodate hardware absent from the target. Asahi AGX and
 AMDGPU remain required. Their object builds run before the full distro build.
+
+Full build run 42795717534 succeeded at source-recipe commit
+`c8ab22c4b57c815a209058a74ae89612ce45f55b`. The kernel tarball and target-generated
+initramfs were verified without installing or booting them. A target-only recipe
+correction explicitly includes the staged AVD firmware directory and verifies all
+six firmware hashes after creation: host install_optional_items had otherwise
+inserted the old firmware despite --fwdir ordering. Use the updated standalone
+`initramfs/ubuntu/build-current-initramfs.sh`, not the earlier copy embedded in
+that build's tarball. No kernel binary rebuild is required for this recipe fix.
+Hardware qualification and a matched bootloader/DT bundle remain outstanding.

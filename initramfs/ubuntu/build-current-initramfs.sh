@@ -24,6 +24,7 @@ dracut --kver "$version" --kmoddir "$stage/lib/modules/$version" \
  --fwdir "$stage/usr/lib/firmware:/usr/lib/firmware" --no-hostonly --no-hostonly-cmdline \
  --add-drivers 'thunderbolt_apple nvme nvme_apple' --omit-drivers 'appledrm amdgpu' \
  --omit 'usb-test-fallback' \
+ --include "$stage/usr/lib/firmware/apple" /usr/lib/firmware/apple \
  --include /usr/lib/dracut/modules.d/99usb-test-fallback/reprobe-yotta-root.sh \
  /var/lib/dracut/hooks/initqueue/settled/20-root-host-reprobe.sh "$out"
 lsinitrd "$out" > "$out.inventory.txt"
@@ -33,5 +34,16 @@ if grep -Eq '(appledrm|amdgpu)\.ko|99-display-overlay-egpu3|native-hpd/|restore-
 fi
 grep -Eq '(authorize-root-chain|asahi-root-chain)\.sh' "$out.inventory.txt"
 grep -q "lib/modules/$version" "$out.inventory.txt"
+# Host install_optional_items can otherwise copy the old AVD firmware despite
+# --fwdir ordering. The explicit directory include replaces it; check the bytes.
+for fw in "$stage"/usr/lib/firmware/apple/avd-fw-*.bin; do
+ test -f "$fw"
+ expected=$(sha256sum "$fw" | cut -d ' ' -f1)
+ actual=$(lsinitrd -f "usr/lib/firmware/apple/${fw##*/}" "$out" | sha256sum | cut -d ' ' -f1)
+ [[ "$actual" == "$expected" ]] || {
+  echo "Candidate firmware mismatch: ${fw##*/}" >&2
+  exit 1
+ }
+done
 sha256sum "$out" > "$out.sha256"
 printf 'Candidate initramfs generated; boot selection unchanged: %s\n' "$out"
