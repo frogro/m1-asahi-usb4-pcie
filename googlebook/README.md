@@ -16,3 +16,10 @@ The 5 November recipe builds `7.2.12-googlebook-usb4-egpu2` and also applies the
 selected boot-router ancestor guard. It is a new build candidate, not the
 previously installed egpu1 Image. See `local-image/` for the local-only bootstrap
 and ramdisk assembly and `../docs/runtime-integration-20261105.md` for status.
+
+## Current Asahi build profile
+
+The separate `googlebook-current` GitHub Actions profile builds
+`7.3.3-googlebook-usb4-rc2` on the exact shared source foundation of the current
+Ubuntu rc2 candidate. See [the port notes](asahi-7.3.3-20261110/README.md).
+The original `googlebook` profile and 7.2.12 recipe above remain reproducible.

@@ -1,0 +1,14 @@
+{
+  "before": {
+    "exit": 1,
+    "stdout": "cases=294 policy_failures=102\n",
+    "stderr": "",
+    "harness_sha256": "b625f2dde4b39f647340158464c4c059239dd92ca9c165941f2c50e39d2b1655"
+  },
+  "after": {
+    "exit": 0,
+    "stdout": "cases=294 policy_failures=0\n",
+    "stderr": "",
+    "harness_sha256": "f6aa97b9e9a05545e87254c98a3464ea54d309895e73e908333e3dc9f60c781a"
+  }
+}
