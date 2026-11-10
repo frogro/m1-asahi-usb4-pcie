@@ -30,7 +30,7 @@ cp "$repo/consolidated/next-build/audio-open-lock/tests.json" "$repo/artifacts/a
 cp "$repo/consolidated/display-20261105/tests/policy-test-result.json" "$repo/artifacts/"
 cd "$work/linux"
 cp "$repo/build/running-kernel.config" .config
-scripts/config --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-m1-usb4-rc1' \
+scripts/config --enable ANDROID_BINDER_IPC --enable ANDROID_BINDERFS --enable PCIE_APPLE_PCIEC --set-str LOCALVERSION '-m1-usb4-rc1' \
  --set-str SYSTEM_TRUSTED_KEYS '' --set-str SYSTEM_REVOCATION_KEYS ''
 make olddefconfig
 python3 "$repo/build/asahi-current-check-config.py" "$repo/build/running-kernel.config" .config "$work/linux" "$repo/artifacts/config-comparison.json"

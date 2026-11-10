@@ -3,7 +3,7 @@
   "base_commit": "1ed3045d3f7e92f4a8cf69c99e06c415857407c0",
   "base_tag": "asahi-7.3.3-1",
   "release": "7.3.3-m1-usb4-rc1",
-  "patch_sha256": "950dd05a813c4a25fe2de26186d5c38b8d46636cb5955f437c49a696bb261397",
+  "patch_sha256": "7b4d3b75f37ce8cd7dd262bcc292933d533cecb712a5cd0f35b219cf70817e39",
   "preimages": {
     "Documentation/gpu/apple-usb4-dpin-draft.rst": null,
     "Documentation/gpu/apple-usb4-consolidation.rst": null,
@@ -90,7 +90,7 @@
     "arch/arm64/boot/dts/apple/t8103.dtsi": "ac9afc3a2b3c52abf72942f96ad5cafd19443b0604c8d52027c1667b6f3987c1",
     "arch/arm64/boot/dts/apple/t8103-pmgr.dtsi": "cabd4f4422e99bb8a4c206afeeee748b126595cb2d4def0464fb6f706b4dbe6c",
     "arch/arm64/boot/dts/apple/t8103-pciec-tunables.dtsi": "fbe578ab6ff42761b99db816bf17c6f2a44c3d9afe653ec39ec8f1254f36cad8",
-    "arch/arm64/boot/dts/apple/t8103-j274.dts": "b37e37ab97edb1314a6170fd8f6a8444d9dce1c9d1f3990958b3e85c97b6e792",
+    "arch/arm64/boot/dts/apple/t8103-j274.dts": "6331783617cbe18c43a9c0b1577f507cb79fa1426985f02f3e0dd06aee6ca501",
     "drivers/thunderbolt/tunnel.h": "437fc9cdfe5e3a89f153276d0cc8021bd35435356d369eada3af689a2ae4b8a1",
     "drivers/thunderbolt/tunnel.c": "ee856577984df348e22ee9500bb0c78d470964e29a74f77e43959fb2e0caad38",
     "drivers/thunderbolt/tb.h": "bd03d96b83f27a4fff04d9e7ca131137a8daebba68265d3e080f667bee60f1ed",

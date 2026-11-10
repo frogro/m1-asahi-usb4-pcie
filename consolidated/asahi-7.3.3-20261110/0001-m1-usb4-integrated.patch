@@ -304,10 +304,10 @@ index 0000000..5cfb01e
 +surprise removal: that path still produced SError in prior tests. Do not include
 +those incomplete patches in a dock-display PR by implication.
 diff --git a/arch/arm64/boot/dts/apple/t8103-j274.dts b/arch/arm64/boot/dts/apple/t8103-j274.dts
-index 2d49140..7885452 100644
+index 2d49140..0abeb69 100644
 --- a/arch/arm64/boot/dts/apple/t8103-j274.dts
 +++ b/arch/arm64/boot/dts/apple/t8103-j274.dts
-@@ -147,3 +147,96 @@
+@@ -147,3 +147,125 @@
  };
  
  #include "hwmon-mini.dtsi"
@@ -403,6 +403,35 @@ index 2d49140..7885452 100644
 +/* External DCP audio, tested through the Dynabook DP tunnel in DP128. */
 +&dpaudio1 {
 +	status = "okay";
++};
++
++/* Opt-in shared display routing, equivalent to the validated runtime bindings.
++ * Keep the legacy port1 provider for kernels which ignore the added routes.
++ * m1n1 still owns firmware and reserved-memory fixups.
++ */
++&dcpext {
++	apple,auto-dp-routing;
++	apple,native-dp-ports = <&hpm0>, <&hpm1>;
++	apple,dpin-ports = <&usb4_0_acio>, <&usb4_1_acio>;
++	phys = <&atcphy0 PHY_TYPE_DP>, <&atcphy1 PHY_TYPE_DP>;
++	phy-names = "dp0-phy", "dp1-phy";
++	mux-controls = <&atcphy0_xbar 0>, <&atcphy1_xbar 0>;
++	mux-control-names = "dp0-xbar", "dp1-xbar";
++};
++
++&usb4_0_acio {
++	apple,auto-dpin-provider;
++	codex,atcphy = <&atcphy0>;
++	mux-controls = <&atcphy0_xbar 1>;
++	mux-control-names = "dp-xbar";
++};
++
++&atcphy0 {
++	codex,dpin-clock-test;
++};
++
++&atcphy0_xbar {
++	codex,dpin-staged-test;
 +};
 diff --git a/arch/arm64/boot/dts/apple/t8103-pciec-tunables.dtsi b/arch/arm64/boot/dts/apple/t8103-pciec-tunables.dtsi
 new file mode 100644

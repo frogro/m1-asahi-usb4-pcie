@@ -2,11 +2,13 @@
 # Generate an additional initramfs only; never change boot selection or existing images.
 set -euo pipefail
 version=7.3.3-m1-usb4-rc1
-out=${1:?Usage: sudo bash build-current-initramfs.sh /absolute/new/initramfs-path}
+stage=${1:?Usage: sudo bash build-current-initramfs.sh /absolute/extracted-package /absolute/new/initramfs-path}
+out=${2:?Missing candidate initramfs output}
+stage=$(realpath -e "$stage")
 [[ "$out" = /* && ! -e "$out" ]]
-test -d "/lib/modules/$version"
+test -d "$stage/lib/modules/$version"
 for module in thunderbolt_apple nvme appledrm amdgpu; do
- actual=$(modinfo -k "$version" -F vermagic "$module")
+ actual=$(modinfo -b "$stage" -k "$version" -F vermagic "$module")
  [[ "$actual" == "$version "* ]]
 done
 # Root authorization must be supplied by this installation, not copied from another machine.
@@ -18,7 +20,8 @@ test -d /usr/lib/dracut/modules.d/91asahi-root-chain || {
  exit 1
 }
 # Omit the old binary display overlay; the new modules contain these sources directly.
-dracut --kver "$version" --no-hostonly --no-hostonly-cmdline \
+dracut --kver "$version" --kmoddir "$stage/lib/modules/$version" \
+ --fwdir "$stage/usr/lib/firmware:/usr/lib/firmware" --no-hostonly --no-hostonly-cmdline \
  --add-drivers 'thunderbolt_apple nvme nvme_apple' --omit-drivers 'appledrm amdgpu' \
  --omit 'usb-test-fallback' \
  --include /usr/lib/dracut/modules.d/99usb-test-fallback/reprobe-yotta-root.sh \
