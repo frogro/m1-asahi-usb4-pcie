@@ -25,7 +25,7 @@ elif mode=='modules':
  assert res['baseline']['depends']==m['expected_depends']==res['candidate']['depends']
  # Logging may introduce its own symbol; all other imports must match.
  assert set(res['candidate']['imports'])-set(res['baseline']['imports']) <= {'_printk','param_ops_bool'},res
- assert 'legacy_locked_ttbr:bool' in s.check_output(['modinfo','-p',str(d/'apple-dart-candidate.ko')],text=True)
+ assert 'legacy_locked_ttbr:bool' in s.check_output(['modinfo','-F','parmtype',str(d/'apple-dart-candidate.ko')],text=True)
  res['passed']=True
  (d/'dart-validation.json').write_text(json.dumps(res,indent=2)+'\n')
  print('DART baseline reproduction and candidate ABI checks passed')
