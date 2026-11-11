@@ -49,11 +49,12 @@ jobs:
       - name: Full Image, modules and DTBs
         env:
           INCLUDE_EGPU: ${{ inputs.include_egpu }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if test "${{ inputs.kernel_profile }}" = ubuntu-current; then
             bash build/asahi-current.sh
           elif test "${{ inputs.kernel_profile }}" = googlebook-current; then
-            bash googlebook/build-current-kernel.sh
+            bash googlebook/dart-diagnostic/build.sh
           elif test "${{ inputs.kernel_profile }}" = googlebook; then
             googlebook/build-kernel.sh
           else

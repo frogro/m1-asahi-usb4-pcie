@@ -1,0 +1,11 @@
+{
+  "original_sha256": "d670ffc08b1a5bc3b68750ac972a8630057950a0cf5b39754afeda5c96748a85",
+  "candidate_sha256": "8f72d1212bf9307d9044262a0fcc55868d1602c9c4937e87dfae8b98c40e6ef4",
+  "kernel": "7.3.3-googlebook-usb4-rc2",
+  "purpose": "Diagnostic countertest, not established root-cause fix",
+  "default_legacy_locked_ttbr": true,
+  "new_iommu_probe_api_preserved": true,
+  "original_text_sha256": "316313476d67f28c3fce385bea771e967a10aff72f416960beb7d810885b6b66",
+  "expected_vermagic": "7.3.3-googlebook-usb4-rc2 SMP preempt mod_unload aarch64",
+  "expected_depends": ""
+}

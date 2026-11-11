@@ -1,0 +1,36 @@
+--- a/drivers/iommu/apple-dart.c
++++ b/drivers/iommu/apple-dart.c
+@@ -424,6 +424,14 @@
+ 		apple_dart_hw_clear_ttbr(stream_map, i);
+ }
+ 
++/* Diagnostic A/B build only: emulate 7.2.12 locked-TTBR handling.
++ * Do not use this setting as a production fix without a captured result.
++ * The current IOMMU probe API and all USB4-specific fixes remain intact.
++ */
++static bool legacy_locked_ttbr = true;
++module_param(legacy_locked_ttbr, bool, 0400);
++MODULE_PARM_DESC(legacy_locked_ttbr, "Diagnostic: use pre-7.3 remapped locked-TTBR handling");
++
+ static int
+ apple_dart_hw_map_locked_ttbr(struct apple_dart_stream_map *stream_map, u8 idx)
+ {
+@@ -435,7 +443,7 @@
+ 		phys_addr_t phys;
+ 		u64 *l1_tbl;
+ 
+-		if (dart->hw->is_remapped(dart, sid))
++		if (!legacy_locked_ttbr && dart->hw->is_remapped(dart, sid))
+ 			continue;
+ 
+ 		ttbr = readl(dart->regs + DART_TTBR(dart, sid, idx));
+@@ -1005,6 +1013,9 @@
+ 	struct apple_dart_master_cfg *cfg = dev_iommu_priv_get(dev);
+ 	struct apple_dart_stream_map *stream_map;
+ 	int i;
++
++	pr_info_once("Googlebook DART diagnostic: legacy_locked_ttbr=%d\n",
++		     legacy_locked_ttbr);
+ 
+ 	if (!cfg)
+ 		return ERR_PTR(-ENODEV);
