@@ -31,7 +31,7 @@ test "$(make -s kernelrelease)" = "$release"
 for variant in baseline candidate; do
  mkdir -p "$work/$variant"
  cp drivers/iommu/apple-dart.c "$work/$variant/apple-dart.c"
- printf 'obj-m += apple-dart.o\n' > "$work/$variant/Makefile"
+ printf 'obj-m += apple-dart.o\nccflags-y += -I$(srctree)/drivers/iommu\n' > "$work/$variant/Makefile"
 done
 python3 "$repo/googlebook/dart-diagnostic/validate.py" source "$work/baseline/apple-dart.c" "$repo/googlebook/dart-diagnostic/manifest.json"
 git apply --check "$repo/googlebook/dart-diagnostic/legacy-locked-ttbr.patch"
