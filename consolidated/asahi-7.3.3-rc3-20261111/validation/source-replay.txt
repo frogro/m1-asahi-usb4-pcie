@@ -1,0 +1,39 @@
+Warning: you are leaving 13 commits behind, not connected to
+any of your branches:
+
+  7cb95feb0 0013-atc-pipe-failure-state.patch
+  8b8b8f81c 0012-navi-bounded-init-timeout-retry.patch
+  b23dd5af9 0011-amd-hdmi-vendor-infoframe-warning.patch
+  22f19ee4f 0010-ucsi-debugfs-no-connector.patch
+ ... and 9 more.
+
+If you want to keep them by creating a new branch, this may be a good time
+to do so with:
+
+ git branch <new-branch-name> 7cb95feb0
+
+HEAD is now at f6487a636 ASoC: apple: mca: Fix clock selection for clock consumer FEs
+Verified: Existing M1 USB4 PCIe eGPU integration
+Verified: Existing rc2 VM accounting and offline display fix
+Verified: 0003-ucsi-init-retry-upstream.patch
+Verified: 0004-ucsi-ccg-cam-bounds-upstream.patch
+Verified: 0005-ucsi-ccg-read-retry-upstream.patch
+Verified: 0006-ucsi-debugfs-response-limit.patch
+Verified: 0007-asahi-pr503-atc-reliability.patch
+Verified: 0008-amd-i2c-transfer-count.patch
+Verified: 0009-ucsi-ccg-reject-short-transfers.patch
+Verified: 0010-ucsi-debugfs-no-connector.patch
+Verified: 0011-amd-hdmi-vendor-infoframe-warning.patch
+Verified: 0012-navi-bounded-init-timeout-retry.patch
+Verified: 0013-atc-pipe-failure-state.patch
+Verified final rc3 tree: 47885543a098b159a5837a265360cb34bdb6681b
+amd-transfer 5 transfer/PM/error cases passed
+amd-transfer unpatched source fails as expected
+ccg-transfer 10 chunk/short-transfer/retry/PM/allocation cases passed
+ucsi-retry 11 init retry, limit, success and published-port cases passed
+debugfs-null 6 absent/present connector cases passed
+phy-state 5 PIPE success/failure state cases passed
+phy-state unpatched source fails as expected
+phy-usb4-unwind 3 USB4 lock failure cleanup/success/precheck cases passed
+phy-mode-order 5 invalid-mode/power-failure/early-setup/duplicate-call cases passed
+ccg-cam-bounds 512 firmware/translated-index bounds cases passed

@@ -1,0 +1,24 @@
+Subject: [PATCH] usb: typec: ucsi: bound debugfs response to protocol version
+
+Local candidate from the earlier rc2 cross-check. Prepared with Codex.
+
+--- a/drivers/usb/typec/ucsi/debugfs.c
++++ b/drivers/usb/typec/ucsi/debugfs.c
+@@ -9,6 +9,7 @@
+  */
+ #include <linux/debugfs.h>
+ #include <linux/hex.h>
++#include <linux/minmax.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ #include <linux/types.h>
+@@ -60,7 +61,8 @@
+ 	case UCSI_GET_LPM_PPM_INFO:
+ 		ret = ucsi_send_command(ucsi, val,
+ 					&ucsi->debugfs->response,
+-					sizeof(ucsi->debugfs->response));
++					min_t(size_t, sizeof(ucsi->debugfs->response),
++					      UCSI_MAX_DATA_LENGTH(ucsi)));
+ 		break;
+ 	default:
+ 		ret = -EOPNOTSUPP;

@@ -1,0 +1,9 @@
+[Unit]
+Description=Opt-in rc3 Navi21 display recovery candidate
+
+[Timer]
+OnBootSec=20
+Unit=radeon-usbc-startup-rc3.service
+
+[Install]
+WantedBy=timers.target

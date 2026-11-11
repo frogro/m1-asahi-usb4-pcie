@@ -1,0 +1,17 @@
+{
+  "time_utc": "2026-11-11T17:15:41.313832+00:00",
+  "base": "f6487a636f87bd4250f67f728b85077390811636",
+  "final_tree": "47885543a098b159a5837a265360cb34bdb6681b",
+  "clean_replay": "passed",
+  "arm64_cross_compile": {
+    "ucsi": "passed",
+    "i2c_designware_master": "passed",
+    "apple_atc": "passed",
+    "amdgpu": "in progress; full compilation delegated to GitHub"
+  },
+  "hardware_tests": "deferred by owner; no installation or reboot performed",
+  "mocked_c_cases": 557,
+  "recovery_model_cases": 21,
+  "rc2_vm_cases": 3920,
+  "rc2_dm_cases": 2
+}

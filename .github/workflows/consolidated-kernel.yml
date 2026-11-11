@@ -5,7 +5,7 @@ on:
       kernel_profile:
         description: 'OS kernel recipe; complete Googlebook images are never built here'
         type: choice
-        options: [ubuntu, ubuntu-current, googlebook, googlebook-current]
+        options: [ubuntu, ubuntu-current, ubuntu-rc3, googlebook, googlebook-current]
         default: ubuntu
       include_egpu:
         description: 'Include eGPU, automatic display-routing sources and audio unlock (new full build needs hardware validation)'
@@ -50,7 +50,9 @@ jobs:
         env:
           INCLUDE_EGPU: ${{ inputs.include_egpu }}
         run: |
-          if test "${{ inputs.kernel_profile }}" = ubuntu-current; then
+          if test "${{ inputs.kernel_profile }}" = ubuntu-rc3; then
+            bash build/asahi-rc3.sh
+          elif test "${{ inputs.kernel_profile }}" = ubuntu-current; then
             bash build/asahi-current.sh
           elif test "${{ inputs.kernel_profile }}" = googlebook-current; then
             bash googlebook/build-current-kernel.sh

@@ -1,0 +1,8 @@
+[Unit]
+Description=Opt-in rc3 Navi21 USB-C recovery candidate
+After=systemd-udev-trigger.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/share/doc/asahi-m1-usb4-rc3/recovery/radeon-usbc-startup.py
+TimeoutStartSec=450

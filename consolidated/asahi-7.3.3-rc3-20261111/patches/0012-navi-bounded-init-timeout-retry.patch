@@ -1,0 +1,113 @@
+Subject: [PATCH] usb: typec: ucsi: retry one early timeout on identified Navi CCG
+
+Local rc3 code review; hardware validation pending
+Prepared with Codex; no upstream acceptance claimed.
+
+diff --git a/drivers/usb/typec/ucsi/ucsi.c b/drivers/usb/typec/ucsi/ucsi.c
+--- a/drivers/usb/typec/ucsi/ucsi.c
++++ b/drivers/usb/typec/ucsi/ucsi.c
+@@ -2231,6 +2231,21 @@
+ 		return;
+ 	}
+ 
++	/* A final CCI read can fail after ports have been published. */
++	if (ucsi->connector)
++		goto err;
++
++	/* One bounded retry for the identified Navi CCG boot-time timeout. */
++	if (ret == -ETIMEDOUT &&
++	    (ucsi->quirks & UCSI_RETRY_INIT_TIMEOUT) &&
++	    !ucsi->init_timeout_retried) {
++		ucsi->init_timeout_retried = true;
++		ucsi->work_count++;
++		dev_warn(ucsi->dev, "PPM init timed out, retrying once\n");
++		queue_delayed_work(system_dfl_long_wq, &ucsi->work, HZ);
++		return;
++	}
++
+ 	/*
+ 	 * On some platforms the PPM is not ready to answer commands
+ 	 * correctly for a short window during boot: standard commands are
+@@ -2252,6 +2267,7 @@
+ 		return;
+ 	}
+ 
++err:
+ 	dev_err_probe(ucsi->dev, ret, "PPM init failed\n");
+ }
+ 
+@@ -2374,6 +2390,9 @@
+ 		UCSI_BCD_GET_MINOR(ucsi->version),
+ 		UCSI_BCD_GET_SUBMINOR(ucsi->version));
+ 
++	ucsi->work_count = 0;
++	ucsi->init_timeout_retried = false;
++
+ 	queue_delayed_work(system_dfl_long_wq, &ucsi->work, 0);
+ 
+ 	ucsi_debugfs_register(ucsi);
+@@ -2411,6 +2430,7 @@
+ 	}
+ 
+ 	kfree(ucsi->connector);
++	ucsi->connector = NULL;
+ }
+ EXPORT_SYMBOL_GPL(ucsi_unregister);
+ 
+diff --git a/drivers/usb/typec/ucsi/ucsi.h b/drivers/usb/typec/ucsi/ucsi.h
+--- a/drivers/usb/typec/ucsi/ucsi.h
++++ b/drivers/usb/typec/ucsi/ucsi.h
+@@ -487,6 +487,7 @@
+ 	struct work_struct resume_work;
+ 	struct delayed_work work;
+ 	int work_count;
++	bool init_timeout_retried;
+ #define UCSI_ROLE_SWITCH_RETRY_PER_HZ	10
+ #define UCSI_ROLE_SWITCH_INTERVAL	(HZ / UCSI_ROLE_SWITCH_RETRY_PER_HZ)
+ #define UCSI_ROLE_SWITCH_WAIT_COUNT	(10 * UCSI_ROLE_SWITCH_RETRY_PER_HZ)
+@@ -510,6 +511,7 @@
+ 
+ /* USB4 connection can imply that USB communcation is supported */
+ #define UCSI_USB4_IMPLIES_USB	BIT(2)
++#define UCSI_RETRY_INIT_TIMEOUT	BIT(3)
+ };
+ 
+ #define UCSI_MAX_DATA_LENGTH(u) (((u)->version < UCSI_VERSION_2_0) ? 0x10 : 0xff)
+diff --git a/drivers/usb/typec/ucsi/ucsi_ccg.c b/drivers/usb/typec/ucsi/ucsi_ccg.c
+--- a/drivers/usb/typec/ucsi/ucsi_ccg.c
++++ b/drivers/usb/typec/ucsi/ucsi_ccg.c
+@@ -1463,6 +1463,25 @@
+ 	NULL,
+ };
+ 
++/* Local candidate: allow A/B testing without changing unrelated controllers. */
++static bool navi_init_retry = true;
++module_param(navi_init_retry, bool, 0444);
++MODULE_PARM_DESC(navi_init_retry, "Retry one early PPM timeout on AMD 73a4/0408");
++
++static bool ccg_navi_init_retry(struct i2c_client *client)
++{
++	struct device *parent = client->adapter->dev.parent;
++	struct pci_dev *pdev;
++
++	if (!navi_init_retry || !parent || !dev_is_pci(parent))
++		return false;
++
++	pdev = to_pci_dev(parent);
++	return pdev->vendor == PCI_VENDOR_ID_ATI && pdev->device == 0x73a4 &&
++	       pdev->subsystem_vendor == PCI_VENDOR_ID_ATI &&
++	       pdev->subsystem_device == 0x0408;
++}
++
+ static int ucsi_ccg_probe(struct i2c_client *client)
+ {
+ 	struct device *dev = &client->dev;
+@@ -1515,6 +1534,8 @@
+ 		return PTR_ERR(uc->ucsi);
+ 
+ 	ucsi_set_drvdata(uc->ucsi, uc);
++	if (ccg_navi_init_retry(client))
++		uc->ucsi->quirks |= UCSI_RETRY_INIT_TIMEOUT;
+ 
+ 	status = ccg_request_irq(uc);
+ 	if (status < 0) {

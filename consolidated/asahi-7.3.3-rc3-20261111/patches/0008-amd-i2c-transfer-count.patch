@@ -1,0 +1,17 @@
+Subject: [PATCH] i2c: designware: return completed messages from AMD polling transfer
+
+Local rc3 code review; hardware validation pending
+Prepared with Codex; no upstream acceptance claimed.
+
+diff --git a/drivers/i2c/busses/i2c-designware-master.c b/drivers/i2c/busses/i2c-designware-master.c
+--- a/drivers/i2c/busses/i2c-designware-master.c
++++ b/drivers/i2c/busses/i2c-designware-master.c
+@@ -364,7 +364,7 @@
+ 			return status;
+ 	}
+ 
+-	return 0;
++	return num_msgs;
+ }
+ 
+ /*

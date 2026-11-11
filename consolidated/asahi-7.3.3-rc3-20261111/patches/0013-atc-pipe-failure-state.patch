@@ -1,0 +1,41 @@
+Subject: [PATCH] phy: apple: atc: retain failed initialization state and clear USB4 overrides
+
+Local rc3 code review; hardware validation pending
+Prepared with Codex; no upstream acceptance claimed.
+
+diff --git a/drivers/phy/apple/atc.c b/drivers/phy/apple/atc.c
+--- a/drivers/phy/apple/atc.c
++++ b/drivers/phy/apple/atc.c
+@@ -1242,6 +1242,8 @@
+ 	ret = atcphy_pipehandler_lock(atcphy);
+ 	if (ret) {
+ 		dev_err(atcphy->dev, "Failed to lock pipehandler\n");
++		clear32(atcphy->regs.pipehandler + PIPEHANDLER_OVERRIDE,
++			PIPEHANDLER_OVERRIDE_RXVALID | PIPEHANDLER_OVERRIDE_RXDETECT);
+ 		return ret;
+ 	}
+ 
+@@ -1303,11 +1305,11 @@
+ 	switch (atcphy_modes[atcphy->mode].pipehandler_state) {
+ 	case ATCPHY_PIPEHANDLER_STATE_USB3:
+ 		ret = atcphy_configure_pipehandler_usb3(atcphy, host);
+-		atcphy->pipehandler_up = true;
++		atcphy->pipehandler_up = !ret;
+ 		break;
+ 	case ATCPHY_PIPEHANDLER_STATE_USB4:
+ 		ret = atcphy_configure_pipehandler_usb4(atcphy);
+-		atcphy->pipehandler_up = true;
++		atcphy->pipehandler_up = !ret;
+ 		break;
+ 	case ATCPHY_PIPEHANDLER_STATE_DUMMY:
+ 		ret = atcphy_configure_pipehandler_dummy(atcphy);
+@@ -2405,6 +2407,9 @@
+ 	struct apple_atcphy *atcphy = phy_get_drvdata(phy);
+ 	int ret;
+ 
++	if (mode != PHY_MODE_USB_HOST && mode != PHY_MODE_USB_DEVICE)
++		return -EINVAL;
++
+ 	guard(mutex)(&atcphy->lock);
+ 
+ 	/*

@@ -1,0 +1,46 @@
+SKIP: tested Radeon hardware/DRM not ready; no changes
+.SKIP: Radeon DP monitor already connected; no changes
+.SKIP: controller removed before rebind
+.SKIP: partner absent, display connected or hardware removed; no reset
+.SKIP: tested Radeon hardware/DRM not ready; no changes
+.NEGOTIATE before={"branch": true, "identity": "00e04c4470312e3400", "ports": 0, "power": 2, "sinks": 0}
+RECOVER: connector 1 reset on Radeon UCSI 3-0008, once
+FAIL: bridge/display not confirmed after one renegotiation; stopping
+.RECOVER: missing Type-C port; rebind UCSI client 3-0008 once
+FAIL: UCSI port still missing after one rebind; stopping
+.NEGOTIATE before={"branch": true, "identity": "00e04c4470312e3400", "ports": 0, "power": 2, "sinks": 0}
+RECOVER: connector 1 reset on Radeon UCSI 3-0008, once
+FAIL: bridge/display not confirmed after one renegotiation; stopping
+.SKIP: partner absent, display connected or hardware removed; no reset
+.NEGOTIATE before={"branch": true, "identity": "00e04c4470312e3400", "ports": 0, "power": 2, "sinks": 0}
+RECOVER: connector 1 reset on Radeon UCSI 3-0008, once
+NEGOTIATE after={"branch": true, "identity": "00e04c4470312e3400", "ports": 1, "power": 1, "sinks": 1}
+OK: card0-DP-4 connected; enabled=disabled
+SKIP: Radeon DP monitor already connected; no changes
+.NEGOTIATE before={"branch": true, "identity": "00e04c4470312e3400", "ports": 0, "power": 2, "sinks": 0}
+RECOVER: connector 1 reset on Radeon UCSI 3-0008, once
+NEGOTIATE after={"branch": true, "identity": "00e04c4470312e3400", "ports": 1, "power": 1, "sinks": 1}
+OK: card0-DP-4 connected; enabled=
+.SKIP: partner absent, display connected or hardware removed; no reset
+.RECOVER: missing Type-C port; rebind UCSI client 3-0008 once
+NEGOTIATE before={"branch": true, "identity": "00e04c4470312e3400", "ports": 0, "power": 2, "sinks": 0}
+RECOVER: connector 1 reset on Radeon UCSI 3-0008, once
+NEGOTIATE after={"branch": true, "identity": "00e04c4470312e3400", "ports": 1, "power": 1, "sinks": 1}
+OK: card0-DP-4 connected; enabled=disabled
+.NEGOTIATE before={"branch": true, "identity": "00e04c4470312e3400", "ports": 0, "power": 2, "sinks": 0}
+SKIP: connection changed before renegotiation
+.SKIP: known zero-sink bridge state not confirmed; no reset
+.SKIP: no unique UCSI client under the Radeon controller
+.NEGOTIATE before={"branch": true, "identity": "00e04c4470312e3400", "ports": 0, "power": 2, "sinks": 0}
+RECOVER: connector 1 reset on Radeon UCSI 3-0008, once
+NEGOTIATE after={"branch": true, "identity": "00e04c4470312e3400", "ports": 1, "power": 1, "sinks": 1}
+OK: card0-DP-4 connected; enabled=disabled
+.SKIP: known zero-sink bridge state not confirmed; no reset
+.SKIP: known zero-sink bridge state not confirmed; no reset
+.SKIP: known zero-sink bridge state not confirmed; no reset
+.SKIP: tested Radeon hardware/DRM not ready; no changes
+.
+----------------------------------------------------------------------
+Ran 21 tests in 0.086s
+
+OK

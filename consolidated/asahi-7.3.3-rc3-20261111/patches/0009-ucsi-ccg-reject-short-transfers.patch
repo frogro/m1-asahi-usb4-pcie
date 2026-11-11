@@ -1,0 +1,30 @@
+Subject: [PATCH] usb: typec: ucsi: ccg: reject incomplete I2C reads and writes
+
+Local rc3 code review; hardware validation pending
+Prepared with Codex; no upstream acceptance claimed.
+
+diff --git a/drivers/usb/typec/ucsi/ucsi_ccg.c b/drivers/usb/typec/ucsi/ucsi_ccg.c
+--- a/drivers/usb/typec/ucsi/ucsi_ccg.c
++++ b/drivers/usb/typec/ucsi/ucsi_ccg.c
+@@ -280,7 +280,9 @@
+ 			fsleep(1000);
+ 		}
+ 
+-		if (status < 0) {
++		if (status != ARRAY_SIZE(msgs)) {
++			if (status >= 0)
++				status = -EIO;
+ 			dev_err(uc->dev, "i2c_transfer failed %d\n", status);
+ 			pm_runtime_put_sync(uc->dev);
+ 			return status;
+@@ -317,7 +319,9 @@
+ 
+ 	pm_runtime_get_sync(uc->dev);
+ 	status = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
+-	if (status < 0) {
++	if (status != ARRAY_SIZE(msgs)) {
++		if (status >= 0)
++			status = -EIO;
+ 		dev_err(uc->dev, "i2c_transfer failed %d\n", status);
+ 		pm_runtime_put_sync(uc->dev);
+ 		kfree(buf);

@@ -1,0 +1,13 @@
+{
+  "kind": "actual C functions with mocked hardware, no timing validation",
+  "tests": {
+    "amd-transfer": "5 transfer/PM/error cases passed; unpatched source fails the same assertions",
+    "ccg-transfer": "10 chunk/short-transfer/retry/PM/allocation cases passed",
+    "ucsi-retry": "11 init retry, limit, success and published-port cases passed",
+    "debugfs-null": "6 absent/present connector cases passed",
+    "phy-state": "5 PIPE success/failure state cases passed; unpatched source fails the same assertions",
+    "phy-usb4-unwind": "3 USB4 lock failure cleanup/success/precheck cases passed",
+    "phy-mode-order": "5 invalid-mode/power-failure/early-setup/duplicate-call cases passed",
+    "ccg-cam-bounds": "512 firmware/translated-index bounds cases passed"
+  }
+}

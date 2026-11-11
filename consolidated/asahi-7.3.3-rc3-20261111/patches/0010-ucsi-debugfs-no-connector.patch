@@ -1,0 +1,38 @@
+Subject: [PATCH] usb: typec: ucsi: guard power debugfs before initialization
+
+Backport of Bertrand Jacquin patch, reviewed by Heikki Krogerus: https://lkml.iu.edu/2610.3/03200.html
+Prepared with Codex; no upstream acceptance claimed.
+
+diff --git a/drivers/usb/typec/ucsi/debugfs.c b/drivers/usb/typec/ucsi/debugfs.c
+--- a/drivers/usb/typec/ucsi/debugfs.c
++++ b/drivers/usb/typec/ucsi/debugfs.c
+@@ -94,6 +94,9 @@
+ {
+ 	struct ucsi *ucsi = m->private;
+ 
++	if (!ucsi->connector)
++		return -ENODEV;
++
+ 	seq_printf(m, "%u mA\n", ucsi->connector->peak_current);
+ 	return 0;
+ }
+@@ -103,6 +106,9 @@
+ {
+ 	struct ucsi *ucsi = m->private;
+ 
++	if (!ucsi->connector)
++		return -ENODEV;
++
+ 	seq_printf(m, "%u mA\n", ucsi->connector->avg_current);
+ 	return 0;
+ }
+@@ -111,6 +117,9 @@
+ static int ucsi_vbus_volt_show(struct seq_file *m, void *v)
+ {
+ 	struct ucsi *ucsi = m->private;
++
++	if (!ucsi->connector)
++		return -ENODEV;
+ 
+ 	seq_printf(m, "%u mV\n", ucsi->connector->vbus_voltage);
+ 	return 0;
