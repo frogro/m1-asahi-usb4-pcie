@@ -1,5 +1,5 @@
 from pathlib import Path
-import sys,json,hashlib,subprocess as s,tempfile
+import sys,json,hashlib,subprocess as s,tempfile,os
 mode,a,b=sys.argv[1:]
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 if mode=='config':
@@ -17,14 +17,14 @@ elif mode=='modules':
   vermagic=s.check_output(['modinfo','-F','vermagic',str(p)],text=True).strip()
   assert vermagic==m['expected_vermagic'],vermagic
   deps=s.check_output(['modinfo','-F','depends',str(p)],text=True).strip()
-  imports=sorted(l.split()[-1] for l in s.check_output(['nm','-u',str(p)],text=True).splitlines())
+  imports=sorted(l.split()[-1] for l in s.check_output([os.environ.get('CROSS_COMPILE','')+'nm','-u',str(p)],text=True).splitlines())
   with tempfile.TemporaryDirectory() as t:
-   sec=Path(t)/'text';s.run(['objcopy','--dump-section','.text='+str(sec),str(p)],check=True);text_sha=sha(sec)
+   sec=Path(t)/'text';s.run([os.environ.get('CROSS_COMPILE','')+'objcopy','--dump-section','.text='+str(sec),str(p),os.devnull],check=True);text_sha=sha(sec)
   res[n]={'sha256':sha(p),'text_sha256':text_sha,'vermagic':vermagic,'depends':deps,'imports':imports}
  assert res['baseline']['text_sha256']==m['original_text_sha256'], 'Baseline machine code differs; stop deployment'
  assert res['baseline']['depends']==m['expected_depends']==res['candidate']['depends']
  # Logging may introduce its own symbol; all other imports must match.
- assert set(res['candidate']['imports'])-set(res['baseline']['imports']) <= {'_printk','__once_size'},res
+ assert set(res['candidate']['imports'])-set(res['baseline']['imports']) <= {'_printk','param_ops_bool'},res
  assert 'legacy_locked_ttbr:bool' in s.check_output(['modinfo','-p',str(d/'apple-dart-candidate.ko')],text=True)
  res['passed']=True
  (d/'dart-validation.json').write_text(json.dumps(res,indent=2)+'\n')
